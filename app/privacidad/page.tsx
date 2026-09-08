@@ -32,7 +32,7 @@ const SECTIONS = [
   },
   {
     title: "Reportes comunitarios",
-    body: "Si envías una corrección, UruGo guarda el tipo de reporte, la ruta o lugar indicado, tu descripción y el contacto que decidas proporcionar. La dirección IP no se conserva: se transforma en una huella no reversible para limitar abuso. Las confirmaciones y reportes resueltos se eliminan después de 180 días; los que sigan abiertos, después de 365 días. La bitácora privada de decisiones se conserva hasta 365 días. Ningún aporte modifica el mapa automáticamente."
+    body: "Si envías una corrección, UruGo guarda el tipo de reporte, la ruta o lugar indicado, tu descripción, el contacto que decidas proporcionar y, si dibujas un recorrido, sus coordenadas aproximadas. Esa propuesta permanece privada durante la revisión. La dirección IP no se conserva: se transforma en una huella no reversible para limitar abuso. Las confirmaciones y reportes resueltos se eliminan después de 180 días; los que sigan abiertos, después de 365 días. La bitácora privada de decisiones se conserva hasta 365 días. Ningún aporte modifica el mapa automáticamente."
   },
   {
     title: "Servicios de terceros",

@@ -15,13 +15,15 @@ test("el reporte comunitario confirma que queda pendiente de revisión", async (
   });
   await page.goto("/reportar-error?ruta=Ruta%2014&clave=ruta-14-llanitos");
 
-  await page.getByLabel("Tipo de reporte").selectOption("route_inactive");
-  await page.getByLabel("Qué pasó").fill("Varias personas indican que esta ruta ya no circula.");
-  await page.getByLabel("Fuente o evidencia opcional").fill("https://example.com/aviso-ruta-14");
-  await page.getByRole("button", { name: "Enviar a revisión" }).click();
+  await page.getByText("Ya no circula", { exact: true }).click();
+  await expect(page.getByRole("radio", { name: /Ya no circula/ })).toBeChecked();
+  await page.getByLabel("Detalle del reporte").fill("Varias personas indican que esta ruta ya no circula.");
+  await page.locator("summary").filter({ hasText: "Agregar contacto o evidencia" }).click();
+  await page.getByLabel("Enlace a foto o aviso").fill("https://example.com/aviso-ruta-14");
+  await page.getByRole("button", { name: "Enviar reporte" }).click();
 
-  await expect(page.getByRole("heading", { name: "Gracias por ayudar a mejorar la ruta." })).toBeVisible();
-  await expect(page.getByText(/Ningún dato cambia en el mapa/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Gracias, ya quedó en revisión." })).toBeVisible();
+  await expect(page.getByText(/antes de hacer cambios en el mapa/)).toBeVisible();
   expect(submittedRouteKey).toBe("ruta-14-llanitos");
   expect(submittedEvidenceUrl).toBe("https://example.com/aviso-ruta-14");
 });

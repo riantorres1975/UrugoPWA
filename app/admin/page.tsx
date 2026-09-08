@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import AdminHeader from "@/components/admin/AdminHeader";
 import ContributorHistory from "@/components/admin/ContributorHistory";
+import ReportPathComparison from "@/components/admin/ReportPathComparison";
 import { getAdminAccess } from "@/lib/admin-auth";
 import { getContributorReputations } from "@/lib/community-reputation";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
@@ -185,7 +186,6 @@ export default async function AdminPage({ searchParams }: Props) {
                       {report.source_path && <Link href={report.source_path} target="_blank" className="hover:text-[#b8e840]">Abrir página relacionada</Link>}
                       {report.route_key && <Link href={`/ruta/${report.route_key}`} target="_blank" className="hover:text-[#b8e840]">Ver ficha de la ruta</Link>}
                       {report.evidence_url?.startsWith("https://") && <a href={report.evidence_url} target="_blank" rel="noreferrer" className="font-bold text-[#f4c84a] hover:underline">Abrir evidencia</a>}
-                      {Array.isArray(report.proposed_path) && <span className="font-bold text-[#48cce0]">Propuesta: {report.proposed_path.length} puntos</span>}
                       {report.contact && <span>Contacto: <span className="text-[#a8c888]">{report.contact}</span></span>}
                       {report.status === "approved" && (
                         <Link href={report.route_id ? `/admin/routes/${report.route_id}?reporte=${report.id}` : `/admin/routes?buscar=${encodeURIComponent(report.route_name ?? "")}&reporte=${report.id}`} className="font-bold text-[#b8e840] hover:underline">
@@ -193,6 +193,9 @@ export default async function AdminPage({ searchParams }: Props) {
                         </Link>
                       )}
                     </div>
+                    {report.route_key && Array.isArray(report.proposed_path) && (
+                      <ReportPathComparison routeKey={report.route_key} proposedPath={report.proposed_path} />
+                    )}
                     <ContributorHistory reputation={report.submitted_by_hash ? contributorHistory.get(report.submitted_by_hash) ?? null : null} />
                   </div>
 

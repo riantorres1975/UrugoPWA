@@ -107,6 +107,8 @@ Si Supabase no responde, el servidor vuelve automáticamente al JSON incluido en
 | `/admin/routes/[id]` | Administradores | Publica y restaura versiones de una ruta |
 | `GET /api/admin/routes/export` | Administradores | Descarga rutas y revisiones en JSON, sin datos comunitarios |
 
+En `/reportar-error`, la persona puede elegir cualquiera de las rutas disponibles aunque entre directamente al formulario. Para cambios de recorrido puede comparar la línea publicada y dibujar sobre el mapa las calles por donde pasa realmente; esa propuesta permanece privada hasta la revisión administrativa.
+
 La navegación administrativa muestra contadores de reportes y señales pendientes para que la bandeja de revisión sea visible desde cualquier sección del panel.
 Cada ficha de ruta permite registrar una verificación de campo con fecha, administrador y nota. El registro es inmutable y no crea una versión de geometría; editar otros datos de una ruta no renueva esa fecha.
 Cada aporte también muestra al administrador un historial agregado de aceptados, descartados y pendientes de la misma instalación anónima. El hash técnico nunca se presenta en pantalla ni se expone en endpoints públicos.

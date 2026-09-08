@@ -135,7 +135,7 @@ export default function RouteProposalMap({ routeKey, points, onChange }: Props) 
             id: CURRENT_SOURCE,
             type: "line",
             source: CURRENT_SOURCE,
-            paint: { "line-color": firstDirection.color, "line-width": 4, "line-opacity": 0.65 },
+            paint: { "line-color": "#48cce0", "line-width": 4, "line-opacity": 0.82 },
           });
           map.addSource(PROPOSAL_LINE_SOURCE, { type: "geojson", data: lineData(pointsRef.current) });
           map.addLayer({
@@ -202,7 +202,7 @@ export default function RouteProposalMap({ routeKey, points, onChange }: Props) 
     const direction = directions.find((candidate) => candidate.id === selectedId);
     if (!map?.isStyleLoaded() || !direction) return;
     (map.getSource(CURRENT_SOURCE) as import("mapbox-gl").GeoJSONSource | undefined)?.setData(lineData(direction.path));
-    map.setPaintProperty(CURRENT_SOURCE, "line-color", direction.color);
+    map.setPaintProperty(CURRENT_SOURCE, "line-color", "#48cce0");
     const longitudes = direction.path.map(([longitude]) => longitude);
     const latitudes = direction.path.map(([, latitude]) => latitude);
     map.fitBounds([
@@ -216,21 +216,21 @@ export default function RouteProposalMap({ routeKey, points, onChange }: Props) 
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-11 items-center gap-2 border border-[#48cce0]/30 px-4 text-xs font-black text-[#74dceb] transition hover:bg-[#48cce0]/10"
+        aria-expanded="false"
+        className="flex min-h-14 w-full items-center justify-between gap-3 border border-[#48cce0]/35 bg-[#071312] px-4 text-left text-sm font-black text-[#dff9fb] transition hover:border-[#74dceb] hover:bg-[#0a1b19]"
       >
-        <MapPinned className="h-4 w-4" aria-hidden="true" />
-        Marcar recorrido propuesto
-        {points.length >= 2 && <span className="bg-[#48cce0] px-2 py-0.5 text-[#071006]">{points.length}</span>}
+        <span className="inline-flex items-center gap-3"><MapPinned className="h-5 w-5 text-[#48cce0]" aria-hidden="true" /> Abrir mapa y marcar calles</span>
+        {points.length >= 2 && <span className="shrink-0 bg-[#48cce0] px-2 py-1 text-xs text-[#071006]">Listo</span>}
       </button>
     );
   }
 
   return (
-    <section className="border border-[#48cce0]/25 bg-[#090d08]" aria-label="Propuesta de recorrido">
+    <section className="border border-[#48cce0]/30 bg-[#090d08]" aria-label="Propuesta de recorrido">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
         <div>
           <p className="text-xs font-black uppercase text-[#74dceb]">Recorrido propuesto</p>
-          <p className="mt-1 text-[11px] text-[#78965f]">Toca el mapa siguiendo las calles. La línea amarilla es tu propuesta.</p>
+          <p className="mt-1 text-[11px] text-[#89a873]">Toca las calles en orden. Azul: ruta publicada. Amarillo: tu corrección.</p>
         </div>
         <button type="button" onClick={() => setOpen(false)} className="text-xs font-bold text-[#78965f] hover:text-[#e8f2d8]">Cerrar mapa</button>
       </div>
@@ -244,17 +244,23 @@ export default function RouteProposalMap({ routeKey, points, onChange }: Props) 
         </label>
       )}
 
-      <div className="relative h-[360px] w-full bg-[#10170e]">
-        <div ref={containerRef} className="absolute inset-0" />
+      <div className="relative h-[420px] w-full bg-[#10170e] sm:h-[480px]">
+        <div ref={containerRef} className="absolute inset-0 cursor-crosshair" />
         {state === "loading" && <div className="absolute inset-0 grid place-items-center bg-[#0c110a]/85"><LoaderCircle className="h-6 w-6 animate-spin text-[#48cce0]" aria-label="Cargando mapa" /></div>}
         {state === "ready" && points.length === 0 && <p className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap bg-[#0c110a]/95 px-3 py-2 text-xs font-bold text-[#e8f2d8] shadow-lg">Marca el primer punto</p>}
+        {state === "ready" && (
+          <div className="pointer-events-none absolute left-3 top-3 flex flex-wrap gap-2 text-[10px] font-black uppercase">
+            <span className="bg-[#0c110a]/95 px-2.5 py-2 text-[#74dceb]">Línea actual</span>
+            <span className="bg-[#0c110a]/95 px-2.5 py-2 text-[#f4c84a]">Tu propuesta</span>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-4 py-3">
         <p className="text-xs text-[#78965f]">{points.length < 2 ? `${points.length} de 2 puntos mínimos` : `${points.length} puntos listos para enviar`}</p>
         <div className="flex gap-2">
-          <button type="button" disabled={points.length === 0} onClick={() => onChange(points.slice(0, -1))} title="Deshacer último punto" className="grid h-9 w-9 place-items-center border border-white/15 text-[#a8c888] hover:text-[#e8f2d8] disabled:opacity-30"><Undo2 className="h-4 w-4" /></button>
-          <button type="button" disabled={points.length === 0} onClick={() => onChange([])} title="Borrar propuesta" className="grid h-9 w-9 place-items-center border border-[#dd6b5f]/25 text-[#e98b80] hover:bg-[#dd6b5f]/10 disabled:opacity-30"><Trash2 className="h-4 w-4" /></button>
+          <button type="button" disabled={points.length === 0} onClick={() => onChange(points.slice(0, -1))} aria-label="Deshacer último punto" title="Deshacer último punto" className="grid h-9 w-9 place-items-center border border-white/15 text-[#a8c888] hover:text-[#e8f2d8] disabled:opacity-30"><Undo2 className="h-4 w-4" /></button>
+          <button type="button" disabled={points.length === 0} onClick={() => onChange([])} aria-label="Borrar propuesta" title="Borrar propuesta" className="grid h-9 w-9 place-items-center border border-[#dd6b5f]/25 text-[#e98b80] hover:bg-[#dd6b5f]/10 disabled:opacity-30"><Trash2 className="h-4 w-4" /></button>
           <button type="button" onClick={() => setOpen(false)} title="Terminar propuesta" className="inline-flex h-9 items-center gap-2 bg-[#48cce0] px-3 text-xs font-black text-[#071006]"><Check className="h-4 w-4" /> Terminar</button>
         </div>
       </div>

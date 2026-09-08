@@ -203,7 +203,7 @@ La consulta pública versionada está documentada en [`/datos-api`](https://www.
 
 Actualmente están operativos:
 
-- Formularios públicos para reportar errores, rutas faltantes y cambios de servicio.
+- Formulario público guiado para reportar errores, elegir una ruta y dibujar sobre el mapa el recorrido correcto.
 - Confirmaciones rápidas desde las fichas de ruta, con deduplicación y revisión administrativa.
 - Acceso privado por enlace de correo, bandejas de moderación y bitácora de decisiones.
 - Historial agregado por colaborador anónimo, sin mostrar IP ni identificadores técnicos.
