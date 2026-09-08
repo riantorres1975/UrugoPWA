@@ -179,7 +179,7 @@ test.describe("moderación con Supabase aislado", () => {
       .from("route_field_verifications")
       .update({ note: `${verificationNote} editada` })
       .eq("id", verification.id);
-    expect(immutableError?.message).toContain("route field verifications are immutable");
+    expect(immutableError).toMatchObject({ code: "42501" });
 
     const { count: revisionCount, error: revisionCountError } = await adminClient
       .from("route_revisions")
