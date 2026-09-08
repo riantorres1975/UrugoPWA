@@ -6,6 +6,9 @@ const runId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const adminEmail = `admin-e2e-${runId}@example.com`;
 const reportDescription = `Reporte aislado E2E ${runId}`;
 const integrationName = `Integración E2E ${runId}`;
+const routeId = 8_000_000_000_000 + (Date.now() % 1_000_000_000);
+const routeName = `Ruta E2E ${runId}`;
+const verificationNote = `Recorrido E2E comprobado en campo ${runId}`;
 
 let adminClient: SupabaseClient;
 let apiClientId: string | null = null;
@@ -27,6 +30,8 @@ async function cleanupFixture() {
     await adminClient.from("community_reports").delete().eq("id", reportId);
   }
   if (apiClientId) await adminClient.from("community_api_clients").delete().eq("id", apiClientId);
+  const { error: routeCleanupError } = await adminClient.from("routes").delete().eq("id", routeId);
+  if (routeCleanupError) throw routeCleanupError;
   await adminClient.from("admin_members").delete().eq("email", adminEmail);
   if (adminUserId) await adminClient.auth.admin.deleteUser(adminUserId);
 }
@@ -53,6 +58,22 @@ test.describe("moderación con Supabase aislado", () => {
       user_id: adminUserId,
     });
     if (memberError) throw memberError;
+
+    const { error: routeError } = await adminClient.from("routes").insert({
+      color: "#57d6e8",
+      corridor_width_m: 500,
+      data_version: 1,
+      id: routeId,
+      landmarks: [],
+      name: routeName,
+      operational_status: "active",
+      original_name: routeName,
+      path: [[-102.071, 19.411], [-102.061, 19.421]],
+      publication_status: "published",
+      published_at: new Date().toISOString(),
+      verified: false,
+    });
+    if (routeError) throw routeError;
 
     const { data: reportData, error: reportError } = await adminClient
       .from("community_reports")
@@ -82,7 +103,7 @@ test.describe("moderación con Supabase aislado", () => {
 
   test.afterAll(cleanupFixture);
 
-  test("modera un reporte y administra una credencial externa", async ({ page }) => {
+  test("modera, verifica una ruta y administra una credencial externa", async ({ page }) => {
     if (!tokenHash || !reportId || !adminUserId) throw new Error("El fixture E2E no está completo.");
 
     await page.goto(`/auth/callback?token_hash=${encodeURIComponent(tokenHash)}&type=email`);
@@ -120,6 +141,52 @@ test.describe("moderación con Supabase aislado", () => {
       previous_status: "pending",
       report_id: reportId,
     });
+
+    await page.goto(`/admin/routes/${routeId}`);
+    await expect(page.getByRole("heading", { name: routeName, exact: true })).toBeVisible();
+    await page.getByLabel("Qué comprobaste y cómo").fill(verificationNote);
+    await page.getByRole("button", { name: "Confirmar verificación" }).click();
+    await expect(page).toHaveURL(new RegExp(`/admin/routes/${routeId}\\?verificada=1$`));
+    await expect(page.getByRole("status")).toContainText("Verificación de campo registrada");
+    await expect(page.getByText(verificationNote, { exact: true })).toBeVisible();
+
+    const { data: verifiedRoute, error: verifiedRouteError } = await adminClient
+      .from("routes")
+      .select("data_version,last_verified_at,verified")
+      .eq("id", routeId)
+      .single();
+    if (verifiedRouteError || !verifiedRoute) {
+      throw verifiedRouteError ?? new Error("No se encontró la ruta verificada E2E.");
+    }
+    expect(verifiedRoute).toMatchObject({ data_version: 1, verified: true });
+    expect(Date.parse(verifiedRoute.last_verified_at)).not.toBeNaN();
+
+    const { data: verification, error: verificationError } = await adminClient
+      .from("route_field_verifications")
+      .select("id,note,route_id,verified_by")
+      .eq("route_id", routeId)
+      .single();
+    if (verificationError || !verification) {
+      throw verificationError ?? new Error("No se registró la verificación E2E.");
+    }
+    expect(verification).toMatchObject({
+      note: verificationNote,
+      route_id: routeId,
+      verified_by: adminUserId,
+    });
+
+    const { error: immutableError } = await adminClient
+      .from("route_field_verifications")
+      .update({ note: `${verificationNote} editada` })
+      .eq("id", verification.id);
+    expect(immutableError?.message).toContain("route field verifications are immutable");
+
+    const { count: revisionCount, error: revisionCountError } = await adminClient
+      .from("route_revisions")
+      .select("id", { count: "exact", head: true })
+      .eq("route_id", routeId);
+    expect(revisionCountError).toBeNull();
+    expect(revisionCount).toBe(0);
 
     await page.goto("/admin/integrations");
     await expect(page.getByRole("heading", { name: "Llaves con dueño y límite." })).toBeVisible();

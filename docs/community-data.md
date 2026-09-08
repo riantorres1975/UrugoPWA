@@ -142,7 +142,7 @@ Al eliminar un aporte también desaparecen su contacto opcional, agente de usuar
 
 ## Prueba administrativa aislada
 
-`pnpm test:admin-integration` comprueba el flujo real de acceso, bandeja, moderación, auditoría y ciclo de credenciales externas. La prueba crea un administrador, un reporte y una integración temporales y los elimina al terminar. Debe ejecutarse únicamente contra un segundo proyecto Supabase dedicado a pruebas, con todas las migraciones aplicadas.
+`pnpm test:admin-integration` comprueba el flujo real de acceso, bandeja, moderación, auditoría, verificación de campo y ciclo de credenciales externas. La prueba crea un administrador, una ruta, un reporte y una integración temporales y los elimina al terminar. Debe ejecutarse únicamente contra un segundo proyecto Supabase dedicado a pruebas, con todas las migraciones aplicadas.
 
 Configura estas variables sólo en tu terminal o en un entorno de CI protegido:
 
