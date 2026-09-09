@@ -74,16 +74,16 @@ export default function RouteVerification({ routeKey, routeName }: Props) {
     <section className="mt-10 border-y border-[#6aab48]/15 bg-[#0c110a] py-6" aria-labelledby="route-verification-title">
       {publicStatus && publicStatus.state !== "no_recent_data" && (
         <div className={`mb-6 flex gap-3 border-l-2 px-4 py-3 ${publicStatus.state === "recently_seen" ? "border-[#b8e840] bg-[#b8e840]/[0.06]" : "border-[#f4c84a] bg-[#f4c84a]/[0.06]"}`} role="status">
-          {publicStatus.state === "recently_seen" ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#b8e840]" aria-hidden="true" /> : publicStatus.state === "collecting_evidence" ? <CircleDashed className="mt-0.5 h-4 w-4 shrink-0 text-[#f4c84a]" aria-hidden="true" /> : <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#f4c84a]" aria-hidden="true" />}
+          {publicStatus.state === "recently_seen" ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[var(--public-accent)]" aria-hidden="true" /> : publicStatus.state === "collecting_evidence" ? <CircleDashed className="mt-0.5 h-4 w-4 shrink-0 text-[#f4c84a]" aria-hidden="true" /> : <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#f4c84a]" aria-hidden="true" />}
           <div>
-            <p className={`text-xs font-black uppercase ${publicStatus.state === "recently_seen" ? "text-[#b8e840]" : "text-[#f4df98]"}`}>{publicStatus.state === "recently_seen" ? "Actividad confirmada" : publicStatus.state === "collecting_evidence" ? "Verificación en curso" : "Información en revisión"}</p>
-            <p className="mt-1 text-sm leading-6 text-[#a8c888]">
+            <p className={`text-xs font-bold uppercase ${publicStatus.state === "recently_seen" ? "text-[var(--public-accent)]" : "text-[#f4df98]"}`}>{publicStatus.state === "recently_seen" ? "Actividad confirmada" : publicStatus.state === "collecting_evidence" ? "Verificación en curso" : "Información en revisión"}</p>
+            <p className="mt-1 text-sm leading-6 text-[var(--public-secondary)]">
               {publicStatus.state === "recently_seen"
                 ? `${publicStatus.supportCount} confirmaciones independientes y revisadas indican que esta ruta circuló recientemente.`
                 : publicStatus.state === "review_suggested"
                   ? `${publicStatus.supportCount} confirmaciones independientes y revisadas indican cambios o posible suspensión. Confirma antes de viajar.`
                   : `${publicStatus.supportCount} de ${publicStatus.requiredCount} aportes independientes necesarios para confirmar ${publicStatus.evidenceType === "concern" ? "un posible cambio" : "actividad reciente"}.`}
-              {publicStatus.observedAt && <span className="ml-1 text-[#78965f]">Actualizado {new Intl.DateTimeFormat("es-MX", { dateStyle: "medium", timeZone: "America/Mexico_City" }).format(new Date(publicStatus.observedAt))}.</span>}
+              {publicStatus.observedAt && <span className="ml-1 text-[var(--public-muted)]">Actualizado {new Intl.DateTimeFormat("es-MX", { dateStyle: "medium", timeZone: "America/Mexico_City" }).format(new Date(publicStatus.observedAt))}.</span>}
             </p>
           </div>
         </div>
@@ -94,8 +94,8 @@ export default function RouteVerification({ routeKey, routeName }: Props) {
             <BusFront className="h-5 w-5" aria-hidden="true" />
           </span>
           <div>
-            <h2 id="route-verification-title" className="font-serif text-xl font-black text-[#e8f2d8]">¿Has visto esta ruta recientemente?</h2>
-            <p className="mt-1 text-sm leading-6 text-[#78965f]">Tu respuesta genera una señal de revisión; nunca cambia el recorrido automáticamente.</p>
+            <h2 id="route-verification-title" className="text-[var(--public-ink)] public-section-title">¿Has visto esta ruta recientemente?</h2>
+            <p className="mt-1 text-sm leading-6 text-[var(--public-muted)]">Tu respuesta genera una señal de revisión; nunca cambia el recorrido automáticamente.</p>
           </div>
         </div>
 
@@ -110,7 +110,7 @@ export default function RouteVerification({ routeKey, routeName }: Props) {
                 disabled={state === "submitting" || state === "success"}
                 className="inline-flex h-10 items-center gap-2 border border-[#6aab48]/25 px-3 text-xs font-bold text-[#c9dbb9] transition hover:border-[#b8e840]/60 hover:bg-[#b8e840]/[0.07] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <Icon className={`h-4 w-4 text-[#b8e840] ${state === "submitting" && selected === choice.type ? "animate-spin" : ""}`} aria-hidden="true" />
+                <Icon className={`h-4 w-4 text-[var(--public-accent)] ${state === "submitting" && selected === choice.type ? "animate-spin" : ""}`} aria-hidden="true" />
                 {choice.label}
               </button>
             );
@@ -122,7 +122,7 @@ export default function RouteVerification({ routeKey, routeName }: Props) {
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-l-2 border-[#b8e840] bg-[#b8e840]/[0.06] px-4 py-3" role="status">
           <p className={`text-sm font-semibold ${state === "error" ? "text-[#f4df98]" : "text-[#c9dbb9]"}`}>{message}</p>
           {state === "success" && selected !== "seen_today" && (
-            <Link href={`/reportar-error?ruta=${encodeURIComponent(routeName)}&clave=${encodeURIComponent(routeKey)}&from=ruta/${routeKey}`} className="text-xs font-black text-[#b8e840] underline underline-offset-4">
+            <Link href={`/reportar-error?ruta=${encodeURIComponent(routeName)}&clave=${encodeURIComponent(routeKey)}&from=ruta/${routeKey}`} className="text-xs font-bold text-[var(--public-accent)] underline underline-offset-4">
               Agregar detalles
             </Link>
           )}

@@ -70,12 +70,12 @@ const socialLinks = [
 
 export default function PublicFooter() {
   return (
-    <footer className="border-t border-white/[0.08] bg-[#090d08] px-5 sm:px-8 lg:px-10">
+    <footer className="public-page border-t border-[var(--public-border)] bg-[#090d08] px-5 sm:px-8 lg:px-10">
       <div className="mx-auto max-w-7xl">
         <div className="grid gap-10 py-10 sm:py-12 lg:grid-cols-[1.35fr_0.8fr_1fr] lg:gap-14">
           <div>
             <Logo size={26} showName href="/" />
-            <p className="mt-4 max-w-md text-sm leading-6 text-[#88a66e]">
+            <p className="mt-4 max-w-md text-sm leading-6 text-[var(--public-secondary)]">
               Transporte público de Uruapan con datos locales, mapas claros y herramientas gratuitas.
             </p>
 
@@ -84,7 +84,7 @@ export default function PublicFooter() {
                 href={PROJECT.donationUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex h-11 items-center gap-2 rounded-full bg-[#6aab48] px-5 text-sm font-bold text-[#0c110a] transition hover:bg-[#7cbd59] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b8e840]"
+                className="inline-flex h-11 items-center gap-2 rounded-md bg-[#6aab48] px-5 text-sm font-bold text-[#0c110a] transition hover:bg-[#7cbd59] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b8e840]"
               >
                 <Heart className="h-4 w-4" aria-hidden="true" />
                 Apoyar UruGo
@@ -93,7 +93,7 @@ export default function PublicFooter() {
                 href={PROJECT.repositoryUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex h-11 items-center gap-2 rounded-full border border-white/15 px-5 text-sm font-bold text-[#dceaca] transition hover:border-[#6aab48]/60 hover:bg-[#6aab48]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b8e840]"
+                className="inline-flex h-11 items-center gap-2 rounded-md border border-[var(--public-border)] px-5 text-sm font-bold text-[var(--public-ink)] transition hover:border-[#6aab48]/60 hover:bg-[#6aab48]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b8e840]"
               >
                 <FileCode2 className="h-4 w-4" aria-hidden="true" />
                 Ver código
@@ -103,10 +103,10 @@ export default function PublicFooter() {
           </div>
 
           <nav aria-label="Explorar UruGo">
-            <p className="text-xs font-bold uppercase text-[#b8e840]">Explorar</p>
-            <div className="mt-4 grid grid-cols-2 gap-x-8 gap-y-3 text-sm font-semibold text-[#a8c888] lg:grid-cols-1">
+            <p className="text-xs font-bold uppercase text-[var(--public-accent)]">Explorar</p>
+            <div className="mt-4 grid grid-cols-2 gap-x-8 gap-y-3 text-sm font-semibold text-[var(--public-secondary)] lg:grid-cols-1">
               {exploreLinks.map((link) => (
-                <Link key={link.href} href={link.href} className="w-fit transition hover:text-[#e8f2d8]">
+                <Link key={link.href} href={link.href} className="w-fit transition hover:text-[var(--public-ink)]">
                   {link.label}
                 </Link>
               ))}
@@ -114,9 +114,9 @@ export default function PublicFooter() {
           </nav>
 
           <div>
-            <p className="text-xs font-bold uppercase text-[#b8e840]">Proyecto independiente</p>
-            <p className="mt-4 max-w-sm text-sm leading-6 text-[#88a66e]">
-              Hecho en Uruapan por <span className="font-semibold text-[#dceaca]">{PROJECT.author}</span>. Tu apoyo ayuda a mantener el mapa, el dominio y las mejoras futuras.
+            <p className="text-xs font-bold uppercase text-[var(--public-accent)]">Proyecto independiente</p>
+            <p className="mt-4 max-w-sm text-sm leading-6 text-[var(--public-secondary)]">
+              Hecho en Uruapan por <span className="font-semibold text-[var(--public-ink)]">{PROJECT.author}</span>. Tu apoyo ayuda a mantener el mapa, el dominio y las mejoras futuras.
             </p>
 
             <div className="mt-5 flex flex-wrap gap-2" aria-label="Redes sociales del creador">
@@ -130,7 +130,7 @@ export default function PublicFooter() {
                     rel="me noreferrer"
                     aria-label={link.label}
                     title={link.label}
-                    className="inline-flex h-10 min-w-10 items-center justify-center gap-2 rounded-full border border-white/10 px-3 text-xs font-bold text-[#9bb77f] transition hover:border-[#6aab48]/50 hover:bg-[#6aab48]/10 hover:text-[#e8f2d8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b8e840]"
+                    className="inline-flex h-10 min-w-10 items-center justify-center gap-2 rounded-full border border-[var(--public-border)] px-3 text-xs font-bold text-[var(--public-secondary)] transition hover:border-[#6aab48]/50 hover:bg-[#6aab48]/10 hover:text-[var(--public-ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b8e840]"
                   >
                     <Icon className="h-4 w-4" aria-hidden="true" />
                     {link.shortLabel ? (
@@ -143,13 +143,13 @@ export default function PublicFooter() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-4 border-t border-white/[0.08] py-6 text-xs text-[#6f895a] sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 border-t border-[var(--public-border)] py-6 text-xs text-[var(--public-muted)] sm:flex-row sm:items-center sm:justify-between">
           <p>UruGo no está afiliado al gobierno ni a las empresas de transporte.</p>
           <nav aria-label="Información legal" className="flex flex-wrap gap-x-5 gap-y-2 font-semibold">
-            <Link href="/acerca-de" className="transition hover:text-[#dceaca]">Metodología y autor</Link>
-            <Link href="/datos-api" className="transition hover:text-[#dceaca]">Datos y API</Link>
-            <Link href="/reportar-error" className="transition hover:text-[#dceaca]">Reportar un error</Link>
-            <Link href="/privacidad" className="transition hover:text-[#dceaca]">Privacidad</Link>
+            <Link href="/acerca-de" className="transition hover:text-[var(--public-ink)]">Metodología y autor</Link>
+            <Link href="/datos-api" className="transition hover:text-[var(--public-ink)]">Datos y API</Link>
+            <Link href="/reportar-error" className="transition hover:text-[var(--public-ink)]">Reportar un error</Link>
+            <Link href="/privacidad" className="transition hover:text-[var(--public-ink)]">Privacidad</Link>
           </nav>
         </div>
       </div>

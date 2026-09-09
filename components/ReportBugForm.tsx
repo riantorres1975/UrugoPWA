@@ -177,10 +177,10 @@ export default function ReportBugForm({
   if (submitState === "success") {
     return (
       <section className="border-y border-[#6aab48]/30 bg-[#10180d] px-5 py-10 text-center sm:px-8" aria-live="polite">
-        <CheckCircle2 className="mx-auto h-10 w-10 text-[#b8e840]" aria-hidden="true" />
-        <p className="mt-5 text-xs font-black uppercase text-[#89aa70]">Reporte recibido</p>
-        <h2 className="mt-2 font-serif text-3xl font-black text-[#e8f2d8]">Gracias, ya quedó en revisión.</h2>
-        <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-[#a8c888]">
+        <CheckCircle2 className="mx-auto h-10 w-10 text-[var(--public-accent)]" aria-hidden="true" />
+        <p className="mt-5 text-xs font-bold uppercase text-[var(--public-muted)]">Reporte recibido</p>
+        <h2 className="mt-2 text-[var(--public-ink)] public-section-title">Gracias, ya quedó en revisión.</h2>
+        <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-[var(--public-secondary)]">
           Revisaremos la información y el recorrido que marcaste antes de hacer cambios en el mapa.
         </p>
         <button
@@ -192,7 +192,7 @@ export default function ReportBugForm({
             setProposedPath([]);
             setSubmitState("idle");
           }}
-          className="mt-7 inline-flex h-11 items-center justify-center bg-[#6aab48] px-5 text-sm font-black text-[#0c110a] transition hover:bg-[#79bd55]"
+          className="mt-7 inline-flex h-11 items-center justify-center bg-[#6aab48] px-5 text-sm font-bold text-[#0c110a] transition hover:bg-[#79bd55]"
         >
           Enviar otro reporte
         </button>
@@ -200,21 +200,21 @@ export default function ReportBugForm({
     );
   }
 
-  const fieldClass = "mt-2 w-full border border-[#6aab48]/25 bg-[#0a1008] px-4 text-base text-[#e8f2d8] outline-none placeholder:text-white/30 focus:border-[#b8e840]/70 focus:ring-2 focus:ring-[#b8e840]/10";
+  const fieldClass = "mt-2 w-full border border-[#6aab48]/25 bg-[#0a1008] px-4 text-base text-[var(--public-ink)] outline-none placeholder:text-white/30 focus:border-[#b8e840]/70 focus:ring-2 focus:ring-[#b8e840]/10";
 
   return (
-    <form className="border-y border-white/10 bg-[#0f170c]" onSubmit={submitReport}>
+    <form className="border-y border-[var(--public-border)] bg-[#0f170c]" onSubmit={submitReport}>
       <section className="px-5 py-7 sm:px-8 sm:py-9" aria-labelledby="report-problem-title">
         <div className="flex items-center gap-3">
-          <span className="grid h-7 w-7 place-items-center bg-[#b8e840] text-xs font-black text-[#0c110a]">1</span>
-          <h2 id="report-problem-title" className="font-serif text-2xl font-black text-[#e8f2d8]">¿Qué está mal?</h2>
+          <span className="grid h-7 w-7 place-items-center bg-[#b8e840] text-xs font-bold text-[#0c110a]">1</span>
+          <h2 id="report-problem-title" className="text-[var(--public-ink)] public-section-title">¿Qué está mal?</h2>
         </div>
         <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3">
           {REPORT_CHOICES.map((choice, index) => {
             const Icon = choice.icon;
             const selected = reportType === choice.value;
             return (
-              <label key={choice.value} className={`relative min-h-28 cursor-pointer border p-4 transition ${index === 0 ? "col-span-2 sm:col-span-3" : ""} ${selected ? "border-[#b8e840] bg-[#b8e840]/10" : "border-white/10 bg-[#0a1008] hover:border-[#6aab48]/50"}`}>
+              <label key={choice.value} className={`relative min-h-28 cursor-pointer border p-4 transition ${index === 0 ? "col-span-2 sm:col-span-3" : ""} ${selected ? "border-[#b8e840] bg-[#b8e840]/10" : "border-[var(--public-border)] bg-[#0a1008] hover:border-[#6aab48]/50"}`}>
                 <input
                   type="radio"
                   name="reportType"
@@ -224,10 +224,10 @@ export default function ReportBugForm({
                   className="sr-only"
                 />
                 <div className={index === 0 ? "flex items-center gap-4" : ""}>
-                  <Icon className={`h-5 w-5 shrink-0 ${selected ? "text-[#b8e840]" : "text-[#6aab48]"}`} aria-hidden="true" />
+                  <Icon className={`h-5 w-5 shrink-0 ${selected ? "text-[var(--public-accent)]" : "text-[var(--public-muted)]"}`} aria-hidden="true" />
                   <span className={index === 0 ? "block" : ""}>
-                    <span className={`${index === 0 ? "" : "mt-3"} block text-sm font-black leading-5 text-[#e8f2d8]`}>{choice.label}</span>
-                    <span className="mt-1 block text-[11px] leading-4 text-[#89a873]">{choice.hint}</span>
+                    <span className={`${index === 0 ? "" : "mt-3"} block text-sm font-bold leading-5 text-[var(--public-ink)]`}>{choice.label}</span>
+                    <span className="mt-1 block text-[11px] leading-4 text-[var(--public-muted)]">{choice.hint}</span>
                   </span>
                 </div>
               </label>
@@ -236,15 +236,15 @@ export default function ReportBugForm({
         </div>
       </section>
 
-      <section className="border-t border-white/10 px-5 py-7 sm:px-8 sm:py-9" aria-labelledby="report-route-title">
+      <section className="border-t border-[var(--public-border)] px-5 py-7 sm:px-8 sm:py-9" aria-labelledby="report-route-title">
         <div className="flex items-center gap-3">
-          <span className="grid h-7 w-7 place-items-center bg-[#b8e840] text-xs font-black text-[#0c110a]">2</span>
-          <h2 id="report-route-title" className="font-serif text-2xl font-black text-[#e8f2d8]">{requiresRoute ? "¿Qué ruta es?" : "¿Dónde ocurrió?"}</h2>
+          <span className="grid h-7 w-7 place-items-center bg-[#b8e840] text-xs font-bold text-[#0c110a]">2</span>
+          <h2 id="report-route-title" className="text-[var(--public-ink)] public-section-title">{requiresRoute ? "¿Qué ruta es?" : "¿Dónde ocurrió?"}</h2>
         </div>
 
         {requiresRoute && (
           <div className="mt-5">
-            <label htmlFor="report-route" className="text-xs font-black uppercase text-[#89aa70]">Elige una ruta</label>
+            <label htmlFor="report-route" className="text-xs font-bold uppercase text-[var(--public-muted)]">Elige una ruta</label>
             <select id="report-route" value={selectedRouteKey} onChange={(event) => chooseRoute(event.target.value)} required className={`${fieldClass} h-14`}>
               <option value="">Selecciona la ruta</option>
               {routeOptions.map((route) => <option key={route.slug} value={route.slug}>{route.name}</option>)}
@@ -255,21 +255,21 @@ export default function ReportBugForm({
 
         {isCustomRoute && (
           <label className="mt-4 block">
-            <span className="text-xs font-black uppercase text-[#89aa70]">¿Cómo se conoce?</span>
+            <span className="text-xs font-bold uppercase text-[var(--public-muted)]">¿Cómo se conoce?</span>
             <input value={routeName} onChange={(event) => setRouteName(event.target.value)} required maxLength={120} placeholder="Ej. La Llanitos, Ruta 26..." className={`${fieldClass} h-14`} />
           </label>
         )}
 
         <label className="mt-4 block">
-          <span className="text-xs font-black uppercase text-[#89aa70]">Calle, colonia o referencia <span className="normal-case text-[#89a873]">(opcional)</span></span>
+          <span className="text-xs font-bold uppercase text-[var(--public-muted)]">Calle, colonia o referencia <span className="normal-case text-[var(--public-muted)]">(opcional)</span></span>
           <input value={place} onChange={(event) => setPlace(event.target.value)} maxLength={180} placeholder="Ej. frente al Mercado Poniente" className={`${fieldClass} h-14`} />
         </label>
 
         {canProposePath && (
           <div className="mt-5 border-l-2 border-[#48cce0] bg-[#48cce0]/[0.06] p-4 sm:p-5">
-            <p className="text-xs font-black uppercase text-[#74dceb]">¿El recorrido del mapa está mal?</p>
-            <h3 className="mt-2 text-lg font-black text-[#e8f2d8]">Marca por dónde pasa realmente.</h3>
-            <p className="mt-1 text-xs leading-5 text-[#89a873]">Verás la ruta publicada como referencia. Toca las calles en orden para dibujar la corrección.</p>
+            <p className="text-xs font-bold uppercase text-[#74dceb]">¿El recorrido del mapa está mal?</p>
+            <h3 className="mt-2 text-lg font-bold text-[var(--public-ink)]">Marca por dónde pasa realmente.</h3>
+            <p className="mt-1 text-xs leading-5 text-[var(--public-muted)]">Verás la ruta publicada como referencia. Toca las calles en orden para dibujar la corrección.</p>
             <div className="mt-4">
               <RouteProposalMap routeKey={selectedRouteKey} points={proposedPath} onChange={setProposedPath} />
             </div>
@@ -278,26 +278,26 @@ export default function ReportBugForm({
         )}
       </section>
 
-      <section className="border-t border-white/10 px-5 py-7 sm:px-8 sm:py-9" aria-labelledby="report-detail-title">
+      <section className="border-t border-[var(--public-border)] px-5 py-7 sm:px-8 sm:py-9" aria-labelledby="report-detail-title">
         <div className="flex items-center gap-3">
-          <span className="grid h-7 w-7 place-items-center bg-[#b8e840] text-xs font-black text-[#0c110a]">3</span>
-          <h2 id="report-detail-title" className="font-serif text-2xl font-black text-[#e8f2d8]">Cuéntanos qué cambió</h2>
+          <span className="grid h-7 w-7 place-items-center bg-[#b8e840] text-xs font-bold text-[#0c110a]">3</span>
+          <h2 id="report-detail-title" className="text-[var(--public-ink)] public-section-title">Cuéntanos qué cambió</h2>
         </div>
         <label className="mt-5 block">
           <span className="sr-only">Detalle del reporte</span>
           <textarea value={description} onChange={(event) => setDescription(event.target.value)} required minLength={10} maxLength={2000} rows={5} placeholder={promptFor(reportType)} className={`${fieldClass} py-3 leading-6`} />
-          <span className="mt-2 block text-xs text-[#89a873]">No necesitas escribir perfecto; con una referencia clara es suficiente.</span>
+          <span className="mt-2 block text-xs text-[var(--public-muted)]">No necesitas escribir perfecto; con una referencia clara es suficiente.</span>
         </label>
 
-        <details className="mt-5 border-y border-white/10 py-4">
-          <summary className="cursor-pointer text-sm font-bold text-[#a8c888]">Agregar contacto o evidencia <span className="font-normal text-[#89a873]">(opcional)</span></summary>
+        <details className="mt-5 border-y border-[var(--public-border)] py-4">
+          <summary className="cursor-pointer text-sm font-bold text-[var(--public-secondary)]">Agregar contacto o evidencia <span className="font-normal text-[var(--public-muted)]">(opcional)</span></summary>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <label className="block">
-              <span className="text-xs font-black uppercase text-[#89aa70]">Contacto</span>
+              <span className="text-xs font-bold uppercase text-[var(--public-muted)]">Contacto</span>
               <input value={contact} onChange={(event) => setContact(event.target.value)} maxLength={180} placeholder="Email o red social" className={`${fieldClass} h-12`} />
             </label>
             <label className="block">
-              <span className="text-xs font-black uppercase text-[#89aa70]">Enlace a foto o aviso</span>
+              <span className="text-xs font-bold uppercase text-[var(--public-muted)]">Enlace a foto o aviso</span>
               <input type="url" inputMode="url" value={evidenceUrl} onChange={(event) => setEvidenceUrl(event.target.value)} maxLength={500} pattern="https://.*" placeholder="https://..." className={`${fieldClass} h-12`} />
             </label>
           </div>
@@ -311,16 +311,16 @@ export default function ReportBugForm({
         {submitState === "error" && (
           <div className="mt-5 border-l-2 border-[#f4c84a] bg-[#f4c84a]/[0.07] px-4 py-3" role="alert">
             <p className="text-sm font-bold text-[#f4df98]">{submitError}</p>
-            <p className="mt-1 text-xs leading-5 text-[#a8c888]">Tus datos siguen en el formulario. Intenta nuevamente en un momento.</p>
+            <p className="mt-1 text-xs leading-5 text-[var(--public-secondary)]">Tus datos siguen en el formulario. Intenta nuevamente en un momento.</p>
           </div>
         )}
 
         <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-xs font-bold text-[#a8c888]">{summary}</p>
-            <p className="mt-1 max-w-md text-[11px] leading-5 text-[#89a873]">El reporte será privado hasta que se revise. No cambiaremos una ruta automáticamente.</p>
+            <p className="text-xs font-bold text-[var(--public-secondary)]">{summary}</p>
+            <p className="mt-1 max-w-md text-[11px] leading-5 text-[var(--public-muted)]">El reporte será privado hasta que se revise. No cambiaremos una ruta automáticamente.</p>
           </div>
-          <button type="submit" disabled={!canSubmit} className="inline-flex h-12 min-w-48 items-center justify-center gap-2 bg-[#b8e840] px-6 text-sm font-black text-[#0c110a] transition hover:bg-[#c7f35c] disabled:cursor-not-allowed disabled:opacity-40">
+          <button type="submit" disabled={!canSubmit} className="inline-flex h-12 min-w-48 items-center justify-center gap-2 bg-[#b8e840] px-6 text-sm font-bold text-[#0c110a] transition hover:bg-[#c7f35c] disabled:cursor-not-allowed disabled:opacity-40">
             {submitState === "submitting" ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Send className="h-4 w-4" aria-hidden="true" />}
             {submitState === "submitting" ? "Enviando" : "Enviar reporte"}
           </button>

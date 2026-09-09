@@ -8,16 +8,16 @@ export default function NotGovernmentNotice({ variant = "compact" }: Props) {
     return (
       <div
         role="note"
-        className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-semibold"
+        className="inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-[11px] font-semibold"
         style={{
-          borderColor: "rgba(140,200,80,0.12)",
-          background: "rgba(106,171,72,0.05)",
-          color: "rgba(232,242,216,0.6)",
+          borderColor: "var(--public-border)",
+          background: "var(--public-surface)",
+          color: "var(--public-ink)",
         }}
       >
         <span aria-hidden="true">⚠️</span>
         <span>
-          <span className="font-bold" style={{ color: "#e8f2d8" }}>Sitio independiente.</span>{" "}
+          <span className="font-bold" style={{ color: "var(--public-ink)" }}>Sitio independiente.</span>{" "}
           No pertenece al gobierno municipal ni estatal.
         </span>
       </div>
@@ -28,7 +28,7 @@ export default function NotGovernmentNotice({ variant = "compact" }: Props) {
     <aside
       role="note"
       aria-label="Aviso sobre la naturaleza independiente del proyecto"
-      className="rounded-2xl border p-5"
+      className="rounded-lg border p-5"
       style={{
         borderColor: "rgba(184,232,64,0.2)",
         background: "rgba(184,232,64,0.04)",
@@ -38,7 +38,7 @@ export default function NotGovernmentNotice({ variant = "compact" }: Props) {
         <span
           aria-hidden="true"
           className="grid h-9 w-9 shrink-0 place-items-center rounded-full"
-          style={{ background: "rgba(106,171,72,0.12)", color: "#6aab48" }}
+          style={{ background: "var(--public-surface)", color: "var(--public-muted)" }}
         >
           <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
             <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
@@ -47,14 +47,14 @@ export default function NotGovernmentNotice({ variant = "compact" }: Props) {
           </svg>
         </span>
         <div>
-          <p className="font-serif text-lg font-black" style={{ color: "#e8f2d8" }}>
-            Este sitio <span className="italic" style={{ color: "#b8e840" }}>no es oficial</span>.
+          <p className="font-sans text-lg font-bold" style={{ color: "var(--public-ink)" }}>
+            Este sitio <span className="italic" style={{ color: "var(--public-accent)" }}>no es oficial</span>.
           </p>
-          <p className="mt-2 text-sm leading-7" style={{ color: "rgba(232,242,216,0.65)" }}>
-            UruGo es un proyecto <strong style={{ color: "#e8f2d8" }}>independiente y sin fines de lucro</strong> hecho por un vecino de Uruapan como una herramienta para todas las personas — habitantes, estudiantes y turistas — que necesitan moverse en transporte público por la ciudad.
+          <p className="mt-2 text-sm leading-7" style={{ color: "var(--public-ink)" }}>
+            UruGo es un proyecto <strong style={{ color: "var(--public-ink)" }}>independiente y sin fines de lucro</strong> hecho por un vecino de Uruapan como una herramienta para todas las personas — habitantes, estudiantes y turistas — que necesitan moverse en transporte público por la ciudad.
           </p>
-          <p className="mt-3 text-sm leading-7" style={{ color: "rgba(232,242,216,0.65)" }}>
-            <strong style={{ color: "#e8f2d8" }}>No pertenece al Gobierno de Uruapan</strong>, al Gobierno del Estado de Michoacán, al SITU, al COCOTRA ni a ninguna empresa concesionaria. La información se basa en datos públicos y observación de campo. Para trámites o cambios oficiales, consulta los canales oficiales del transporte de Uruapan.
+          <p className="mt-3 text-sm leading-7" style={{ color: "var(--public-ink)" }}>
+            <strong style={{ color: "var(--public-ink)" }}>No pertenece al Gobierno de Uruapan</strong>, al Gobierno del Estado de Michoacán, al SITU, al COCOTRA ni a ninguna empresa concesionaria. La información se basa en datos públicos y observación de campo. Para trámites o cambios oficiales, consulta los canales oficiales del transporte de Uruapan.
           </p>
         </div>
       </div>

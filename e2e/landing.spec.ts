@@ -98,14 +98,11 @@ test("la vista móvil usa capturas reales del modo viaje", async ({ page }) => {
   await expect(simulator.locator(".landing-map-pin")).toHaveCount(0);
 });
 
-test("la tarifa usa un signo de pesos legible", async ({ page }) => {
+test("las tarifas del transporte se muestran junto al medio de pago", async ({ page }) => {
   await page.goto("/");
 
-  const fareLabel = page.getByText("tarifa base 2026 MXN", { exact: true });
-  const fareValue = fareLabel.locator("xpath=preceding-sibling::*[1]");
-
-  await expect(fareValue).toHaveText("$12");
-  await expect(fareValue.locator("span")).toHaveCSS("font-family", /DM Sans/);
+  await expect(page.locator("#transporte").getByRole("link", { name: /Camión urbano/ })).toContainText("$12 · Efectivo");
+  await expect(page.locator("#transporte").getByRole("link", { name: /Teleférico Uruapan/ })).toContainText("$12 · Tarjeta");
 });
 
 test("el menú móvil se cierra con Escape y al tocar fuera", async ({ page }) => {
@@ -123,7 +120,7 @@ test("el menú móvil se cierra con Escape y al tocar fuera", async ({ page }) =
   await expect(page.getByRole("navigation", { name: "Navegación móvil" })).toBeHidden();
 });
 
-test("las tarjetas de transporte usan iconos y caben en mobile", async ({ page }) => {
+test("las opciones de transporte usan iconos y caben en mobile", async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await page.goto("/");
 
@@ -134,7 +131,6 @@ test("las tarjetas de transporte usan iconos y caben en mobile", async ({ page }
   await expect(cableCarCard.locator(".lucide-cable-car")).toBeVisible();
   await expect(busCard).toContainText("$12 · Efectivo");
   await expect(cableCarCard).toContainText("$12 · Tarjeta");
-  await expect(busCard).toHaveCSS("border-radius", "8px");
 
   const layout = await page.evaluate(() => ({
     scrollWidth: document.documentElement.scrollWidth,

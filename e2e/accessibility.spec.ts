@@ -5,6 +5,8 @@ const pages = [
   { name: "inicio", path: "/" },
   { name: "mapa", path: "/mapa" },
   { name: "horarios", path: "/horarios" },
+  { name: "directorio de rutas", path: "/rutas" },
+  { name: "directorio de lugares", path: "/como-llegar" },
   { name: "guía de uso", path: "/guia" },
   { name: "metodología", path: "/acerca-de" },
   { name: "reporte de errores", path: "/reportar-error" },

@@ -38,25 +38,25 @@ export default async function ReportErrorPage({ searchParams }: ReportErrorPageP
     .sort((left, right) => left.name.localeCompare(right.name, "es-MX", { numeric: true }));
 
   return (
-    <main className="min-h-dvh bg-[#0c110a] text-[#e8f2d8]">
+    <main className="public-page min-h-dvh bg-[#0c110a] text-[var(--public-ink)]">
       <ForceDark />
-      <PublicHeader />
+      <PublicHeader active="reportar-error" />
 
-      <section className="border-b border-white/10 px-5 pb-9 pt-28 sm:px-8 lg:px-10">
+      <section className="border-b border-[var(--public-border)] px-5 pb-9 pt-28 sm:px-8 lg:px-10">
         <div className="mx-auto max-w-4xl">
-          <div className="flex items-center gap-2 text-xs font-black uppercase text-[#b8e840]">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase text-[var(--public-accent)]">
             <MapPinned className="h-4 w-4" aria-hidden="true" />
             Correcciones de la comunidad
           </div>
-          <h1 className="mt-5 max-w-3xl font-serif text-4xl font-black leading-[1.04] sm:text-6xl">
+          <h1 className="mt-5 max-w-3xl public-page-title">
             Ayúdanos a corregir una ruta.
           </h1>
-          <p className="mt-5 max-w-2xl text-base leading-7 text-[#a8c888] sm:text-lg">
+          <p className="mt-5 max-w-2xl text-base leading-7 text-[var(--public-secondary)] sm:text-lg">
             Elige qué está mal, selecciona la ruta y cuéntanos lo que sabes. Si cambió el recorrido, puedes dibujarlo directamente sobre el mapa.
           </p>
-          <div className="mt-7 flex flex-wrap gap-x-6 gap-y-3 border-t border-white/10 pt-5 text-xs font-bold text-[#78965f]">
-            <span className="inline-flex items-center gap-2"><Check className="h-4 w-4 text-[#b8e840]" /> No necesitas cuenta</span>
-            <span className="inline-flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[#b8e840]" /> Revisión antes de publicar</span>
+          <div className="mt-7 flex flex-wrap gap-x-6 gap-y-3 border-t border-[var(--public-border)] pt-5 text-xs font-bold text-[var(--public-muted)]">
+            <span className="inline-flex items-center gap-2"><Check className="h-4 w-4 text-[var(--public-accent)]" /> No necesitas cuenta</span>
+            <span className="inline-flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[var(--public-accent)]" /> Revisión antes de publicar</span>
             <span className="inline-flex items-center gap-2"><MapPinned className="h-4 w-4 text-[#48cce0]" /> Puedes marcar las calles</span>
           </div>
         </div>

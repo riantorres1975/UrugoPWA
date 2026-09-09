@@ -126,12 +126,12 @@ export default function TelefericoBlogArticlePage() {
             <section
               key={section.n}
               id={section.id}
-              className="scroll-mt-40 border-t border-white/[0.1] py-8 first:border-t-0 first:pt-0"
+              className="scroll-mt-40 border-t border-[var(--public-border)] py-8 first:border-t-0 first:pt-0"
             >
-              <p className="font-serif-display text-3xl font-black text-lima">
+              <p className="font-sans text-3xl font-bold text-lima">
                 {section.n}
               </p>
-              <h2 className="mt-2 font-serif-display text-2xl font-black text-white">
+              <h2 className="mt-2 text-white public-section-title">
                 {section.title}
               </h2>
               <p className="mt-3 text-sm leading-7 text-foreground/75">
@@ -140,9 +140,9 @@ export default function TelefericoBlogArticlePage() {
             </section>
           ))}
 
-          <section id="estaciones" className="scroll-mt-40 border-t border-white/[0.1] pt-8">
-            <p className="font-serif-display text-3xl font-black text-lima">06</p>
-            <h2 className="mt-2 font-serif-display text-2xl font-black text-white">
+          <section id="estaciones" className="scroll-mt-40 border-t border-[var(--public-border)] pt-8">
+            <p className="font-sans text-3xl font-bold text-lima">06</p>
+            <h2 className="mt-2 text-white public-section-title">
               Las 6 estaciones, de oriente a poniente
             </h2>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -151,10 +151,10 @@ export default function TelefericoBlogArticlePage() {
                   key={station}
                   className="rounded-lg border border-foreground/10 bg-ink-900/65 p-4"
                 >
-                  <p className="font-serif-display text-xs font-black text-lima">
+                  <p className="font-sans text-xs font-bold text-lima">
                     E{index + 1}
                   </p>
-                  <h3 className="mt-2 font-serif-display text-lg font-black text-white">
+                  <h3 className="mt-2 font-sans text-lg font-bold text-white">
                     {station}
                   </h3>
                   <p className="mt-2 text-xs leading-6 text-foreground/65">

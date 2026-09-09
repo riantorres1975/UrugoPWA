@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 const links = [
+  { href: "/reportar-error", label: "Reportar un error" },
   { href: "/rutas", label: "Rutas" },
   { href: "/horarios", label: "Horarios" },
   { href: "/como-llegar", label: "Cómo llegar" },
@@ -38,7 +39,7 @@ export default function PublicMobileMenu() {
   }, [open]);
 
   return (
-    <div ref={menuRef} className="relative md:hidden">
+    <div ref={menuRef} className="relative lg:hidden">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}

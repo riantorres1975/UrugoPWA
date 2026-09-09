@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowRight,
-  BadgeCheck,
+  ArrowUpRight,
+  Plus,
+  Users,
   BusFront,
   CableCar,
   Crosshair,
@@ -12,7 +14,7 @@ import {
   ScanSearch,
 } from "lucide-react";
 import LandingHeroPlanner from "@/components/LandingHeroPlanner";
-import StatsAnimados from "@/components/StatsAnimados";
+import LandingReports from "@/components/LandingReports";
 import ForceDark from "@/components/ForceDark";
 import FareUpdateNotice from "@/components/FareUpdateNotice";
 import PublicFooter from "@/components/PublicFooter";
@@ -139,245 +141,157 @@ const organizationJsonLd = {
 
 export default function LandingPage() {
   return (
-    <main
-      className="landing-home min-h-dvh overflow-hidden bg-[#0c110a] text-[#e8f2d8]"
-      data-theme="dark"
-    >
+    <main className="landing-home min-h-dvh bg-[#0c110a] text-[#eef2ea]" data-theme="dark">
       <ForceDark />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webAppJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
-
       <PublicHeader />
       <FareUpdateNotice />
 
-      <section className="mx-auto max-w-[1240px] px-5 pb-10 pt-28 sm:px-8 lg:pb-16 lg:pt-36">
-        <div className="border-b border-white/10 pb-7 sm:pb-9">
-          <div className="animate-fade-up mb-5 flex items-center gap-2.5 text-[11px] font-black uppercase tracking-[0.16em] text-[#8eb16f]">
-            <span className="h-2 w-2 rounded-full bg-[#a8ef24]" aria-hidden="true" />
+      <section className="mx-auto max-w-[1240px] px-5 pb-12 pt-28 sm:px-8 lg:pb-16 lg:pt-32">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-white/15 pb-4">
+          <p className="flex items-center gap-3 text-sm font-semibold">
+            <span className="text-lg font-black text-[#b8e840]">UruGo</span>
+            <span className="h-4 border-l border-white/25" aria-hidden="true" />
             Uruapan, Michoacán
-          </div>
+          </p>
+          <span className="text-xs text-[#a8b5a1]">Gratis · Sin cuenta · Sin anuncios</span>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_260px] lg:items-end lg:gap-12">
+          <h1 className="max-w-[810px] text-[36px] font-extrabold leading-[1.1] sm:text-5xl lg:text-[56px]">
+            Encuentra qué camión tomar en <span className="text-[#b8e840]">Uruapan.</span>
+          </h1>
+          <p className="max-w-lg text-sm leading-6 text-[#b6c1af] lg:pb-1">
+            Busca tu destino y compara recorridos de camión y Teleférico.
+          </p>
+        </div>
+        <LandingHeroPlanner>
+          <LandingReports />
+        </LandingHeroPlanner>
+      </section>
 
-          <div className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_260px] lg:items-end">
-            <div>
-              <h1 className="animate-fade-up animate-delay-100 max-w-[900px] font-serif text-[46px] font-black leading-[0.96] sm:text-6xl lg:text-7xl">
-                <span className="block">Encuentra qué camión{" "}</span>
-                <span className="block">
-                  tomar en <em className="font-serif text-[#a8ef24]">Uruapan.</em>
-                </span>
-              </h1>
-              <p className="animate-fade-up animate-delay-200 mt-5 max-w-2xl text-base leading-7 text-[#a8c888] sm:text-lg">
-                Busca tu destino, compara rutas y combina camión con Teleférico en un mapa hecho aquí. Sin cuentas ni anuncios.
-              </p>
-            </div>
-
-            <dl className="animate-fade-up animate-delay-300 grid grid-cols-3 border-y border-white/10 py-4 lg:grid-cols-1 lg:gap-3 lg:border-y-0 lg:border-l lg:py-0 lg:pl-7">
+      <section id="transporte" className="scroll-mt-24 border-y border-white/15 bg-[#171e14]">
+        <div className="mx-auto grid max-w-[1240px] divide-y divide-white/15 px-5 sm:px-8 md:grid-cols-2 md:divide-x md:divide-y-0">
+          {[
+            { href: "/rutas", icon: BusFront, title: "Camión urbano", detail: "40 rutas por la ciudad", fare: URBAN_FARE_DISPLAY, payment: "Efectivo", color: "#66d8e7", link: "Explorar rutas" },
+            { href: "/teleferico-uruapan-horario", icon: CableCar, title: "Teleférico Uruapan", detail: `6 estaciones · ${TELEFERICO_URUAPAN.hours}`, fare: TELEFERICO_FARE_DISPLAY, payment: "Tarjeta", color: "#f4d25e", link: "Ver horarios y estaciones" },
+          ].map(({ href, icon: Icon, title, detail, fare, payment, color, link }) => (
+            <Link key={href} href={href} className="group grid grid-cols-[44px_minmax(0,1fr)] gap-4 py-7 transition hover:bg-white/[0.03] md:px-6 md:py-9">
+              <Icon className="h-9 w-9" style={{ color }} strokeWidth={1.5} aria-hidden="true" />
               <div>
-                <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#6f895a]">Cobertura</dt>
-                <dd className="mt-1 font-serif text-lg font-black text-[#e8f2d8]">40 rutas</dd>
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                  <h2 className="text-lg font-bold">{title}</h2>
+                  <p className="text-sm font-bold" style={{ color }}>{fare} · {payment}</p>
+                </div>
+                <p className="mt-1 text-sm text-[#b6c1af]">{detail}</p>
+                <span className="mt-4 inline-flex items-center gap-2 text-xs font-bold">{link}<ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" aria-hidden="true" /></span>
               </div>
-              <div>
-                <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#6f895a]">Teleférico</dt>
-                <dd className="mt-1 font-serif text-lg font-black text-[#e8f2d8]">6 estaciones</dd>
-              </div>
-              <div>
-                <dt className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#6f895a]">Acceso</dt>
-                <dd className="mt-1 font-serif text-lg font-black text-[#e8f2d8]">Gratis</dd>
-              </div>
-            </dl>
-          </div>
-        </div>
-
-        <div className="animate-fade-up animate-delay-300">
-          <LandingHeroPlanner />
-        </div>
-      </section>
-
-      <StatsAnimados />
-
-      <section className={`border-y border-white/10 bg-[#10160d] ${DEFERRED_SECTION}`}>
-        <div className="mx-auto grid max-w-[1240px] gap-10 px-5 py-14 sm:px-8 lg:grid-cols-[minmax(0,1fr)_520px] lg:items-center lg:py-20">
-          <div>
-            <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-[#b8e840]">
-              <BadgeCheck className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-              Datos hechos en Uruapan
-            </div>
-            <h2 className="mt-4 max-w-xl font-serif text-4xl font-black leading-tight sm:text-5xl">
-              Rutas verificadas localmente, con referencias que sí reconoces.
-            </h2>
-            <p className="mt-5 max-w-xl text-sm leading-7 text-[#8eaa76]">
-              Los recorridos se documentan como trazos GPS y se revisan con observación de campo. Los puntos de referencia ayudan a buscar por hospitales, escuelas, mercados y lugares cotidianos.
-            </p>
-            <Link href="/acerca-de" className="mt-6 inline-flex items-center gap-2 text-sm font-black text-[#b8e840]">
-              Conoce cómo se construye UruGo <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
-          </div>
-
-          <div>
-            <p className="border-b border-white/10 pb-4 text-[11px] font-black uppercase tracking-[0.18em] text-[#6f895a]">
-              Rutas más consultadas
-            </p>
-            <div className="divide-y divide-white/10">
-              {featuredRoutes.map((route) => (
-                <Link
-                  key={route.slug}
-                  href={`/ruta/${route.slug}`}
-                  className="group grid min-h-20 grid-cols-[1fr_auto] items-center gap-4 py-4 transition hover:bg-white/[0.025] sm:px-3"
-                >
-                  <span>
-                    <span className="block text-sm font-black text-[#e8f2d8]">{route.name} en Uruapan</span>
-                    <span className="mt-1 block text-xs text-[#6f895a]">
-                      {route.destination ?? "Recorrido local"} · horario, mapa y por dónde pasa
-                    </span>
-                  </span>
-                  <ArrowRight className="h-4 w-4 text-[#6f895a] transition group-hover:translate-x-1 group-hover:text-[#b8e840]" aria-hidden="true" />
-                </Link>
-              ))}
-            </div>
-            <Link href="/rutas" className="mt-4 inline-flex min-h-11 items-center gap-2 text-sm font-black text-[#dceaca]">
-              Ver las 40 rutas <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section id="transporte" className={`mx-auto max-w-[1240px] px-5 py-16 sm:px-8 lg:py-24 ${DEFERRED_SECTION}`}>
-        <div className="mb-8 grid gap-3 border-b border-white/10 pb-5 md:grid-cols-[1fr_auto] md:items-end">
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#6f895a]">La red</p>
-            <h2 className="mt-2 font-serif text-3xl font-black sm:text-4xl">Dos maneras de cruzar la ciudad.</h2>
-          </div>
-          <p className="max-w-sm text-sm leading-6 text-[#789660]">Elige una red completa o combínalas en el mismo recorrido.</p>
-        </div>
-
-        <div className="grid gap-3 md:grid-cols-2">
-          <Link
-            href="/rutas"
-            className="group grid min-h-[260px] rounded-lg border border-white/10 bg-[#11180e] p-6 transition hover:border-[#57d6e8]/50 sm:p-8"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <span className="grid h-12 w-12 place-items-center rounded-md bg-[#57d6e8] text-[#071114]" aria-hidden="true">
-                <BusFront className="h-6 w-6" strokeWidth={1.8} />
-              </span>
-              <span className="text-xs font-black uppercase tracking-[0.12em] text-[#8eb16f]">{URBAN_FARE_DISPLAY} · Efectivo</span>
-            </div>
-            <div className="mt-8 self-end">
-              <p className="text-xs font-black uppercase tracking-[0.14em] text-[#57d6e8]">Camión urbano</p>
-              <p className="mt-2 font-serif text-5xl font-black">40 <span className="font-sans text-sm font-bold text-[#6f895a]">rutas</span></p>
-              <p className="mt-3 max-w-lg text-sm leading-6 text-[#789660]">Recorridos, horarios y puntos de referencia de todo el rutero urbano.</p>
-              <span className="mt-5 inline-flex items-center gap-2 text-sm font-black text-[#e8f2d8]">Explorar rutas <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" aria-hidden="true" /></span>
-            </div>
-          </Link>
-
-          <Link
-            href="/teleferico-uruapan-horario"
-            className="group grid min-h-[260px] rounded-lg border border-white/10 bg-[#11180e] p-6 transition hover:border-[#ffd84d]/50 sm:p-8"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <span className="grid h-12 w-12 place-items-center rounded-md bg-[#ffd84d] text-[#171303]" aria-hidden="true">
-                <CableCar className="h-6 w-6" strokeWidth={1.8} />
-              </span>
-              <span className="text-xs font-black uppercase tracking-[0.12em] text-[#8eb16f]">{TELEFERICO_FARE_DISPLAY} · Tarjeta</span>
-            </div>
-            <div className="mt-8 self-end">
-              <p className="text-xs font-black uppercase tracking-[0.14em] text-[#ffd84d]">Teleférico Uruapan</p>
-              <p className="mt-2 font-serif text-5xl font-black">6 <span className="font-sans text-sm font-bold text-[#6f895a]">estaciones</span></p>
-              <p className="mt-3 max-w-lg text-sm leading-6 text-[#789660]">Cruza de oriente a poniente y opera {TELEFERICO_URUAPAN.hours}.</p>
-              <span className="mt-5 inline-flex items-center gap-2 text-sm font-black text-[#e8f2d8]">Ver guía del Teleférico <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" aria-hidden="true" /></span>
-            </div>
-          </Link>
-        </div>
-      </section>
-
-      <section id="como-funciona" className={`border-y border-white/10 bg-[#10160d] ${DEFERRED_SECTION}`}>
-        <div className="mx-auto max-w-[1240px] px-5 py-16 sm:px-8 lg:py-24">
-          <div className="grid gap-10 lg:grid-cols-[300px_1fr]">
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#b8e840]">Cómo se usa</p>
-              <h2 className="mt-3 font-serif text-4xl font-black">Del punto A al B, sin vueltas.</h2>
-              <p className="mt-4 text-sm leading-6 text-[#789660]">El mapa te acompaña desde la búsqueda hasta el modo viaje.</p>
-            </div>
-
-            <ol className="grid border-t border-white/10 sm:grid-cols-2 lg:grid-cols-4 lg:border-l lg:border-t-0">
-              {HOW_IT_WORKS_STEPS.map((step) => {
-                const Icon = step.icon;
-                return (
-                  <li key={step.n} className="relative border-b border-white/10 py-6 sm:px-5 lg:border-b-0 lg:border-r lg:py-2">
-                    <span className="font-serif text-3xl font-black text-[#6f895a]">{step.n}</span>
-                    <Icon className="mt-8 h-5 w-5 text-[#b8e840]" strokeWidth={1.8} aria-hidden="true" />
-                    <h3 className="mt-3 text-sm font-black text-[#e8f2d8]">{step.title}</h3>
-                    <p className="mt-2 text-xs leading-5 text-[#6f895a]">{step.desc}</p>
-                  </li>
-                );
-              })}
-            </ol>
-          </div>
-        </div>
-      </section>
-
-      <section className={`mx-auto max-w-[1240px] px-5 py-16 sm:px-8 lg:py-24 ${DEFERRED_SECTION}`}>
-        <div className="mb-7 flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-5">
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#6f895a]">Destinos cotidianos</p>
-            <h2 className="mt-2 font-serif text-3xl font-black sm:text-4xl">¿Cómo llegar a...?</h2>
-          </div>
-          <Link href="/como-llegar" className="inline-flex items-center gap-2 text-sm font-black text-[#b8e840]">
-            Ver directorio <ArrowRight className="h-4 w-4" aria-hidden="true" />
-          </Link>
-        </div>
-
-        <div className="grid border-t border-white/10 md:grid-cols-2">
-          {featuredPlaces.map((place, index) => (
-            <Link
-              key={place.slug}
-              href={`/como-llegar/${place.slug}`}
-              className={`group grid min-h-[92px] grid-cols-[34px_1fr_auto] items-center gap-3 border-b border-white/10 py-4 transition hover:bg-white/[0.025] md:px-5 ${index % 2 === 0 ? "md:border-r" : ""}`}
-            >
-              <MapPin className="h-5 w-5 text-[#b8e840]" strokeWidth={1.8} aria-hidden="true" />
-              <span>
-                <span className="block text-sm font-black text-[#e8f2d8]">{place.label}</span>
-                <span className="mt-1 block text-xs text-[#6f895a]">{place.routeCount} {place.routeCount === 1 ? "ruta" : "rutas"} · desde {place.nearestWalkMin} min a pie</span>
-              </span>
-              <ArrowRight className="h-4 w-4 text-[#6f895a] transition group-hover:translate-x-1 group-hover:text-[#b8e840]" aria-hidden="true" />
             </Link>
           ))}
         </div>
       </section>
 
-      <section className={`border-t border-white/10 ${DEFERRED_SECTION}`}>
-        <div className="mx-auto grid max-w-[1240px] gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[320px_1fr] lg:py-24">
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#6f895a]">Antes de salir</p>
-            <h2 className="mt-3 font-serif text-4xl font-black">Preguntas frecuentes</h2>
+      <section id="destinos" className={`public-directory scroll-mt-24 border-y border-[var(--public-border)] ${DEFERRED_SECTION}`}>
+        <div className="mx-auto max-w-[1240px] px-5 py-12 sm:px-8 lg:py-16">
+          <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase text-[var(--public-muted)]">Destinos cotidianos</p>
+              <h2 className="mt-2 text-3xl font-extrabold sm:text-4xl">¿A dónde vas hoy?</h2>
+            </div>
+            <Link href="/como-llegar" className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-[var(--public-accent)] underline decoration-[var(--public-border)] underline-offset-4">Todos los destinos<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
           </div>
-          <div className="border-t border-white/10">
+          <div className="grid border-t border-[var(--public-border)] md:grid-cols-2 md:gap-x-10">
+            {featuredPlaces.map((place) => (
+              <Link key={place.slug} href={`/como-llegar/${place.slug}`} className="group grid min-h-[88px] grid-cols-[36px_minmax(0,1fr)_20px] items-center gap-3 border-b border-[var(--public-border)] py-4 transition hover:bg-[var(--public-hover)]">
+                <MapPin className="h-5 w-5 text-[var(--public-accent)]" aria-hidden="true" />
+                <span>
+                  <span className="block text-sm font-bold">{place.label}</span>
+                  <span className="mt-1 block text-xs text-[var(--public-muted)]">{place.routeCount} {place.routeCount === 1 ? "ruta" : "rutas"} cerca · desde {place.nearestWalkMin} min a pie</span>
+                </span>
+                <ArrowUpRight className="h-4 w-4 text-[var(--public-muted)] transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
+              </Link>
+            ))}
+          </div>
+          <div className="mt-10 border-t border-[var(--public-border)] pt-6">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <h3 className="text-lg font-bold">Rutas más consultadas</h3>
+              <Link href="/rutas" className="inline-flex min-h-11 items-center gap-2 text-sm font-bold">Ver las 40 rutas <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
+            </div>
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              {featuredRoutes.map((route) => (
+                <Link key={route.slug} href={`/ruta/${route.slug}`} className="group flex min-h-36 flex-col items-start rounded-md border border-[var(--public-border)] bg-[var(--public-surface)] px-4 py-5 transition hover:border-[#6aab48]">
+                  <div className="flex w-full items-center justify-between gap-2">
+                    <span className="text-2xl font-extrabold">{route.name}</span>
+                    <ArrowUpRight className="h-4 w-4 shrink-0 text-[var(--public-muted)]" aria-hidden="true" />
+                  </div>
+                  <span className="mt-2 text-xs leading-5 text-[var(--public-muted)]">{route.destination ?? "Recorrido local"}</span>
+                  <span className="mt-auto pt-4 text-xs font-bold text-[var(--public-accent)]">Horario y recorrido</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="como-funciona" className={`scroll-mt-24 border-b border-white/15 ${DEFERRED_SECTION}`}>
+        <div className="mx-auto max-w-[1240px] px-5 py-12 sm:px-8 lg:py-16">
+          <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase text-[#b8e840]">Tu primer viaje</p>
+              <h2 className="mt-2 text-3xl font-extrabold">Del origen a tu destino.</h2>
+            </div>
+            <Link href="/guia" className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-[#b8e840]">Ver la guía<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
+          </div>
+          <ol className="grid gap-x-6 gap-y-5 sm:grid-cols-2 lg:grid-cols-4">
+            {HOW_IT_WORKS_STEPS.map((step) => {
+              const Icon = step.icon;
+              return (
+                <li key={step.n} className="border-t border-white/25 pt-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-[#a8b5a1]">{step.n}</span>
+                    <Icon className="h-5 w-5 text-[#b8e840]" aria-hidden="true" />
+                  </div>
+                  <h3 className="mt-4 text-base font-bold">{step.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-[#a8b5a1]">{step.desc}</p>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      </section>
+
+      <section className={DEFERRED_SECTION}>
+        <div className="mx-auto grid max-w-[1240px] gap-8 px-5 py-12 sm:px-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] lg:gap-20 lg:py-16">
+          <div>
+            <p className="text-xs font-bold uppercase text-[#a8b5a1]">Antes de salir</p>
+            <h2 className="mt-2 text-3xl font-extrabold">¿Alguna duda?</h2>
+            <p className="mt-4 max-w-sm text-sm leading-6 text-[#a8b5a1]">Tarifas, horarios y lo que necesitas saber para moverte por Uruapan.</p>
+          </div>
+          <div className="border-t border-white/20">
             {LANDING_FAQS.slice(0, 4).map((item) => (
-              <details key={item.question} className="group border-b border-white/10">
-                <summary className="flex min-h-20 cursor-pointer list-none items-center justify-between gap-4 py-5 text-base font-black text-[#e8f2d8] [&::-webkit-details-marker]:hidden">
+              <details key={item.question} className="group border-b border-white/20">
+                <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 py-4 text-sm font-bold [&::-webkit-details-marker]:hidden">
                   {item.question}
-                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-white/15 text-lg text-[#b8e840] transition group-open:rotate-45" aria-hidden="true">+</span>
+                  <Plus className="h-5 w-5 shrink-0 text-[#b8e840] transition group-open:rotate-45" aria-hidden="true" />
                 </summary>
-                <p className="max-w-2xl pb-6 text-sm leading-6 text-[#8eaa76]">{item.answer}</p>
+                <p className="pb-5 text-sm leading-6 text-[#b6c1af]">{item.answer}</p>
               </details>
             ))}
           </div>
         </div>
       </section>
 
-      <section className={`bg-[#b8e840] text-[#0c110a] ${DEFERRED_SECTION}`}>
-        <div className="mx-auto flex max-w-[1240px] flex-col gap-7 px-5 py-12 sm:px-8 md:flex-row md:items-center md:justify-between lg:py-16">
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#3d6828]">Listo para moverte</p>
-            <h2 className="mt-2 max-w-2xl font-serif text-4xl font-black sm:text-5xl">Abre el mapa. Elige tu destino. Vámonos.</h2>
+      <section className="border-t border-white/15 bg-[#172012]">
+        <div className="mx-auto flex max-w-[1240px] flex-col gap-6 px-5 py-9 sm:px-8 md:flex-row md:items-center md:justify-between">
+          <div className="max-w-2xl">
+            <p className="flex items-center gap-2 text-sm font-bold text-[#b8e840]"><Users className="h-4 w-4" aria-hidden="true" />Hecho aquí, mejorado entre todos.</p>
+            <p className="mt-2 text-sm leading-6 text-[#b6c1af]">Las rutas cambian. Tus reportes nos ayudan a revisar recorridos y mantener la información al día.</p>
           </div>
-          <Link href="/mapa" className="inline-flex min-h-14 shrink-0 items-center justify-center gap-2 rounded-md bg-[#0c110a] px-7 text-sm font-black text-[#e8f2d8] transition hover:bg-[#172012]">
-            <MapPinned className="h-4 w-4" aria-hidden="true" />
-            Abrir mapa gratis
-          </Link>
+          <Link href="/acerca-de" className="inline-flex min-h-11 shrink-0 items-center gap-2 text-sm font-bold">Conoce el proyecto<ArrowUpRight className="h-4 w-4" aria-hidden="true" /></Link>
         </div>
       </section>
-
       <PublicFooter />
     </main>
   );

@@ -61,71 +61,71 @@ export default function RutasPage() {
   };
 
   return (
-    <main style={{ background: "#0c110a", color: "#e8f2d8", minHeight: "100dvh" }}>
+    <main className="public-page" style={{ background: "var(--public-bg)", color: "var(--public-ink)", minHeight: "100dvh" }}>
       <ForceDark />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       <PublicHeader active="rutas" />
 
-      <div className="greca-bg greca-bg-animated px-5 pt-28 pb-16 sm:px-8 lg:px-10">
+      <div className="px-5 pt-28 pb-16 sm:px-8 lg:px-10">
         <div className="mx-auto max-w-5xl">
 
           {/* Header */}
           <div className="mb-3">
             <Link
               href="/"
-              className="text-xs font-semibold uppercase tracking-widest transition hover:opacity-80"
-              style={{ color: "#6aab48" }}
+              className="text-xs font-semibold uppercase transition hover:opacity-80"
+              style={{ color: "var(--public-muted)" }}
             >
               ← Inicio
             </Link>
           </div>
-          <p className="text-xs font-bold uppercase tracking-[0.22em]" style={{ color: "#b8e840" }}>
+          <p className="text-xs font-bold uppercase" style={{ color: "var(--public-accent)" }}>
             Uruapan, Michoacán
           </p>
           <h1
-            className="mt-2 font-serif text-4xl font-black tracking-tight md:text-5xl"
-            style={{ color: "#e8f2d8", letterSpacing: "-0.025em" }}
+            className="mt-2 public-page-title"
+            style={{ color: "var(--public-ink)", letterSpacing: "0" }}
           >
-            Las <em style={{ fontStyle: "italic", color: "#b8e840" }}>40 rutas</em> de camión en Uruapan
+            Las <em style={{ fontStyle: "normal", color: "var(--public-accent)" }}>40 rutas</em> de camión en Uruapan
           </h1>
-          <p className="mt-4 max-w-xl text-sm leading-7" style={{ color: "#a8c888" }}>
+          <p className="mt-4 max-w-xl text-sm leading-7" style={{ color: "var(--public-secondary)" }}>
             Directorio completo de rutas de camión urbano. Toca cualquier ruta para ver destino, tarifa y abrirla en el mapa interactivo.
             {" "}
-            <Link href="/horarios" className="font-bold transition hover:opacity-80" style={{ color: "#b8e840" }}>
+            <Link href="/horarios" className="font-bold transition hover:opacity-80" style={{ color: "var(--public-accent)" }}>
               Ver horarios de todas las rutas →
             </Link>
             {" "}
-            <Link href="/como-llegar" className="font-bold transition hover:opacity-80" style={{ color: "#b8e840" }}>
+            <Link href="/como-llegar" className="font-bold transition hover:opacity-80" style={{ color: "var(--public-accent)" }}>
               ¿Cómo llegar a un lugar? →
             </Link>
           </p>
 
+          <div className="public-directory -mx-5 mt-8 px-5 py-6 sm:mx-0 sm:px-6">
           {/* Stats bar */}
           <div
-            className="mt-8 flex flex-wrap gap-4 rounded-2xl border p-4"
-            style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(20,28,16,0.6)" }}
+            className="flex flex-wrap gap-6 border-b border-[var(--public-border)] pb-5"
           >
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "#6aab48" }}>Rutas</p>
-              <p className="font-serif text-2xl font-black" style={{ color: "#e8f2d8" }}>40</p>
+              <p className="text-xs font-bold uppercase" style={{ color: "var(--public-muted)" }}>Rutas</p>
+              <p className="font-sans text-2xl font-bold" style={{ color: "var(--public-ink)" }}>40</p>
             </div>
             <div style={{ borderLeft: "1px solid rgba(140,200,80,0.12)", paddingLeft: "1rem" }}>
-              <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "#6aab48" }}>Tarifa</p>
-              <p className="font-serif text-2xl font-black" style={{ color: "#e8f2d8" }}>
+              <p className="text-xs font-bold uppercase" style={{ color: "var(--public-muted)" }}>Tarifa</p>
+              <p className="font-sans text-2xl font-bold" style={{ color: "var(--public-ink)" }}>
                 <span className="font-sans">$</span>{FARES_2026.urbanBus.price.replace(/^\$/, "")}
               </p>
             </div>
             <div style={{ borderLeft: "1px solid rgba(140,200,80,0.12)", paddingLeft: "1rem" }}>
-              <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "#6aab48" }}>Pago</p>
-              <p className="font-serif text-2xl font-black" style={{ color: "#e8f2d8" }}>Efectivo</p>
+              <p className="text-xs font-bold uppercase" style={{ color: "var(--public-muted)" }}>Pago</p>
+              <p className="font-sans text-2xl font-bold" style={{ color: "var(--public-ink)" }}>Efectivo</p>
             </div>
             <div className="flex w-full items-center gap-1.5 pt-1 sm:ml-auto sm:w-auto sm:pt-0">
-              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0" style={{ color: "#b8e840" }} aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0" style={{ color: "var(--public-accent)" }} aria-hidden="true">
                 <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
               </svg>
-              <Link href="/acerca-de" className="text-[11px] font-semibold transition hover:text-[#e8f2d8]" style={{ color: "#a8c888" }}>
+              <Link href="/acerca-de" className="text-[11px] font-semibold transition hover:text-[var(--public-ink)]" style={{ color: "var(--public-secondary)" }}>
                 Rutas verificadas en campo · actualizado {DATA_LAST_UPDATED}
               </Link>
             </div>
@@ -142,10 +142,10 @@ export default function RutasPage() {
               <div
                 key={route.slug}
                 data-search={buildSearchText(route.name, route.destination, route.landmarks)}
-                className="flex flex-col rounded-2xl border transition-[transform,border-color,box-shadow] hover:-translate-y-0.5 hover:border-lima/30 hover:shadow-[0_12px_40px_rgba(0,0,0,0.4)]"
+                className="flex flex-col rounded-lg border transition-colors hover:border-[#6aab48]"
                 style={{
-                  borderColor: "rgba(140,200,80,0.1)",
-                  background: "rgba(20,28,16,0.6)",
+                  borderColor: "var(--public-border)",
+                  background: "var(--public-surface)",
                   // No renderizar tarjetas fuera de pantalla hasta que se acerquen al scroll
                   contentVisibility: "auto",
                   containIntrinsicSize: "0 140px",
@@ -165,19 +165,18 @@ export default function RutasPage() {
                         className="h-3 w-3 shrink-0 rounded-full"
                         style={{ backgroundColor: route.color }}
                       />
-                      <span className="font-serif text-base font-black" style={{ color: "#e8f2d8" }}>
+                      <span className="font-sans text-base font-bold" style={{ color: "var(--public-ink)" }}>
                         {route.name}
                       </span>
                     </div>
                     {route.destination && (
-                      <p className="mt-1.5 text-xs leading-snug" style={{ color: "#6aab48" }}>
+                      <p className="mt-1.5 text-xs leading-snug" style={{ color: "var(--public-muted)" }}>
                         → {route.destination}
                       </p>
                     )}
                   </div>
                   <div
-                    className="order-2 shrink-0 overflow-hidden rounded-xl"
-                    style={{ background: "rgba(0,0,0,0.25)" }}
+                    className="order-2 shrink-0 overflow-hidden"
                   >
                     <RoutePreviewFromData
                       routeName={route.name}
@@ -190,21 +189,21 @@ export default function RutasPage() {
                 </Link>
                 <div
                   className="flex items-center justify-between gap-2 border-t px-3 py-2 sm:px-4"
-                  style={{ borderColor: "rgba(140,200,80,0.08)" }}
+                  style={{ borderColor: "var(--public-border)" }}
                 >
                   <Link
                     href={`/ruta/${route.slug}`}
                     prefetch={false}
-                    className="inline-flex h-8 items-center gap-1 text-[11px] font-semibold uppercase tracking-widest transition hover:opacity-80"
-                    style={{ color: "rgba(232,242,216,0.45)" }}
+                    className="inline-flex h-8 items-center gap-1 text-[11px] font-semibold uppercase transition hover:opacity-80"
+                    style={{ color: "var(--public-ink)" }}
                   >
                     Detalles →
                   </Link>
                   <Link
                     href={`/mapa?r=${encodeURIComponent(route.name)}`}
                     prefetch={false}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[11px] font-bold transition hover:opacity-90"
-                    style={{ background: "rgba(106,171,72,0.15)", color: "#b8e840" }}
+                    className="inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-[11px] font-bold transition hover:opacity-90"
+                    style={{ background: "var(--public-surface)", color: "var(--public-accent)" }}
                     aria-label={`Ver ${route.name} en el mapa interactivo`}
                   >
                     <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
@@ -221,30 +220,32 @@ export default function RutasPage() {
           {/* Estado vacío (lo controla RutasFilter) */}
           <div
             id="rutas-empty"
-            style={{ display: "none", borderColor: "rgba(140,200,80,0.12)", background: "rgba(20,28,16,0.6)" }}
-            className="mt-4 flex flex-col items-center gap-2 rounded-2xl border px-4 py-10 text-center"
+            style={{ display: "none", borderColor: "var(--public-border)", background: "var(--public-surface)" }}
+            className="mt-4 flex flex-col items-center gap-2 rounded-lg border px-4 py-10 text-center"
           >
-            <p className="text-sm font-semibold" style={{ color: "#e8f2d8" }}>Sin resultados</p>
-            <p className="text-xs" style={{ color: "#6aab48" }}>Prueba con otro número, colonia o destino.</p>
+            <p className="text-sm font-semibold" style={{ color: "var(--public-ink)" }}>Sin resultados</p>
+            <p className="text-xs" style={{ color: "var(--public-muted)" }}>Prueba con otro número, colonia o destino.</p>
+          </div>
+
           </div>
 
           {/* CTA teleférico */}
           <div
-            className="mt-10 rounded-2xl border p-6"
+            className="mt-10 rounded-lg border p-6"
             style={{ borderColor: "rgba(0,212,170,0.2)", background: "rgba(0,212,170,0.04)" }}
           >
-            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "#00D4AA" }}>
+            <p className="text-xs font-bold uppercase" style={{ color: "#00D4AA" }}>
               También en Uruapan
             </p>
-            <h2 className="mt-2 font-serif text-2xl font-black" style={{ color: "#e8f2d8" }}>
+            <h2 className="mt-2 public-section-title" style={{ color: "var(--public-ink)" }}>
               Teleférico Uruapan
             </h2>
-            <p className="mt-2 text-sm leading-7" style={{ color: "#a8c888" }}>
+            <p className="mt-2 text-sm leading-7" style={{ color: "var(--public-secondary)" }}>
               6 estaciones de oriente a poniente. Opera de 05:00 a 23:00. Tarifa {FARES_2026.teleferico.price} con tarjeta de movilidad.
             </p>
             <Link
               href="/teleferico-uruapan-horario"
-              className="mt-4 inline-flex h-10 items-center rounded-full px-5 text-sm font-black transition hover:opacity-90"
+              className="mt-4 inline-flex h-10 items-center rounded-md px-5 text-sm font-bold transition hover:opacity-90"
               style={{ background: "#00D4AA", color: "#0c110a" }}
             >
               Ver guía del Teleférico →

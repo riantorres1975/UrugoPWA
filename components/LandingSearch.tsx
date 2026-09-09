@@ -138,20 +138,19 @@ export default function LandingSearch() {
   };
 
   return (
-    <div ref={containerRef} className="relative mt-6 w-full">
+    <div ref={containerRef} className="relative w-full">
       {/* action/method reales → la búsqueda funciona incluso sin JavaScript */}
       <form
         action="/mapa"
         method="get"
         onSubmit={handleSubmit}
-        className="rounded-lg border p-1.5 shadow-[0_18px_50px_rgba(0,0,0,0.26)]"
-        style={{ borderColor: "rgba(232,242,216,0.18)", background: "#11180e" }}
+        className="public-directory rounded-lg border border-[var(--public-border)] bg-[var(--public-surface)] p-1.5 focus-within:ring-2 focus-within:ring-[#b8e840]"
       >
         <label className="sr-only" htmlFor="destino">¿A dónde vas?</label>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <div className="relative flex-1">
+        <div className="flex gap-1 sm:gap-2">
+          <div className="relative min-w-0 flex-1">
             <Search
-              className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#6f895a]"
+              className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--public-muted)]"
               strokeWidth={1.8}
               aria-hidden="true"
             />
@@ -176,12 +175,7 @@ export default function LandingSearch() {
               aria-controls={listboxId}
               aria-autocomplete="list"
               aria-activedescendant={activeIndex >= 0 ? `${listboxId}-opt-${activeIndex}` : undefined}
-              className="h-12 w-full rounded-md border pl-12 pr-4 text-sm font-semibold outline-none transition placeholder:text-[#60794d]"
-              style={{
-                background: "#0c110a",
-                borderColor: "rgba(232,242,216,0.1)",
-                color: "var(--ink)",
-              }}
+              className="h-12 w-full rounded-md border-0 bg-transparent pl-10 pr-9 text-sm font-medium text-[var(--public-ink)] outline-none placeholder:text-[var(--public-muted)]"
             />
             {isSearching && (
               <span
@@ -192,11 +186,12 @@ export default function LandingSearch() {
             )}
           </div>
           <button
-            className="cta-shine inline-flex h-12 items-center justify-center gap-2 rounded-md px-6 text-sm font-black text-ink-900 transition hover:bg-[#c8f25b]"
+            className="inline-flex h-12 w-12 shrink-0 items-center justify-center gap-2 rounded-md bg-[#b8e840] text-sm font-bold text-[#14200c] transition hover:bg-[#c8f25b] sm:w-auto sm:px-5"
             type="submit"
-            style={{ background: "var(--lima)" }}
+            aria-label="Buscar ruta"
+            title="Buscar ruta"
           >
-            Buscar ruta
+            <span className="hidden sm:inline">Buscar ruta</span>
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>

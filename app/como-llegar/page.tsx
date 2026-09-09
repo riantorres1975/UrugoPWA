@@ -62,7 +62,7 @@ export default function ComoLlegarIndexPage() {
   };
 
   return (
-    <main style={{ background: "#0c110a", color: "#e8f2d8", minHeight: "100dvh" }}>
+    <main className="public-page" style={{ background: "var(--public-bg)", color: "var(--public-ink)", minHeight: "100dvh" }}>
       <ForceDark />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
@@ -73,22 +73,22 @@ export default function ComoLlegarIndexPage() {
           <div className="mb-3">
             <Link
               href="/"
-              className="text-xs font-semibold uppercase tracking-widest transition hover:opacity-80"
-              style={{ color: "#6aab48" }}
+              className="text-xs font-semibold uppercase transition hover:opacity-80"
+              style={{ color: "var(--public-muted)" }}
             >
               ← Inicio
             </Link>
           </div>
-          <p className="text-xs font-bold uppercase tracking-[0.22em]" style={{ color: "#b8e840" }}>
+          <p className="text-xs font-bold uppercase" style={{ color: "var(--public-accent)" }}>
             Uruapan, Michoacán
           </p>
           <h1
-            className="mt-2 font-serif text-4xl font-black tracking-tight md:text-5xl"
-            style={{ color: "#e8f2d8", letterSpacing: "-0.025em" }}
+            className="mt-2 public-page-title"
+            style={{ color: "var(--public-ink)", letterSpacing: "0" }}
           >
-            ¿Cómo <em style={{ fontStyle: "italic", color: "#b8e840" }}>llegar</em> en camión?
+            ¿Cómo <em style={{ fontStyle: "normal", color: "var(--public-accent)" }}>llegar</em> en camión?
           </h1>
-          <p className="mt-4 max-w-2xl text-sm leading-7" style={{ color: "#a8c888" }}>
+          <p className="mt-4 max-w-2xl text-sm leading-7" style={{ color: "var(--public-secondary)" }}>
             Elige a dónde vas y te decimos qué rutas de camión te dejan ahí, a cuántos minutos
             caminando y cómo planear el viaje desde tu ubicación.
           </p>
@@ -98,18 +98,17 @@ export default function ComoLlegarIndexPage() {
           <div className="mt-10 flex flex-col gap-3 sm:flex-row">
             <Link
               href="/mapa"
-              className="inline-flex h-12 items-center justify-center rounded-full px-6 text-sm font-black text-white transition hover:opacity-90"
-              style={{ background: "#6aab48" }}
+              className="inline-flex h-12 items-center justify-center rounded-md bg-[#b8e840] px-6 text-sm font-bold text-[#0c110a] transition hover:bg-[#c6f052]"
             >
               Abrir el mapa interactivo
             </Link>
             <Link
               href="/horarios"
-              className="inline-flex h-12 items-center justify-center rounded-full border px-6 text-sm font-bold transition"
+              className="inline-flex h-12 items-center justify-center rounded-md border px-6 text-sm font-bold transition"
               style={{
-                borderColor: "rgba(140,200,80,0.15)",
-                background: "rgba(106,171,72,0.06)",
-                color: "#e8f2d8",
+                borderColor: "var(--public-border)",
+                background: "var(--public-surface)",
+                color: "var(--public-ink)",
               }}
             >
               Ver horarios de rutas

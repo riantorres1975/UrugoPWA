@@ -46,17 +46,17 @@ const SECTIONS = [
 
 export default function PrivacyPage() {
   return (
-    <main style={{ background: "#0c110a", color: "#e8f2d8", minHeight: "100dvh" }}>
+    <main className="public-page" style={{ background: "var(--public-bg)", color: "var(--public-ink)", minHeight: "100dvh" }}>
       <ForceDark />
       <PublicHeader />
-      <div className="greca-bg greca-bg-animated px-5 pt-28 pb-8 sm:px-8 lg:px-10">
+      <div className="px-5 pt-28 pb-8 sm:px-8 lg:px-10">
       <div className="relative z-10 mx-auto max-w-3xl">
         <PageHeader
           eyebrow="Privacidad"
           kicker="Sin trucos, sin letra chica"
           title={
             <>
-              Aviso de <span className="italic" style={{ color: "#b8e840" }}>privacidad</span>.
+              Aviso de <span style={{ color: "var(--public-accent)" }}>privacidad</span>.
             </>
           }
           intro={`${APP_BRAND.name} es una PWA de consulta de rutas para Uruapan. No requiere cuenta ni crea perfiles de usuario. Este aviso explica qué datos se procesan al usar funciones opcionales.`}
@@ -70,18 +70,18 @@ export default function PrivacyPage() {
           {SECTIONS.map((s, i) => (
             <article
               key={s.title}
-              className="rounded-2xl border p-6 backdrop-blur"
-              style={{ borderColor: "rgba(140,200,80,0.1)", background: "rgba(20,28,16,0.6)" }}
+              className="rounded-lg border p-6 backdrop-blur"
+              style={{ borderColor: "var(--public-border)", background: "var(--public-surface)" }}
             >
               <div className="flex items-baseline gap-3">
-                <span className="font-serif text-xl font-black" style={{ color: "#b8e840" }}>
+                <span className="font-sans text-xl font-bold" style={{ color: "var(--public-accent)" }}>
                   0{i + 1}
                 </span>
-                <h2 className="font-serif text-xl font-black" style={{ color: "#e8f2d8" }}>
+                <h2 className="public-section-title" style={{ color: "var(--public-ink)" }}>
                   {s.title}
                 </h2>
               </div>
-              <p className="mt-3 text-sm leading-7" style={{ color: "rgba(232,242,216,0.65)" }}>{s.body}</p>
+              <p className="mt-3 text-sm leading-7" style={{ color: "var(--public-ink)" }}>{s.body}</p>
             </article>
           ))}
         </section>
@@ -89,15 +89,15 @@ export default function PrivacyPage() {
         <div className="mt-10 flex flex-wrap gap-3">
           <Link
             href="/mapa"
-            className="cta-shine inline-flex h-11 items-center rounded-full px-5 text-sm font-black transition hover:opacity-90"
-            style={{ background: "#6aab48", color: "#e8f2d8" }}
+            className="inline-flex h-11 items-center rounded-md px-5 text-sm font-bold transition hover:opacity-90"
+            style={{ background: "#6aab48", color: "var(--public-ink)" }}
           >
             Volver al mapa →
           </Link>
           <Link
             href="/"
-            className="inline-flex h-11 items-center rounded-full border px-5 text-sm font-bold transition"
-            style={{ borderColor: "rgba(140,200,80,0.15)", background: "rgba(106,171,72,0.06)", color: "#e8f2d8" }}
+            className="inline-flex h-11 items-center rounded-md border px-5 text-sm font-bold transition"
+            style={{ borderColor: "var(--public-border)", background: "var(--public-surface)", color: "var(--public-ink)" }}
           >
             Inicio
           </Link>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MapPin } from "lucide-react";
 import Logo from "@/components/Logo";
 import PublicMobileMenu from "@/components/PublicMobileMenu";
 
@@ -7,20 +8,21 @@ const links = [
   { href: "/horarios", label: "Horarios" },
   { href: "/como-llegar", label: "Cómo llegar" },
   { href: "/guia", label: "Guía" },
+  { href: "/reportar-error", label: "Reportar error" },
 ] as const;
 
 type Props = {
-  active?: "rutas" | "horarios" | "como-llegar" | "guia";
+  active?: "rutas" | "horarios" | "como-llegar" | "guia" | "reportar-error";
   mapHref?: string;
 };
 
 export default function PublicHeader({ active, mapHref = "/mapa" }: Props) {
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-white/[0.08] bg-[#0c110a]/95 backdrop-blur-xl">
-      <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-4 px-5 sm:px-8 lg:px-10">
+      <div className="mx-auto flex h-[72px] max-w-[1240px] items-center justify-between gap-2 whitespace-nowrap px-4 sm:px-8">
         <Logo size={28} showName showSub />
 
-        <nav aria-label="Navegación principal" className="hidden items-center gap-1 md:flex">
+        <nav aria-label="Navegación principal" className="hidden items-center gap-1 lg:flex">
           {links.map((link) => {
             const isActive = active === link.href.slice(1);
             return (
@@ -37,17 +39,14 @@ export default function PublicHeader({ active, mapHref = "/mapa" }: Props) {
           })}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <PublicMobileMenu />
 
           <Link
             href={mapHref}
-            className="inline-flex h-10 items-center gap-1.5 rounded-full bg-[#6aab48] px-4 text-xs font-black text-[#0c110a] transition hover:bg-[#77bc52] sm:px-5 sm:text-sm"
+            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-md bg-[#b8e840] px-3 text-xs font-bold text-[#0c110a] transition hover:bg-[#c8f25b] sm:px-5 sm:text-sm"
           >
-            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-              <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              <circle cx="12" cy="10" r="2.2" fill="currentColor" />
-            </svg>
+            <MapPin className="h-4 w-4" aria-hidden="true" />
             Abrir mapa
           </Link>
         </div>

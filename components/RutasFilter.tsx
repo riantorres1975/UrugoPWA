@@ -78,8 +78,8 @@ export default function RutasFilter({ total, gridId = "rutas-grid", emptyId = "r
 
   return (
     <div
-      className="sticky top-[68px] z-30 -mx-1 mb-6 rounded-2xl border p-3 backdrop-blur-xl"
-      style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(12,17,10,0.92)" }}
+      className="sticky top-[72px] z-30 mb-6 border-b pb-4 pt-1"
+      style={{ borderColor: "var(--public-border)", background: "var(--public-bg)" }}
     >
       <label className="block">
         <span className="sr-only">Buscar ruta por número, colonia o destino</span>
@@ -88,7 +88,7 @@ export default function RutasFilter({ total, gridId = "rutas-grid", emptyId = "r
             viewBox="0 0 24 24"
             fill="none"
             className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2"
-            style={{ color: "#6aab48" }}
+            style={{ color: "var(--public-muted)" }}
             aria-hidden="true"
           >
             <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" />
@@ -102,8 +102,8 @@ export default function RutasFilter({ total, gridId = "rutas-grid", emptyId = "r
             onChange={(event) => updateQuery(event.target.value)}
             placeholder="Busca por número, colonia o destino…"
             aria-label="Filtrar rutas"
-            className="h-12 w-full rounded-xl border pl-11 pr-11 text-sm font-medium outline-none transition [&::placeholder]:opacity-50"
-            style={{ background: "rgba(106,171,72,0.06)", borderColor: "rgba(140,200,80,0.15)", color: "#e8f2d8" }}
+            className="h-12 w-full rounded-lg border pl-11 pr-11 text-sm font-medium outline-none transition placeholder:text-[var(--public-muted)]"
+            style={{ background: "var(--public-surface)", borderColor: "var(--public-border)", color: "var(--public-ink)" }}
           />
           {query && (
             <button
@@ -113,7 +113,7 @@ export default function RutasFilter({ total, gridId = "rutas-grid", emptyId = "r
                 inputRef.current?.focus();
               }}
               className="absolute right-2 top-2.5 grid h-7 w-7 place-items-center rounded-full transition hover:opacity-80"
-              style={{ background: "rgba(106,171,72,0.12)", color: "#a8c888" }}
+              style={{ background: "var(--public-surface)", color: "var(--public-secondary)" }}
               aria-label="Limpiar búsqueda"
             >
               <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
@@ -133,15 +133,15 @@ export default function RutasFilter({ total, gridId = "rutas-grid", emptyId = "r
                 updateQuery(chip);
                 inputRef.current?.focus();
               }}
-              className="rounded-full border px-3 py-1.5 text-[11px] font-semibold transition hover:opacity-80 active:scale-[0.97]"
-              style={{ borderColor: "rgba(140,200,80,0.15)", background: "rgba(106,171,72,0.06)", color: "#a8c888" }}
+              className="rounded-md border px-3 py-1.5 text-[11px] font-semibold transition hover:opacity-80 active:scale-[0.97]"
+              style={{ borderColor: "var(--public-border)", background: "var(--public-surface)", color: "var(--public-secondary)" }}
             >
               {chip}
             </button>
           ))}
         </div>
       )}
-      <p className="mt-2 px-1 text-[12px] font-semibold" style={{ color: "#6aab48" }} aria-live="polite">
+      <p className="mt-2 px-1 text-[12px] font-semibold" style={{ color: "var(--public-muted)" }} aria-live="polite">
         {count} {count === 1 ? "ruta" : "rutas"}
         {query && ` para “${query.trim()}”`}
       </p>

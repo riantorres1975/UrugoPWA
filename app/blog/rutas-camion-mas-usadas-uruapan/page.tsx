@@ -105,8 +105,8 @@ export default function RutasCamionMasUsadasPage() {
               href={`/mapa?destino=${encodeURIComponent(r.id)}`}
               className="group rounded-lg border border-foreground/10 bg-ink-900/60 p-5 transition hover:border-[#6aab48]/40"
             >
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-lima">{r.id}</p>
-              <h3 className="mt-1 font-serif-display text-lg font-black text-white">{r.nombre}</h3>
+              <p className="text-[10px] font-bold uppercase text-lima">{r.id}</p>
+              <h3 className="mt-1 font-sans text-lg font-bold text-white">{r.nombre}</h3>
               <p className="mt-1 text-[11px] font-semibold text-avocado-400">{r.detalle}</p>
               <p className="mt-3 text-sm leading-6 text-foreground/70">{r.desc}</p>
               <span className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-lima transition group-hover:gap-2">
@@ -117,7 +117,7 @@ export default function RutasCamionMasUsadasPage() {
         </section>
 
         <section id="explorar" className="mt-8 scroll-mt-40 border-t border-foreground/12 pt-8">
-          <h2 className="font-serif-display text-2xl font-black text-white">
+          <h2 className="text-white public-section-title">
             Próximamente
           </h2>
           <p className="mt-3 text-sm leading-7 text-foreground/75">
@@ -125,7 +125,7 @@ export default function RutasCamionMasUsadasPage() {
           </p>
           <Link
             href="/mapa"
-            className="cta-shine mt-6 inline-flex h-11 items-center rounded-full bg-verde px-6 py-2 text-sm font-black text-white hover:opacity-90"
+            className="mt-6 inline-flex min-h-11 items-center rounded-md bg-[#b8e840] px-6 py-2 text-sm font-bold text-[#0c110a] hover:bg-[#c6f052]"
           >
             Explorar el mapa →
           </Link>

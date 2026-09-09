@@ -162,7 +162,7 @@ export default async function RoutePage({ params }: RoutePageProps) {
   };
 
   return (
-    <main style={{ background: "#0c110a", color: "#e8f2d8", minHeight: "100dvh" }}>
+    <main className="public-page" style={{ background: "var(--public-bg)", color: "var(--public-ink)", minHeight: "100dvh" }}>
       <PublicHeader active="rutas" mapHref={`/mapa?r=${encodeURIComponent(route.name)}`} />
 
       <div className="px-5 pb-28 pt-28 sm:px-8 lg:px-10 lg:pb-16 lg:pt-32">
@@ -172,16 +172,13 @@ export default async function RoutePage({ params }: RoutePageProps) {
           <div className="mb-5">
             <Link
               href="/rutas"
-              className="text-xs font-semibold uppercase tracking-widest transition hover:opacity-80"
-              style={{ color: "#6aab48" }}
+              className="text-xs font-semibold uppercase transition hover:opacity-80"
+              style={{ color: "var(--public-muted)" }}
             >
               ← Todas las rutas
             </Link>
           </div>
-          <article
-            className="overflow-hidden rounded-[2rem] border shadow-[0_20px_80px_rgba(0,0,0,0.35)] lg:rounded-lg"
-            style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(20,28,16,0.8)" }}
-          >
+          <article className="overflow-hidden border-y border-[var(--public-border)]">
             <div className="h-2" style={{ backgroundColor: route.color }} />
 
             <div className="lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(390px,0.85fr)]">
@@ -221,16 +218,16 @@ export default async function RoutePage({ params }: RoutePageProps) {
               </div>
 
               <div className="flex flex-col justify-center p-6 md:p-8 lg:p-10 xl:p-12">
-                <p className="text-xs font-bold uppercase tracking-[0.24em]" style={{ color: "#b8e840" }}>
+                <p className="text-xs font-bold uppercase" style={{ color: "var(--public-accent)" }}>
                   Ruta de camión · Uruapan
                 </p>
                 <h1
-                  className="mt-3 font-serif text-4xl font-black leading-[1.02] tracking-tight md:text-5xl lg:text-[2.35rem] xl:text-[3.4rem]"
-                  style={{ color: "#e8f2d8" }}
+                  className="mt-3 public-page-title"
+                  style={{ color: "var(--public-ink)" }}
                 >
                   {title}
                 </h1>
-                <p className="mt-5 text-sm leading-7 lg:text-base" style={{ color: "#a8c888" }}>
+                <p className="mt-5 text-sm leading-7 lg:text-base" style={{ color: "var(--public-secondary)" }}>
                   {route.destination
                     ? `La ${route.name} conecta distintas zonas de Uruapan con ${route.destination}${route.distanceKm > 0 ? `, con un recorrido total de ${route.distanceKm} km` : ""}. Consulta el mapa para ver paradas y transbordos disponibles.`
                     : `La ${route.name} recorre colonias de Uruapan${route.distanceKm > 0 ? ` en un trayecto de ${route.distanceKm} km` : ""}. Usa el mapa para encontrar la parada más cercana a tu origen y destino.`
@@ -239,8 +236,7 @@ export default async function RoutePage({ params }: RoutePageProps) {
                 <div className="mt-8 hidden flex-wrap gap-3 lg:flex">
                   <Link
                     href={`/mapa?r=${encodeURIComponent(route.name)}`}
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-full px-6 text-sm font-black text-white transition hover:opacity-90"
-                    style={{ background: "#6aab48" }}
+                    className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-[#b8e840] px-6 text-sm font-bold text-[#0c110a] transition hover:bg-[#c6f052]"
                   >
                     <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
                       <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -250,8 +246,8 @@ export default async function RoutePage({ params }: RoutePageProps) {
                   </Link>
                   <Link
                     href="/horarios"
-                    className="inline-flex h-12 items-center justify-center rounded-full border px-6 text-sm font-bold transition hover:bg-white/5"
-                    style={{ borderColor: "rgba(140,200,80,0.22)", color: "#e8f2d8" }}
+                    className="inline-flex h-12 items-center justify-center rounded-md border px-6 text-sm font-bold transition hover:bg-white/5"
+                    style={{ borderColor: "var(--public-border)", color: "var(--public-ink)" }}
                   >
                     Consultar horarios
                   </Link>
@@ -261,54 +257,54 @@ export default async function RoutePage({ params }: RoutePageProps) {
 
             <dl
               className="grid grid-cols-2 gap-2.5 border-t p-6 sm:grid-cols-3 sm:gap-3 md:p-8 lg:grid-cols-6 lg:gap-0 lg:p-0 lg:[&>div]:rounded-none lg:[&>div]:border-y-0 lg:[&>div]:border-l-0 lg:[&>div]:bg-transparent lg:[&>div]:px-6 lg:[&>div]:py-5 lg:[&>div:last-child]:border-r-0"
-              style={{ borderColor: "rgba(140,200,80,0.10)" }}
+              style={{ borderColor: "var(--public-border)" }}
             >
                 <div
-                  className="rounded-2xl border p-4 lg:border-r"
-                  style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(106,171,72,0.06)" }}
+                  className="rounded-lg border p-4 lg:border-r"
+                  style={{ borderColor: "var(--public-border)", background: "var(--public-surface)" }}
                 >
-                  <dt className="text-xs font-bold uppercase tracking-widest" style={{ color: "#a8c888" }}>Destino</dt>
-                  <dd className="mt-2 text-sm font-bold" style={{ color: "#e8f2d8" }}>{route.destination ?? "Ruta local"}</dd>
+                  <dt className="text-xs font-bold uppercase" style={{ color: "var(--public-secondary)" }}>Destino</dt>
+                  <dd className="mt-2 text-sm font-bold" style={{ color: "var(--public-ink)" }}>{route.destination ?? "Ruta local"}</dd>
                 </div>
                 <div
-                  className="rounded-2xl border p-4 lg:border-r"
-                  style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(106,171,72,0.06)" }}
+                  className="rounded-lg border p-4 lg:border-r"
+                  style={{ borderColor: "var(--public-border)", background: "var(--public-surface)" }}
                 >
-                  <dt className="text-xs font-bold uppercase tracking-widest" style={{ color: "#a8c888" }}>Tarifa</dt>
-                  <dd className="mt-2 text-sm font-bold" style={{ color: "#e8f2d8" }}>{FARES_2026.urbanBus.price}</dd>
+                  <dt className="text-xs font-bold uppercase" style={{ color: "var(--public-secondary)" }}>Tarifa</dt>
+                  <dd className="mt-2 text-sm font-bold" style={{ color: "var(--public-ink)" }}>{FARES_2026.urbanBus.price}</dd>
                 </div>
                 {route.distanceKm > 0 && (
                   <div
-                    className="rounded-2xl border p-4 lg:border-r"
-                    style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(106,171,72,0.06)" }}
+                    className="rounded-lg border p-4 lg:border-r"
+                    style={{ borderColor: "var(--public-border)", background: "var(--public-surface)" }}
                   >
-                    <dt className="text-xs font-bold uppercase tracking-widest" style={{ color: "#a8c888" }}>Recorrido</dt>
-                    <dd className="mt-2 text-sm font-bold" style={{ color: "#e8f2d8" }}>{route.distanceKm} km</dd>
+                    <dt className="text-xs font-bold uppercase" style={{ color: "var(--public-secondary)" }}>Recorrido</dt>
+                    <dd className="mt-2 text-sm font-bold" style={{ color: "var(--public-ink)" }}>{route.distanceKm} km</dd>
                   </div>
                 )}
                 <div
-                  className="rounded-2xl border p-4 lg:border-r"
-                  style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(106,171,72,0.06)" }}
+                  className="rounded-lg border p-4 lg:border-r"
+                  style={{ borderColor: "var(--public-border)", background: "var(--public-surface)" }}
                 >
-                  <dt className="text-xs font-bold uppercase tracking-widest" style={{ color: "#a8c888" }}>Sentido</dt>
-                  <dd className="mt-2 text-sm font-bold" style={{ color: "#e8f2d8" }}>{directions}</dd>
+                  <dt className="text-xs font-bold uppercase" style={{ color: "var(--public-secondary)" }}>Sentido</dt>
+                  <dd className="mt-2 text-sm font-bold" style={{ color: "var(--public-ink)" }}>{directions}</dd>
                 </div>
                 {schedule && (
                   <div
-                    className="rounded-2xl border p-4 lg:border-r"
-                    style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(106,171,72,0.06)" }}
+                    className="rounded-lg border p-4 lg:border-r"
+                    style={{ borderColor: "var(--public-border)", background: "var(--public-surface)" }}
                   >
-                    <dt className="text-xs font-bold uppercase tracking-widest" style={{ color: "#a8c888" }}>Horario</dt>
-                    <dd className="mt-2 text-sm font-bold" style={{ color: "#e8f2d8" }}>{schedule.first} – {schedule.last}</dd>
+                    <dt className="text-xs font-bold uppercase" style={{ color: "var(--public-secondary)" }}>Horario</dt>
+                    <dd className="mt-2 text-sm font-bold" style={{ color: "var(--public-ink)" }}>{schedule.first} – {schedule.last}</dd>
                   </div>
                 )}
                 {frequencyLabel && (
                   <div
-                    className="rounded-2xl border p-4 lg:border-r"
-                    style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(106,171,72,0.06)" }}
+                    className="rounded-lg border p-4 lg:border-r"
+                    style={{ borderColor: "var(--public-border)", background: "var(--public-surface)" }}
                   >
-                    <dt className="text-xs font-bold uppercase tracking-widest" style={{ color: "#a8c888" }}>Frecuencia</dt>
-                    <dd className="mt-2 text-sm font-bold" style={{ color: "#e8f2d8" }}>{frequencyLabel}</dd>
+                    <dt className="text-xs font-bold uppercase" style={{ color: "var(--public-secondary)" }}>Frecuencia</dt>
+                    <dd className="mt-2 text-sm font-bold" style={{ color: "var(--public-ink)" }}>{frequencyLabel}</dd>
                   </div>
                 )}
             </dl>
@@ -318,10 +314,10 @@ export default async function RoutePage({ params }: RoutePageProps) {
 
               {route.landmarks.length > 0 && (
                 <section>
-                  <h2 className="mb-4 font-serif text-xl font-black lg:text-2xl" style={{ color: "#e8f2d8" }}>
+                  <h2 className="mb-4 public-section-title" style={{ color: "var(--public-ink)" }}>
                     ¿Por dónde pasa la {route.name}?
                   </h2>
-                  <p className="mb-5 text-sm leading-7" style={{ color: "#a8c888" }}>
+                  <p className="mb-5 text-sm leading-7" style={{ color: "var(--public-secondary)" }}>
                     {route.destination
                       ? `El recorrido hacia ${route.destination} pasa cerca de estos puntos de referencia en Uruapan.`
                       : "Estos son algunos puntos de referencia ubicados cerca del recorrido en Uruapan."}
@@ -331,15 +327,15 @@ export default async function RoutePage({ params }: RoutePageProps) {
                     {route.landmarks.map((lm) => (
                       <li
                         key={lm}
-                        className="flex items-center gap-2 rounded-xl border px-4 py-3 text-sm lg:rounded-lg"
-                        style={{ borderColor: "rgba(140,200,80,0.12)", background: "rgba(106,171,72,0.06)", color: "#e8f2d8" }}
+                        className="flex items-center gap-2 rounded-lg border px-4 py-3 text-sm lg:rounded-lg"
+                        style={{ borderColor: "var(--public-border)", background: "var(--public-surface)", color: "var(--public-ink)" }}
                       >
-                        <span style={{ color: "#6aab48" }}>▸</span> {lm}
+                        <span style={{ color: "var(--public-muted)" }}>▸</span> {lm}
                       </li>
                     ))}
                   </ul>
                   {route.name !== "Ruta 1 - San José" && (
-                    <p className="mt-3 text-[11px]" style={{ color: "#78965f" }}>
+                    <p className="mt-3 text-[11px]" style={{ color: "var(--public-muted)" }}>
                       Referencias con datos de{" "}
                       <a
                         href="https://www.openstreetmap.org/copyright"
@@ -356,16 +352,16 @@ export default async function RoutePage({ params }: RoutePageProps) {
               )}
 
               <section
-                className="mt-8 rounded-2xl border bg-[rgba(184,232,64,0.06)] p-5 lg:mt-0 lg:rounded-none lg:border-y-0 lg:border-r-0 lg:bg-transparent lg:pl-10"
+                className="mt-8 rounded-lg border bg-[rgba(184,232,64,0.06)] p-5 lg:mt-0 lg:rounded-none lg:border-y-0 lg:border-r-0 lg:bg-transparent lg:pl-10"
                 style={{ borderColor: "rgba(184,232,64,0.2)" }}
               >
-                <h2 className="font-serif text-xl font-black lg:text-2xl" style={{ color: "#e8f2d8" }}>Cómo planear tu viaje</h2>
-                <p className="mt-3 text-sm leading-7" style={{ color: "#a8c888" }}>
+                <h2 className="public-section-title" style={{ color: "var(--public-ink)" }}>Cómo planear tu viaje</h2>
+                <p className="mt-3 text-sm leading-7" style={{ color: "var(--public-secondary)" }}>
                   Abre el mapa de UruGo y marca tu punto de origen y tu destino. El sistema calcula si la {route.name} cubre tu trayecto, qué tan lejos están las paradas y si necesitas caminar o hacer transbordo con otra ruta o el Teleférico de Uruapan.
                   {estimatedMinutes && ` El recorrido completo toma aproximadamente ${estimatedMinutes} minutos.`}
                 </p>
-                <Link href="/acerca-de" className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold transition hover:text-[#e8f2d8]" style={{ color: "#a8c888" }}>
-                  <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0" style={{ color: "#b8e840" }} aria-hidden="true">
+                <Link href="/acerca-de" className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold transition hover:text-[var(--public-ink)]" style={{ color: "var(--public-secondary)" }}>
+                  <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0" style={{ color: "var(--public-accent)" }} aria-hidden="true">
                     <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
                   </svg>
@@ -376,50 +372,49 @@ export default async function RoutePage({ params }: RoutePageProps) {
 
               <RouteVerification routeKey={route.slug} routeName={route.name} />
 
-              <section className="mt-10 border-t pt-9" style={{ borderColor: "rgba(140,200,80,0.10)" }}>
-                <h2 className="mb-5 font-serif text-xl font-black lg:text-2xl" style={{ color: "#e8f2d8" }}>
+              <section className="mt-10 border-t pt-9" style={{ borderColor: "var(--public-border)" }}>
+                <h2 className="mb-5 public-section-title" style={{ color: "var(--public-ink)" }}>
                   Preguntas frecuentes
                 </h2>
                 <div className="grid gap-4 lg:grid-cols-2">
                   {faqs.map((faq) => (
                     <div
                       key={faq.question}
-                      className="rounded-2xl border p-5 lg:rounded-lg"
-                      style={{ borderColor: "rgba(140,200,80,0.10)", background: "rgba(20,28,16,0.6)" }}
+                      className="rounded-lg border p-5 lg:rounded-lg"
+                      style={{ borderColor: "var(--public-border)", background: "var(--public-surface)" }}
                     >
-                      <h3 className="text-sm font-bold mb-2" style={{ color: "#b8e840" }}>{faq.question}</h3>
-                      <p className="text-sm leading-6" style={{ color: "#a8c888" }}>{faq.answer}</p>
+                      <h3 className="text-sm font-bold mb-2" style={{ color: "var(--public-accent)" }}>{faq.question}</h3>
+                      <p className="text-sm leading-6" style={{ color: "var(--public-secondary)" }}>{faq.answer}</p>
                     </div>
                   ))}
                 </div>
               </section>
 
-              <div className="mt-10 flex flex-col gap-3 border-t pt-8 sm:flex-row lg:justify-end" style={{ borderColor: "rgba(140,200,80,0.10)" }}>
+              <div className="mt-10 flex flex-col gap-3 border-t pt-8 sm:flex-row lg:justify-end" style={{ borderColor: "var(--public-border)" }}>
                 <Link
                   href={`/mapa?r=${encodeURIComponent(route.name)}`}
-                  className="inline-flex h-12 items-center justify-center rounded-full px-6 text-sm font-black text-white transition hover:opacity-90"
-                  style={{ background: "#6aab48" }}
+                  className="inline-flex h-12 items-center justify-center rounded-md bg-[#b8e840] px-6 text-sm font-bold text-[#0c110a] transition hover:bg-[#c6f052]"
                 >
                   Ver en el mapa
                 </Link>
                 <Link
                   href="/horarios"
-                  className="inline-flex h-12 items-center justify-center rounded-full border px-6 text-sm font-bold transition"
+                  className="inline-flex h-12 items-center justify-center rounded-md border px-6 text-sm font-bold transition"
                   style={{
-                    borderColor: "rgba(140,200,80,0.15)",
-                    background: "rgba(106,171,72,0.06)",
-                    color: "#e8f2d8",
+                    borderColor: "var(--public-border)",
+                    background: "var(--public-surface)",
+                    color: "var(--public-ink)",
                   }}
                 >
                   Horarios de todas las rutas
                 </Link>
                 <Link
                   href="/rutas"
-                  className="inline-flex h-12 items-center justify-center rounded-full border px-6 text-sm font-bold transition"
+                  className="inline-flex h-12 items-center justify-center rounded-md border px-6 text-sm font-bold transition"
                   style={{
-                    borderColor: "rgba(140,200,80,0.15)",
-                    background: "rgba(106,171,72,0.06)",
-                    color: "#e8f2d8",
+                    borderColor: "var(--public-border)",
+                    background: "var(--public-surface)",
+                    color: "var(--public-ink)",
                   }}
                 >
                   Ver todas las rutas
@@ -436,15 +431,14 @@ export default async function RoutePage({ params }: RoutePageProps) {
       <div
         className="fixed inset-x-0 bottom-0 z-40 border-t px-4 py-3 backdrop-blur-xl lg:hidden"
         style={{
-          borderColor: "rgba(140,200,80,0.14)",
-          background: "rgba(12,17,10,0.92)",
+          borderColor: "var(--public-border)",
+          background: "var(--public-bg)",
           paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))",
         }}
       >
         <Link
           href={`/mapa?r=${encodeURIComponent(route.name)}`}
-          className="flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-black text-white transition active:scale-[0.98]"
-          style={{ background: "#6aab48" }}
+          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-[#b8e840] px-3 py-2 text-center text-sm font-bold text-[#0c110a] transition hover:bg-[#c6f052]"
         >
           <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
             <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
