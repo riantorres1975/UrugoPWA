@@ -142,18 +142,8 @@ export default function LandingHeroPlanner({ children }: { children?: ReactNode 
 
   const trip = PREVIEW_TRIPS[activeTripIndex];
   const mapHref = `/mapa?destino=${encodeURIComponent(trip.destination)}`;
-  const isMultimodal = trip.routeLabel.includes("Teleférico");
-  const journeyMode = activeTripIndex === 1 ? "walking" : isMultimodal ? "cable" : "bus";
-  const journeyImage = journeyMode === "walking"
-    ? "/readme/modo-viaje-caminando.webp"
-    : journeyMode === "cable"
-      ? "/readme/modo-viaje-teleferico.webp"
-      : "/readme/modo-viaje.webp";
-  const journeyModeLabel = journeyMode === "walking"
-    ? "Último tramo a pie"
-    : journeyMode === "cable"
-      ? "Teleférico Uruapan"
-      : "Ruta 11";
+  const journeyImage = `/landing/journeys/${trip.id}-${activeStep}.webp`;
+  const journeyModeLabel = trip.steps[activeStep].label;
 
   const handleTripSelection = (index: number) => {
     setActiveTripIndex(index);
@@ -212,12 +202,8 @@ export default function LandingHeroPlanner({ children }: { children?: ReactNode 
               <span>{String(activeTripIndex + 1).padStart(2, "0")} / 03</span>
             </div>
             <div className="journey-screen">
-            <Image key={journeyImage} src={journeyImage}
-              alt={journeyMode === "walking"
-                ? "Modo viaje de UruGo mostrando el último tramo caminando"
-                : journeyMode === "cable"
-                  ? "Modo viaje de UruGo siguiendo el recorrido del Teleférico"
-                  : "Modo viaje de UruGo siguiendo el recorrido de un camión"}
+            <Image key={`${trip.id}-${journeyImage}`} src={journeyImage}
+              alt={`${trip.steps[activeStep].label}: vista del recorrido desde la Central de Autobuses a ${trip.destination}`}
               className="landing-journey-image object-contain" fill sizes="280px" />
             </div>
             <div className="journey-stage-status" key={`${trip.id}-${activeStep}`}>

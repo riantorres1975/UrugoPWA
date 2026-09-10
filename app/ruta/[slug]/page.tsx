@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Maximize2, ArrowUpRight } from "lucide-react";
 import { notFound } from "next/navigation";
 import PublicFooter from "@/components/PublicFooter";
 import PublicHeader from "@/components/PublicHeader";
@@ -65,7 +66,8 @@ export default async function RoutePage({ params }: RoutePageProps) {
 
   const title = route.destination ? `${route.name}: ${route.destination}` : route.name;
   const directions = route.hasIda && route.hasVuelta ? "Ida y vuelta" : route.hasIda ? "Solo ida" : "Solo vuelta";
-  const staticMapUrl = buildRouteStaticMapUrl(route.name, route.color);
+  const staticMapUrl = buildRouteStaticMapUrl(route.name, route.color, 400, 360, { padding: 30 });
+  const tabletStaticMapUrl = buildRouteStaticMapUrl(route.name, route.color, 800, 500);
   const compactDesktopStaticMapUrl = buildRouteStaticMapUrl(route.name, route.color, 640, 560);
   const desktopStaticMapUrl = buildRouteStaticMapUrl(route.name, route.color, 900, 560);
   const estimatedMinutes = route.distanceKm > 0 ? Math.round((route.distanceKm / 18) * 60) : null;
@@ -185,8 +187,10 @@ export default async function RoutePage({ params }: RoutePageProps) {
 
             <div className="lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(390px,0.85fr)]">
               {/* Route map preview */}
-              <div
-                className="w-full overflow-hidden lg:min-h-[440px]"
+              <Link
+                href={`/mapa?r=${encodeURIComponent(route.name)}`}
+                aria-label={`Abrir mapa interactivo de ${route.name}`}
+                className="route-detail-map group flex w-full flex-col overflow-hidden lg:min-h-[440px]"
                 style={{
                   borderBottom: "1px solid rgba(140,200,80,0.08)",
                   background: "rgba(0,0,0,0.3)",
@@ -194,30 +198,36 @@ export default async function RoutePage({ params }: RoutePageProps) {
                 }}
               >
                 {staticMapUrl ? (
-                  <picture>
+                  <picture className="block aspect-[10/9] w-full sm:aspect-[8/5] lg:aspect-auto lg:min-h-0 lg:flex-1">
                     {desktopStaticMapUrl && <source media="(min-width: 1280px)" srcSet={desktopStaticMapUrl} />}
                     {compactDesktopStaticMapUrl && <source media="(min-width: 1024px)" srcSet={compactDesktopStaticMapUrl} />}
+                    {tabletStaticMapUrl && <source media="(min-width: 640px)" srcSet={tabletStaticMapUrl} />}
                     <img
                       src={staticMapUrl}
                       alt={`Mapa del recorrido de la ${route.name} en Uruapan`}
-                      width={800}
-                      height={220}
-                      className="block h-auto w-full lg:h-full lg:min-h-[440px] lg:object-contain"
+                      width={400}
+                      height={360}
+                      className="block h-full w-full object-contain lg:min-h-[440px]"
                     />
                   </picture>
                 ) : (
-                  <div className="flex h-full min-h-[180px] items-center lg:min-h-[440px]">
+                  <div className="flex aspect-[10/9] w-full items-center sm:aspect-[8/5] lg:aspect-auto lg:min-h-[440px] lg:flex-1">
                     <RoutePreviewFromData
                       routeName={route.name}
                       color={route.color}
-                      width={800}
-                      height={560}
+                      width={400}
+                      height={360}
                       strokeWidth={3}
                       className="h-auto w-full"
                     />
                   </div>
                 )}
-              </div>
+                <span className="flex min-h-12 shrink-0 items-center gap-2 border-t border-[var(--public-border)] bg-[var(--public-surface)] px-4 py-3 text-xs font-bold leading-5 text-[var(--public-ink)] transition group-hover:bg-[var(--public-hover)]">
+                  <Maximize2 className="h-4 w-4 text-[var(--public-accent)]" aria-hidden="true" />
+                  Abrir mapa interactivo
+                  <ArrowUpRight className="ml-auto h-4 w-4" aria-hidden="true" />
+                </span>
+              </Link>
 
               <div className="flex flex-col justify-center p-6 md:p-8 lg:p-10 xl:p-12">
                 <p className="text-xs font-bold uppercase" style={{ color: "var(--public-accent)" }}>

@@ -10,7 +10,8 @@ export function buildRouteStaticMapUrl(
   routeName: string,
   color: string,
   width = 800,
-  height = 220
+  height = 220,
+  options: { padding?: number } = {}
 ): string | null {
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
   if (!token) return null;
@@ -34,5 +35,6 @@ export function buildRouteStaticMapUrl(
   const encoded = encodeURIComponent(geojson);
 
   // padding: top,right,bottom,left in px (extra horizontal to avoid clipping)
-  return `https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/geojson(${encoded})/auto/${width}x${height}@2x?access_token=${token}&padding=50,70,50,70`;
+  const padding = options.padding ?? "50,70,50,70";
+  return `https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/geojson(${encoded})/auto/${width}x${height}@2x?access_token=${token}&padding=${padding}`;
 }

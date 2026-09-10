@@ -111,20 +111,27 @@ test("el movimiento reducido mantiene las etapas manuales y las rutas accesibles
   await expect(ranking.locator("li").first()).toHaveCSS("animation-name", "none");
 });
 
-test("la vista móvil usa capturas reales del modo viaje", async ({ page }) => {
+test("las imágenes del recorrido coinciden con el destino y la etapa", async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await page.goto("/");
+  await page.getByRole("button", { name: "Pausar ejemplos de viaje" }).click();
   await page.getByRole("button", { name: "Mercado Poniente", exact: true }).click();
 
   const simulator = page.getByTestId("landing-trip-simulator");
   const journeyImage = simulator.locator(".landing-journey-image");
   await expect(simulator.locator(".landing-map-stage > svg")).toHaveCount(0);
-  await expect(journeyImage).toHaveAttribute("src", /modo-viaje-caminando/);
-  await expect(simulator).toContainText("Último tramo a pie");
+  await expect(journeyImage).toHaveAttribute("src", /mercado-poniente-0/);
+  await simulator.locator(".journey-stops").getByRole("button", { name: /Teleférico/ }).click();
+  await expect(journeyImage).toHaveAttribute("src", /mercado-poniente-3/);
+  await expect(journeyImage).toHaveAttribute("alt", /Mercado Poniente/);
 
   await page.getByRole("button", { name: "Hospital Regional", exact: true }).click();
-  await expect(journeyImage).toHaveAttribute("src", /modo-viaje-teleferico/);
-  await expect(simulator).toContainText("Teleférico Uruapan");
+  await expect(journeyImage).toHaveAttribute("src", /hospital-regional-0/);
+  await simulator.locator(".journey-stops").getByRole("button", { name: /Hospital Regional Destino/ }).click();
+  await expect(journeyImage).toHaveAttribute("src", /hospital-regional-4/);
+  await expect(journeyImage).toHaveAttribute("alt", /Hospital Regional/);
+  await expect(journeyImage).toBeVisible();
+  await expect.poll(() => journeyImage.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
   await expect(simulator.locator(".landing-map-pin")).toHaveCount(0);
 });
 
