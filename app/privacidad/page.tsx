@@ -36,7 +36,7 @@ const SECTIONS = [
   },
   {
     title: "Servicios de terceros",
-    body: "Mapbox muestra el mapa y resuelve búsquedas de lugares. Vercel Analytics y Speed Insights recopilan métricas técnicas agregadas. Las mediciones de rendimiento del cálculo solo incluyen rangos de tiempo, motor y tipo de resultado; no contienen coordenadas, nombres de lugares ni el recorrido elegido. UruGo también elimina de la URL los parámetros sensibles. DeepSeek procesa los mensajes que envías voluntariamente al asistente junto con contexto de rutas cercanas. Los errores inesperados generan una huella técnica anónima para detectar fallos repetidos; no se envían el mensaje del error, la traza, las búsquedas ni la ubicación."
+    body: "Mapbox muestra el mapa y resuelve búsquedas de lugares. Vercel Analytics y Speed Insights recopilan métricas técnicas agregadas. Para ordenar las rutas más consultadas, UruGo suma de forma anónima cuándo se abre una ficha o se selecciona una ruta en el mapa; solo guarda la ruta, el día, el contexto y un contador, nunca la ubicación, IP, cuenta ni un identificador del visitante. El navegador evita repetir la misma consulta durante el día. Las mediciones de rendimiento del cálculo solo incluyen rangos de tiempo, motor y tipo de resultado; no contienen coordenadas, nombres de lugares ni el recorrido elegido. UruGo también elimina de la URL los parámetros sensibles. DeepSeek procesa los mensajes que envías voluntariamente al asistente junto con contexto de rutas cercanas. Los errores inesperados generan una huella técnica anónima para detectar fallos repetidos; no se envían el mensaje del error, la traza, las búsquedas ni la ubicación."
   },
   {
     title: "Información referencial",

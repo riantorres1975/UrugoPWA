@@ -27,7 +27,7 @@ import {
 } from "@/lib/mobility-config";
 import { getPlaceSeoItems, getRoutesNearPlace, walkMinutesFor } from "@/lib/como-llegar";
 import { PROJECT, PROJECT_SOCIAL_PROFILES } from "@/lib/project";
-import { getRouteSeoItems } from "@/lib/route-seo";
+import { getPopularRoutes } from "@/lib/route-popularity";
 import { SITE_URL } from "@/lib/site-url";
 
 const HOW_IT_WORKS_STEPS = [
@@ -66,11 +66,6 @@ const featuredPlaces = FEATURED_PLACE_LABELS.map((label) => {
   };
 }).filter((place): place is NonNullable<typeof place> => place !== null);
 
-const FEATURED_ROUTE_NAMES = ["Ruta 176", "Ruta 17", "Ruta 45", "Ruta 10"] as const;
-const allSeoRoutes = getRouteSeoItems();
-const featuredRoutes = FEATURED_ROUTE_NAMES.map((name) => allSeoRoutes.find((route) => route.name === name))
-  .filter((route): route is NonNullable<typeof route> => route !== undefined);
-
 export const metadata: Metadata = {
   title: { absolute: "UruGo | Rutas de camiones en Uruapan: mapa y horarios" },
   description:
@@ -86,6 +81,8 @@ export const metadata: Metadata = {
     type: "website",
   },
 };
+
+export const revalidate = 3600;
 
 const faqJsonLd = {
   "@context": "https://schema.org",
@@ -139,7 +136,9 @@ const organizationJsonLd = {
   publishingPrinciples: `${SITE_URL}/acerca-de`,
 };
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const { basedOnUsage, routes: popularRoutes } = await getPopularRoutes(4);
+
   return (
     <main className="landing-home min-h-dvh bg-[#0c110a] text-[#eef2ea]" data-theme="dark">
       <ForceDark />
@@ -216,11 +215,18 @@ export default function LandingPage() {
           </div>
           <div className="mt-10 border-t border-[var(--public-border)] pt-6">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-              <h3 className="text-lg font-bold">Rutas más consultadas</h3>
+              <div>
+                <h3 className="text-lg font-bold">
+                  {basedOnUsage ? "Rutas más consultadas" : "Rutas para empezar"}
+                </h3>
+                <p className="mt-1 text-xs text-[var(--public-muted)]">
+                  {basedOnUsage ? "Actividad anónima de los últimos 30 días" : "Selección inicial mientras reunimos actividad"}
+                </p>
+              </div>
               <Link href="/rutas" className="inline-flex min-h-11 items-center gap-2 text-sm font-bold">Ver las 40 rutas <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
             </div>
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-              {featuredRoutes.map((route) => (
+              {popularRoutes.map((route) => (
                 <Link key={route.slug} href={`/ruta/${route.slug}`} className="group flex min-h-36 flex-col items-start rounded-md border border-[var(--public-border)] bg-[var(--public-surface)] px-4 py-5 transition hover:border-[#6aab48]">
                   <div className="flex w-full items-center justify-between gap-2">
                     <span className="text-2xl font-extrabold">{route.name}</span>

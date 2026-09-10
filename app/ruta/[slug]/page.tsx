@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import PublicFooter from "@/components/PublicFooter";
 import PublicHeader from "@/components/PublicHeader";
 import RoutePreviewFromData from "@/components/RoutePreviewFromData";
+import RouteConsultationTracker from "@/components/RouteConsultationTracker";
 import RouteVerification from "@/components/RouteVerification";
 import { FARES_2026, SITE_CONTENT_LAST_UPDATED_ISO } from "@/lib/mobility-config";
 import { findRouteSeoItem, getRouteSeoItems } from "@/lib/route-seo";
@@ -163,6 +164,7 @@ export default async function RoutePage({ params }: RoutePageProps) {
 
   return (
     <main className="public-page" style={{ background: "var(--public-bg)", color: "var(--public-ink)", minHeight: "100dvh" }}>
+      <RouteConsultationTracker routeKey={route.slug} />
       <PublicHeader active="rutas" mapHref={`/mapa?r=${encodeURIComponent(route.name)}`} />
 
       <div className="px-5 pb-28 pt-28 sm:px-8 lg:px-10 lg:pb-16 lg:pt-32">

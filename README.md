@@ -204,6 +204,8 @@ Los módulos principales son:
 
 Los reportes sobre rutas, horarios o puntos incorrectos pueden enviarse desde la página [`/reportar-error`](https://www.urugo.app/reportar-error). Cuando Supabase está configurado quedan pendientes en el panel privado; ningún reporte modifica directamente el mapa. La guía de configuración está en [`docs/community-data.md`](./docs/community-data.md).
 
+La portada ordena **Rutas más consultadas** con actividad anónima agregada de los últimos 30 días. Se cuenta como máximo una apertura diaria por ruta y contexto en cada navegador; Supabase conserva únicamente la clave de la ruta, la fecha, el contexto (`route_page` o `map`) y el total. No se guardan ubicación, IP, cuenta ni identificadores de visitantes. Hasta que existan cuatro rutas con actividad, la interfaz muestra una selección inicial en lugar de presentar datos insuficientes como un ranking.
+
 La consulta pública versionada está documentada en [`/datos-api`](https://www.urugo.app/datos-api). `GET /api/v1/routes` admite CORS, caché y validación condicional mediante `ETag`. Las integraciones autorizadas pueden enviar propuestas mediante `POST /api/v1/community/reports`; siempre requieren una clave, respetan una cuota propia y pasan por moderación. El contrato completo se publica en [`GET /api/v1/openapi`](https://www.urugo.app/api/v1/openapi) como OpenAPI 3.1.
 
 ### Estado del sistema comunitario

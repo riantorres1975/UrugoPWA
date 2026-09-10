@@ -35,6 +35,7 @@ import { useSharedMapState } from "@/hooks/useSharedMapState";
 import { useTripSession } from "@/hooks/useTripSession";
 import { addRecentTrip, getRecentTrips, RECENT_TRIPS_EVENT, type RecentTrip } from "@/lib/recent-trips";
 import { formatRouteLabel, getRouteDestination } from "@/lib/route-names";
+import { trackRouteConsultation } from "@/lib/route-consultation-client";
 import type { Coordinates } from "@/lib/types";
 import { findMatchingTransfer } from "@/lib/transfer-selection";
 import { buildSharedRouteSegment } from "@/lib/shared-route";
@@ -483,6 +484,11 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     && nearbyRouteIds.length === 0
     && (geoStatus === "idle" || geoStatus === "locating");
   const displayedRouteCount = isNearbyMode ? nearbyRouteIds.length : visibleRouteCount;
+
+  useEffect(() => {
+    if (!selectedRoute || isTelefericoRouteName(selectedRoute.name)) return;
+    trackRouteConsultation({ routeName: selectedRoute.name, source: "map" });
+  }, [selectedRoute]);
 
   const handleNearbyRoutesFound = useCallback((routeIds: number[]) => {
     setNearbyRouteIds(routeIds);
