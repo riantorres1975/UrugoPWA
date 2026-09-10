@@ -76,6 +76,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: CONTENT_LAST_MODIFIED,
       changeFrequency: "monthly",
       priority: 0.5
+    },
+    {
+      url: `${SITE_URL}/apoyar`,
+      lastModified: CONTENT_LAST_MODIFIED,
+      changeFrequency: "monthly",
+      priority: 0.5
     }
   ];
 

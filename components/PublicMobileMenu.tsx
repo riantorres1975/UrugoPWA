@@ -12,6 +12,7 @@ const links = [
   { href: "/blog", label: "Guías locales" },
   { href: "/acerca-de", label: "Acerca de UruGo" },
   { href: "/datos-api", label: "Datos y API" },
+  { href: "/apoyar", label: "Apoyar UruGo" },
 ] as const;
 
 export default function PublicMobileMenu() {

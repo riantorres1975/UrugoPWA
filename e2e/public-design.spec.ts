@@ -4,6 +4,7 @@ const pages = [
   "/rutas", "/horarios", "/como-llegar", "/como-llegar/centro",
   "/ruta/ruta-17-purhepechas", "/guia", "/acerca-de", "/datos-api",
   "/privacidad", "/reportar-error", "/teleferico-uruapan-horario", "/blog",
+  "/apoyar",
   "/blog/como-usar-el-teleferico-uruapan",
   "/pagina-inexistente-diseno",
 ];

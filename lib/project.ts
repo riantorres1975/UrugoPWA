@@ -6,6 +6,7 @@ export const PROJECT = {
   instagramUrl: "https://www.instagram.com/wh01s_r00t",
   linkedinUrl: "https://www.linkedin.com/in/josé-antonio-rivera-torres-b44559244",
   repositoryUrl: "https://github.com/riantorres1975/rutasuruapanpwa",
+  supportUrl: "/apoyar",
   donationUrl: "https://www.paypal.com/paypalme/wh0code",
 } as const;
 

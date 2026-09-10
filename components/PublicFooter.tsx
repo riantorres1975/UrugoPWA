@@ -58,6 +58,7 @@ const exploreLinks = [
   { label: "Guías locales", href: "/blog" },
   { label: "Cómo se hace UruGo", href: "/acerca-de" },
   { label: "Datos y API", href: "/datos-api" },
+  { label: "Apoyar UruGo", href: "/apoyar" },
 ] as const;
 
 const socialLinks = [
@@ -81,9 +82,7 @@ export default function PublicFooter() {
 
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
-                href={PROJECT.donationUrl}
-                target="_blank"
-                rel="noreferrer"
+                href={PROJECT.supportUrl}
                 className="inline-flex h-11 items-center gap-2 rounded-md bg-[#6aab48] px-5 text-sm font-bold text-[#0c110a] transition hover:bg-[#7cbd59] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b8e840]"
               >
                 <Heart className="h-4 w-4" aria-hidden="true" />

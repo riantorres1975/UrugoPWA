@@ -148,8 +148,15 @@ La aplicación estará disponible en [http://localhost:3000](http://localhost:30
 | `ADMIN_NOTIFICATION_EMAILS` | No | Destinatarios del resumen, separados por comas; si se omite usa `ADMIN_EMAILS` |
 | `REPORTER_HASH_SECRET` | No | Secreto para anonimizar la IP de quien contribuye |
 | `ROUTE_DATA_SOURCE` | No | `static` por defecto; usa `supabase` después de importar y verificar las rutas |
+| `SUPPORT_MERCADOPAGO_URL` | No | Enlace HTTPS de pago de Mercado Pago; habilita ese método en `/apoyar` |
+| `SUPPORT_PAYPAL_URL` | No | Enlace HTTPS de PayPal; si se omite se usa el enlace público actual |
+| `SUPPORT_SPEI_CLABE` | No | CLABE de 18 dígitos para mostrar la opción de transferencia |
+| `SUPPORT_SPEI_RECIPIENT` | No | Nombre que debe aparecer como destinatario de la transferencia |
+| `SUPPORT_SPEI_BANK` | No | Banco receptor mostrado junto a la CLABE |
 
 El token público de Mapbox debe restringirse por dominio desde el panel de Mapbox. Las claves privadas no deben usar el prefijo `NEXT_PUBLIC_` ni incluirse en el repositorio.
+
+Los enlaces de apoyo, la CLABE y el nombre del destinatario se renderizan en la página pública `/apoyar`. Configura únicamente datos destinados a compartirse y nunca contraseñas, tokens bancarios u otras credenciales.
 
 El resumen administrativo se programa una vez al día y sólo se envía cuando existen reportes o señales por revisar. Requiere `CRON_SECRET`, `RESEND_API_KEY` y un remitente de un dominio verificado en Resend.
 

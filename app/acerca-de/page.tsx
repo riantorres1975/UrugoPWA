@@ -208,7 +208,7 @@ export default function AboutPage() {
                   <FileCode2 className="h-4 w-4" aria-hidden="true" />
                   Ver repositorio
                 </Link>
-                <Link href={PROJECT.donationUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-12 items-center gap-2 rounded-md bg-[#6aab48] px-5 text-sm font-bold text-[#0c110a] transition hover:bg-[#7cbd59]">
+                <Link href={PROJECT.supportUrl} className="inline-flex min-h-12 items-center gap-2 rounded-md bg-[#6aab48] px-5 text-sm font-bold text-[#0c110a] transition hover:bg-[#7cbd59]">
                   <Heart className="h-4 w-4" aria-hidden="true" />
                   Apoyar el proyecto
                 </Link>

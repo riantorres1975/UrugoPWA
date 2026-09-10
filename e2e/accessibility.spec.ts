@@ -10,6 +10,7 @@ const pages = [
   { name: "guía de uso", path: "/guia" },
   { name: "metodología", path: "/acerca-de" },
   { name: "reporte de errores", path: "/reportar-error" },
+  { name: "apoyo al proyecto", path: "/apoyar" },
   { name: "artículo del blog", path: "/blog/como-usar-el-teleferico-uruapan" },
 ] as const;
 
