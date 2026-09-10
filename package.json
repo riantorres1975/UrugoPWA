@@ -22,6 +22,7 @@
     "landmarks:index": "node scripts/generate-landmark-index.mjs",
     "db:seed-routes": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/sync-routes-to-supabase.mjs",
     "guide:screenshots": "node scripts/capture-guide-screenshots.mjs",
+    "readme:assets": "node scripts/capture-guide-screenshots.mjs && node scripts/capture-report-demo.mjs",
     "video:record": "node scripts/record-demo-video.mjs",
     "video:studio": "remotion studio video/index.ts",
     "video:render:wide": "remotion render video/index.ts UruGoDemoWide video/out/urugo-demo-horizontal.mp4 --codec=h264 --crf=18",

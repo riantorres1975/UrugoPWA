@@ -62,8 +62,20 @@ UruGo is a web application for exploring public transport in Uruapan, Michoacán
 - Shareable links that preserve the route, direction, origin, and destination.
 - PWA installation and a basic offline view for selected routes.
 - Optional transport assistant grounded in the data available in this repository.
+- Account-free community reports with a map tool for drawing corrected route paths.
+- Most-viewed routes ranked from aggregated anonymous activity without storing location or identity.
 
 Device location is only accepted as an automatic origin when it is within Uruapan's service area. Users opening the app from another city must choose an origin manually inside Uruapan; an existing destination is kept.
+
+## Reporting an incorrect route
+
+The report form does not require an account. Choose **Pasa por otras calles**, select the route, and open the map to mark the correct streets in order. Add a short reference and send the proposal; it remains private until an administrator reviews it.
+
+<p align="center">
+  <img src="./public/readme/reportar-ruta.gif" alt="Animated example showing how to report and draw a route correction in UruGo" width="640">
+</p>
+
+<p align="center"><sub>The blue line is the published route and the yellow line is the proposed correction.</sub></p>
 
 ## How route matching works
 
@@ -87,6 +99,8 @@ Matching runs in the browser using project data. Mapbox draws the map and suppor
 | Vitest | Geometry, schedule, search, and storage tests |
 | Service Worker | PWA installation and caching |
 | Vercel Analytics | Usage and performance metrics |
+| Supabase | Community reports, administrative authentication, and route history |
+| Resend and Vercel Cron | Daily moderation digest when pending items exist |
 
 ## Local setup
 
@@ -100,8 +114,8 @@ Matching runs in the browser using project data. Mapbox draws the map and suppor
 ### Installation
 
 ```bash
-git clone https://github.com/riantorres1975/rutasuruapanpwa.git
-cd rutasuruapanpwa
+git clone https://github.com/riantorres1975/UrugoPWA.git
+cd UrugoPWA
 pnpm install
 ```
 
@@ -145,6 +159,7 @@ pnpm start             # serve the production build
 pnpm lint              # ESLint checks
 pnpm test              # Vitest suite
 pnpm guide:screenshots # refresh application screenshots
+pnpm readme:assets     # refresh screenshots and the README report demo
 ```
 
 ## Project layout

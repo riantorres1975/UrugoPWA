@@ -8,7 +8,6 @@ import {
   BusFront,
   CableCar,
   CircleDot,
-  ChevronDown,
   Footprints,
   MapPin,
   Pause,
@@ -82,7 +81,7 @@ const PREVIEW_TRIPS: PreviewTrip[] = [
   },
 ] as const;
 
-const ROTATE_MS = 10_000;
+const STEP_MS = 2800;
 
 function StepIcon({ kind }: { kind: TripStepKind }) {
   const className = "h-4 w-4";
@@ -99,6 +98,15 @@ export default function LandingHeroPlanner({ children }: { children?: ReactNode 
   const [isPlaying, setIsPlaying] = useState(true);
   const [isVisible, setIsVisible] = useState(true);
   const [reduceMotion, setReduceMotion] = useState(false);
+  const [activeStep, setActiveStep] = useState(0);
+  const [tabVisible, setTabVisible] = useState(true);
+
+  useEffect(() => {
+    const sync = () => setTabVisible(!document.hidden);
+    sync();
+    document.addEventListener("visibilitychange", sync);
+    return () => document.removeEventListener("visibilitychange", sync);
+  }, []);
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -120,12 +128,17 @@ export default function LandingHeroPlanner({ children }: { children?: ReactNode 
   }, []);
 
   useEffect(() => {
-    if (!isPlaying || !isVisible || reduceMotion) return;
-    const timer = window.setInterval(() => {
-      setActiveTripIndex((index) => (index + 1) % PREVIEW_TRIPS.length);
-    }, ROTATE_MS);
-    return () => window.clearInterval(timer);
-  }, [isPlaying, isVisible, reduceMotion]);
+    if (!isPlaying || !isVisible || reduceMotion || !tabVisible) return;
+    const timer = window.setTimeout(() => {
+      if (activeStep < PREVIEW_TRIPS[activeTripIndex].steps.length - 1) {
+        setActiveStep(activeStep + 1);
+      } else {
+        setActiveStep(0);
+        setActiveTripIndex((index) => (index + 1) % PREVIEW_TRIPS.length);
+      }
+    }, STEP_MS);
+    return () => window.clearTimeout(timer);
+  }, [isPlaying, isVisible, reduceMotion, tabVisible, activeStep, activeTripIndex]);
 
   const trip = PREVIEW_TRIPS[activeTripIndex];
   const mapHref = `/mapa?destino=${encodeURIComponent(trip.destination)}`;
@@ -144,6 +157,7 @@ export default function LandingHeroPlanner({ children }: { children?: ReactNode 
 
   const handleTripSelection = (index: number) => {
     setActiveTripIndex(index);
+    setActiveStep(0);
   };
 
   return (
@@ -175,7 +189,7 @@ export default function LandingHeroPlanner({ children }: { children?: ReactNode 
 
       {children}
 
-      <div ref={simulatorRef} className="mt-9 sm:mt-12" data-testid="landing-trip-simulator">
+      <div ref={simulatorRef} className="journey-preview mt-9 sm:mt-12" data-testid="landing-trip-simulator" data-playing={isPlaying && isVisible && tabVisible && !reduceMotion}>
         <div className="mb-5 flex items-end justify-between gap-4">
           <div>
             <p className="text-xs font-bold uppercase text-[#a8b5a1]">Modo viaje</p>
@@ -192,21 +206,27 @@ export default function LandingHeroPlanner({ children }: { children?: ReactNode 
         </div>
 
         <div id={`trip-panel-${trip.id}`} className="grid border-y border-white/20 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]" role="region" aria-label={`Ejemplo de viaje a ${trip.destination}`}>
-          <div className="landing-map-stage relative h-[260px] overflow-hidden bg-[#dfe4d8] sm:h-[360px] lg:h-full lg:min-h-[440px]">
+          <div className="landing-map-stage">
+            <div className="journey-stage-caption" aria-hidden="true">
+              <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full" style={{ background: trip.color }} />{journeyModeLabel}</span>
+              <span>{String(activeTripIndex + 1).padStart(2, "0")} / 03</span>
+            </div>
+            <div className="journey-screen">
             <Image key={journeyImage} src={journeyImage}
               alt={journeyMode === "walking"
                 ? "Modo viaje de UruGo mostrando el último tramo caminando"
                 : journeyMode === "cable"
                   ? "Modo viaje de UruGo siguiendo el recorrido del Teleférico"
                   : "Modo viaje de UruGo siguiendo el recorrido de un camión"}
-              className="landing-journey-image object-cover" fill sizes="(min-width: 1240px) 650px, (min-width: 1024px) 55vw, 100vw" />
-            <span className="absolute left-4 top-4 flex items-center gap-2 rounded bg-[#0c110a] px-3 py-2 text-xs font-bold text-[#eef2ea]">
-              <span className="h-2 w-2 rounded-full" style={{background:trip.color}} aria-hidden="true" />
-              {journeyModeLabel}
-            </span>
+              className="landing-journey-image object-contain" fill sizes="280px" />
+            </div>
+            <div className="journey-stage-status" key={`${trip.id}-${activeStep}`}>
+              <span className="journey-status-icon"><StepIcon kind={trip.steps[activeStep].kind} /></span>
+              <span><strong>{trip.steps[activeStep].label}</strong><span>{trip.steps[activeStep].detail}</span></span>
+            </div>
           </div>
 
-          <div className="flex flex-col py-6 lg:px-8 lg:py-7">
+          <div className="journey-trip-detail flex flex-col py-6 lg:px-8 lg:py-7" key={trip.id}>
             <div className="flex items-center gap-2 text-xs font-bold" style={{color:trip.color}}>
               <BusFront className="h-4 w-4" aria-hidden="true" /> {trip.routeLabel}
             </div>
@@ -233,23 +253,20 @@ export default function LandingHeroPlanner({ children }: { children?: ReactNode 
           </div>
         </div>
 
-        <details className="group border-b border-white/20">
-          <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold [&::-webkit-details-marker]:hidden">
-            Etapas del recorrido
-            <ChevronDown className="h-4 w-4 transition group-open:rotate-180" aria-hidden="true" />
-          </summary>
-          <ol className="grid gap-4 pb-6 sm:grid-cols-2 lg:grid-cols-5" aria-label={`Pasos para llegar a ${trip.destination}`}>
-            {trip.steps.map((step) => (
-              <li key={`${step.kind}-${step.label}`} className="flex gap-3 border-t border-white/15 pt-4">
-                <span className="mt-0.5 text-[#b8e840]"><StepIcon kind={step.kind} /></span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-bold">{step.label}</span>
-                  <span className="mt-1 block text-xs leading-5 text-[#a8b5a1]">{step.detail}</span>
-                </span>
+        <div className="journey-stops">
+          <ol aria-label={`Pasos para llegar a ${trip.destination}`}>
+            {trip.steps.map((step, index) => (
+              <li key={`${trip.id}-${index}`} data-active={index === activeStep} data-complete={index < activeStep}>
+                {index === activeStep && <span className="journey-step-progress" aria-hidden="true" />}
+                <button type="button" aria-current={index === activeStep ? "step" : undefined}
+                  onClick={() => { setActiveStep(index); setIsPlaying(false); }}>
+                  <span className="journey-stop-node"><StepIcon kind={step.kind} /></span>
+                  <span className="min-w-0"><strong>{step.label}</strong><small>{step.detail}</small></span>
+                </button>
               </li>
             ))}
           </ol>
-        </details>
+        </div>
       </div>
     </div>
   );

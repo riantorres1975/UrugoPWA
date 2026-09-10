@@ -81,6 +81,36 @@ test("el simulador animado cabe en una pantalla móvil", async ({ page }) => {
   expect(layout.scrollWidth).toBeLessThanOrEqual(layout.viewportWidth);
 });
 
+test("las etapas avanzan, se pueden pausar y elegir manualmente", async ({ page }) => {
+  await page.goto("/");
+  const simulator = page.getByTestId("landing-trip-simulator");
+  await simulator.scrollIntoViewIfNeeded();
+  const current = simulator.locator('.journey-stops [aria-current="step"]');
+  await expect(current).toContainText("Camina 2 min", { timeout: 6000 });
+  await simulator.getByRole("button", { name: "Pausar ejemplos de viaje" }).click();
+  const pausedStep = await current.textContent();
+  await page.waitForTimeout(3000);
+  await expect(current).toHaveText(pausedStep!);
+  await simulator.locator(".journey-stops").getByRole("button", { name: /Ruta 11/ }).click();
+  await expect(current).toContainText("Ruta 11");
+  await expect(simulator.locator(".journey-stage-status")).toContainText("Ruta 11");
+});
+
+test("el movimiento reducido mantiene las etapas manuales y las rutas accesibles", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  const simulator = page.getByTestId("landing-trip-simulator");
+  await simulator.scrollIntoViewIfNeeded();
+  await expect(simulator.getByRole("button", { name: "Pausar ejemplos de viaje" })).toHaveCount(0);
+  await simulator.locator(".journey-stops").getByRole("button", { name: /Camina 2 min/ }).click();
+  await expect(simulator.locator('[aria-current="step"]')).toContainText("Camina 2 min");
+  const ranking = page.locator(".landing-ranking");
+  await ranking.scrollIntoViewIfNeeded();
+  await expect(ranking.locator(".ranking-route")).toHaveCount(4);
+  await expect(ranking.locator(".ranking-route").first()).toHaveAttribute("href", /^\/ruta\//);
+  await expect(ranking.locator("li").first()).toHaveCSS("animation-name", "none");
+});
+
 test("la vista móvil usa capturas reales del modo viaje", async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 800 });
   await page.goto("/");

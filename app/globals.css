@@ -196,18 +196,91 @@ body {
 
 .landing-map-stage {
   isolation: isolate;
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  height: 560px;
+  padding-top: 44px;
+  align-content: start;
+  overflow: hidden;
+  background-color: #172022;
+  background-image: linear-gradient(#ffffff06 1px, transparent 1px), linear-gradient(90deg, #ffffff06 1px, transparent 1px);
+  background-size: 44px 44px;
 }
 
 .landing-journey-image {
-  animation: landing-journey-enter 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  object-position: center 48%;
-  z-index: -2;
+  animation: landing-journey-enter 650ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  object-position: center;
 }
 
+.journey-screen { position: relative; width: 194px; height: 420px; border: 4px solid #394447; border-radius: 8px; overflow: hidden; box-shadow: 18px 20px 0 #0b10154d, 0 22px 40px #0005; }
+.journey-stage-caption { position: absolute; inset: 18px 20px auto; display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; color: #adbec1; }
+.journey-stage-status { position: absolute; bottom: 26px; left: 20px; right: 20px; display: flex; align-items: center; gap: 12px; min-height: 68px; padding: 12px 16px; border-left: 3px solid #66d8e7; background: #0c1518; box-shadow: 0 8px 24px #0004; animation: landing-fade-up 400ms both; }
+.journey-stage-status strong { display: block; font-size: 14px; }
+.journey-stage-status span span { display: block; margin-top: 4px; font-size: 12px; color: #b2c1c4; }
+.journey-status-icon { color: #66d8e7; }
+.journey-trip-detail { animation: landing-fade-up 450ms both; }
+.journey-stops ol { display: flex; border-bottom: 1px solid #ffffff26; }
+.journey-stops li { flex: 1; min-width: 0; position: relative; padding: 24px 12px 20px 0; }
+.journey-stops li::before { content: ""; position: absolute; top: 41px; left: 18px; right: -18px; height: 2px; background: #ffffff20; }
+.journey-stops li:last-child::before { display: none; }
+.journey-stops li[data-complete="true"]::before { background: #66d8e7; }
+.journey-step-progress { position: absolute; top: 41px; left: 18px; right: -18px; height: 2px; background: #66d8e7; transform-origin: left; animation: journey-progress 2800ms linear both; }
+.journey-stops li:last-child .journey-step-progress { display: none; }
+.journey-preview[data-playing="false"] .journey-step-progress { animation-play-state: paused; }
+@keyframes journey-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.journey-stops button { position: relative; width: 100%; text-align: left; display: flex; flex-direction: column; gap: 12px; }
+.journey-stop-node { display: grid; place-items: center; width: 36px; height: 36px; background: #0c110a; border: 1px solid #687262; border-radius: 50%; color: #a8b5a1; transition: background 300ms, color 300ms, box-shadow 300ms; }
+.journey-stops [data-active="true"] .journey-stop-node { background: #66d8e7; color: #0c1518; border-color: #66d8e7; box-shadow: 0 0 0 5px #66d8e71a; }
+.journey-stops strong { display: block; font-size: 12px; }
+.journey-stops small { display: block; margin-top: 5px; font-size: 11px; line-height: 1.5; color: #a8b5a1; }
+.landing-ranking { margin-top: 48px; border-top: 1px solid var(--public-border); padding-top: 32px; }
+.ranking-heading { display: flex; justify-content: space-between; align-items: end; gap: 20px; margin-bottom: 26px; }
+.ranking-eyebrow { color: #66d8e7; font-size: 12px; font-weight: 700; }
+.ranking-heading h3 { font-size: 28px; line-height: 1.2; font-weight: 800; margin-top: 8px; }
+.ranking-period { font-size: 12px; color: var(--public-muted); margin-top: 10px; }
+.ranking-all { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; flex-shrink: 0; font-size: 13px; font-weight: 700; }
+.ranking-list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.ranking-route { height: 100%; display: flex; gap: 14px; padding: 22px 16px; border-top: 2px solid #56614e; background: var(--public-surface); transition: background 200ms, border-color 200ms, transform 200ms; }
+.ranking-route:hover, .ranking-route:focus-visible { transform: translateY(-4px); border-color: #b8e840; background: var(--public-hover); }
+.ranking-number { font-size: 24px; font-weight: 500; font-variant-numeric: tabular-nums; color: #8d9b84; line-height: 1; }
+.ranking-list li:first-child .ranking-route { border-color: #b8e840; }
+.ranking-list li:first-child .ranking-number { color: #b8e840; }
+.ranking-route-body { min-width: 0; flex: 1; display: flex; flex-direction: column; }
+.ranking-route-kind { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--public-muted); }
+.ranking-route strong { font-size: 23px; margin-top: 16px; line-height: 1.2; }
+.ranking-destination { font-size: 12px; line-height: 1.6; color: var(--public-muted); margin-top: 7px; min-height: 40px; }
+.ranking-route-action { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: auto; padding-top: 22px; font-size: 11px; font-weight: 700; color: var(--public-accent); }
+.ranking-route-action svg { flex-shrink: 0; transition: transform 200ms; }
+.ranking-route:hover .ranking-route-action svg { transform: translate(2px, -2px); }
+.landing-ranking[data-revealed="true"] li { animation: landing-fade-up 600ms both; animation-delay: var(--rank-delay); }
+@media (max-width: 1023px) { .ranking-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 639px) {
-  .landing-journey-image {
-    object-position: center 49%;
-  }
+  .landing-map-stage { height: 490px; }
+  .journey-screen { width: 162px; height: 350px; }
+  .journey-stops ol { flex-direction: column; }
+  .journey-stops li { padding: 10px 0; }
+  .journey-stops button { flex-direction: row; align-items: center; gap: 16px; }
+  .journey-stops li::before { left: 17px; top: 28px; bottom: -28px; width: 2px; height: auto; right: auto; }
+  .journey-step-progress { left: 17px; top: 28px; bottom: -28px; width: 2px; height: auto; right: auto; transform-origin: top; animation-name: journey-progress-vertical; }
+  .journey-stop-node { flex-shrink: 0; }
+  .journey-stops strong { font-size: 13px; }
+  .journey-stops small { margin-top: 2px; }
+  .ranking-heading { align-items: start; flex-direction: column; gap: 8px; }
+  .ranking-heading h3 { font-size: 25px; }
+  .ranking-list { grid-template-columns: 1fr; gap: 1px; }
+  .ranking-route { padding: 20px 16px; gap: 20px; border-top-width: 1px; }
+  .ranking-number { font-size: 32px; min-width: 42px; }
+  .ranking-route-kind { display: none; }
+  .ranking-route strong { margin-top: 0; font-size: 22px; }
+  .ranking-destination { min-height: 0; }
+  .ranking-route-action { padding-top: 12px; }
+}
+@keyframes journey-progress-vertical { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@media (prefers-reduced-motion: reduce) {
+  .journey-preview *, .landing-ranking[data-revealed="true"] li, .ranking-route, .ranking-route-action svg { animation: none !important; transition: none !important; }
+  .ranking-route:hover { transform: none; }
 }
 
 .card-lift {

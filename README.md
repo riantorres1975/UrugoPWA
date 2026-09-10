@@ -62,6 +62,8 @@ UruGo es una aplicación web para consultar las rutas de transporte público de 
 - Enlaces compartibles que conservan la ruta, dirección, origen y destino.
 - Instalación como PWA y una vista básica del recorrido cuando no hay conexión.
 - Asistente opcional para preguntas sobre transporte, limitado a los datos disponibles en el proyecto.
+- Reportes comunitarios sin cuenta, con una herramienta para dibujar recorridos corregidos sobre el mapa.
+- Rutas más consultadas ordenadas mediante actividad anónima agregada, sin guardar ubicación ni identidad.
 
 La ubicación del dispositivo solo se usa como origen automático cuando se encuentra dentro del área de servicio de Uruapan. Si el usuario está en otra ciudad, la aplicación conserva el destino y solicita que marque manualmente un origen dentro de Uruapan.
 
@@ -102,8 +104,8 @@ El cálculo se realiza en el cliente con los datos del proyecto. Mapbox se utili
 ### Instalación
 
 ```bash
-git clone https://github.com/riantorres1975/rutasuruapanpwa.git
-cd rutasuruapanpwa
+git clone https://github.com/riantorres1975/UrugoPWA.git
+cd UrugoPWA
 pnpm install
 ```
 
@@ -173,6 +175,7 @@ pnpm test              # ejecuta la suite de Vitest
 pnpm test:admin-integration # modera un reporte contra un Supabase exclusivo de pruebas
 pnpm api-key:create -- "Nombre" # emite una clave para aportes externos moderados
 pnpm guide:screenshots # actualiza las capturas de la aplicación
+pnpm readme:assets      # actualiza las capturas y el GIF del README
 pnpm db:seed-routes     # importa el JSON actual en Supabase
 ```
 
@@ -203,6 +206,16 @@ Los módulos principales son:
 `data/rutas_produccion_final.json` se conserva como respaldo incluido en la aplicación. En producción, Supabase puede entregar las versiones publicadas y el servidor vuelve automáticamente al JSON si la fuente remota no está disponible. El proyecto también incluye un editor visual local cuyo endpoint de guardado permanece deshabilitado por defecto.
 
 Los reportes sobre rutas, horarios o puntos incorrectos pueden enviarse desde la página [`/reportar-error`](https://www.urugo.app/reportar-error). Cuando Supabase está configurado quedan pendientes en el panel privado; ningún reporte modifica directamente el mapa. La guía de configuración está en [`docs/community-data.md`](./docs/community-data.md).
+
+### Reportar un recorrido incorrecto
+
+El formulario no requiere cuenta. Elige **Pasa por otras calles**, selecciona la ruta y abre el mapa para marcar las calles correctas en orden. Después agrega una referencia breve y envía la propuesta; permanecerá privada hasta que un administrador la revise.
+
+<p align="center">
+  <img src="./public/readme/reportar-ruta.gif" alt="Ejemplo animado para reportar y dibujar la corrección de una ruta en UruGo" width="640">
+</p>
+
+<p align="center"><sub>La línea azul es el recorrido publicado y la amarilla es la corrección propuesta.</sub></p>
 
 La portada ordena **Rutas más consultadas** con actividad anónima agregada de los últimos 30 días. Se cuenta como máximo una apertura diaria por ruta y contexto en cada navegador; Supabase conserva únicamente la clave de la ruta, la fecha, el contexto (`route_page` o `map`) y el total. No se guardan ubicación, IP, cuenta ni identificadores de visitantes. Hasta que existan cuatro rutas con actividad, la interfaz muestra una selección inicial en lugar de presentar datos insuficientes como un ranking.
 

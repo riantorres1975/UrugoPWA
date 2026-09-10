@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import LandingHeroPlanner from "@/components/LandingHeroPlanner";
 import LandingReports from "@/components/LandingReports";
+import LandingRanking from "@/components/LandingRanking";
 import ForceDark from "@/components/ForceDark";
 import FareUpdateNotice from "@/components/FareUpdateNotice";
 import PublicFooter from "@/components/PublicFooter";
@@ -213,31 +214,7 @@ export default async function LandingPage() {
               </Link>
             ))}
           </div>
-          <div className="mt-10 border-t border-[var(--public-border)] pt-6">
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h3 className="text-lg font-bold">
-                  {basedOnUsage ? "Rutas más consultadas" : "Rutas para empezar"}
-                </h3>
-                <p className="mt-1 text-xs text-[var(--public-muted)]">
-                  {basedOnUsage ? "Actividad anónima de los últimos 30 días" : "Selección inicial mientras reunimos actividad"}
-                </p>
-              </div>
-              <Link href="/rutas" className="inline-flex min-h-11 items-center gap-2 text-sm font-bold">Ver las 40 rutas <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
-            </div>
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-              {popularRoutes.map((route) => (
-                <Link key={route.slug} href={`/ruta/${route.slug}`} className="group flex min-h-36 flex-col items-start rounded-md border border-[var(--public-border)] bg-[var(--public-surface)] px-4 py-5 transition hover:border-[#6aab48]">
-                  <div className="flex w-full items-center justify-between gap-2">
-                    <span className="text-2xl font-extrabold">{route.name}</span>
-                    <ArrowUpRight className="h-4 w-4 shrink-0 text-[var(--public-muted)]" aria-hidden="true" />
-                  </div>
-                  <span className="mt-2 text-xs leading-5 text-[var(--public-muted)]">{route.destination ?? "Recorrido local"}</span>
-                  <span className="mt-auto pt-4 text-xs font-bold text-[var(--public-accent)]">Horario y recorrido</span>
-                </Link>
-              ))}
-            </div>
-          </div>
+          <LandingRanking basedOnUsage={basedOnUsage} routes={popularRoutes.map(({ slug, name, destination }) => ({ slug, name, destination }))} />
         </div>
       </section>
 

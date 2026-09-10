@@ -1,6 +1,6 @@
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { chromium } from "playwright";
+import { chromium } from "@playwright/test";
 
 const baseUrl = process.env.BASE_URL ?? "http://localhost:3000";
 const outputDir = join(process.cwd(), "public", "guide");
@@ -21,6 +21,7 @@ await context.addInitScript(() => {
   localStorage.setItem("rutas-uru-onboarded", "1");
   localStorage.setItem("voy-pwa-banner-dismissed", "1");
   localStorage.setItem("voy-pwa-ios-hint-dismissed", "1");
+  localStorage.setItem("urugo:announcement:dismissed:fare-update-2026-08", "capture");
 });
 
 const page = await context.newPage();
