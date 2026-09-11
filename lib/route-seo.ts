@@ -1,5 +1,5 @@
 import rutasProduccion from "@/data/rutas_produccion_final.json";
-import { getRouteDestination } from "@/lib/route-names";
+import { getRouteDestination, getRouteKey } from "@/lib/route-names";
 
 type ProductionRouteRaw = {
   id: number;
@@ -65,11 +65,10 @@ export function getRouteSeoItems(): RouteSeoItem[] {
       }
     } else {
       const destination = getRouteDestination(r.name);
-      const destinationSlug = destination ? `-${slugify(destination)}` : "";
       seen.set(r.name, {
         name: r.name,
         destination,
-        slug: `${slugify(r.name)}${destinationSlug}`,
+        slug: getRouteKey(r.name),
         color: r.color,
         hasIda: isTeleferico || !isVuelta,
         hasVuelta: isTeleferico || isVuelta,

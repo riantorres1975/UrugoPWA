@@ -25,7 +25,8 @@ import {
   type TripMarkerMode,
 } from "@/lib/trip-marker";
 
-type ArrowSegment = { coords: Coordinates[]; color: string; showLine?: boolean };
+import type { MapArrowSegment as ArrowSegment } from "@/lib/map-route-view";
+import { renderJourneyLayers } from "@/lib/map-journey-layers";
 import type { TransferOption } from "@/lib/transfers";
 import { getTransferSelectionKey } from "@/lib/transfer-selection";
 import { isDebugMode, getClosestPoint, buildDebugPointsGeoJSON, exportRouteCoords, replaceSegment } from "@/lib/map-debug";
@@ -33,10 +34,6 @@ import { isDebugMode, getClosestPoint, buildDebugPointsGeoJSON, exportRouteCoord
 const LAYER_GLOW_ID = "routes-glow";
 const LAYER_LINE_ID = "routes-line";
 const LAYER_HIT_ID = "routes-hit";
-const ARROWS_SOURCE = "arrows-source";
-const ARROWS_LINE_LAYER = "arrows-line";
-const ARROWS_LAYER = "arrows-layer";
-const ARROW_ICON_ID = "uru-chevron";
 const USER_LOC_SOURCE = "user-location-source";
 const USER_LOC_ACCURACY_LAYER = "user-location-accuracy";
 const USER_LOC_DOT_LAYER = "user-location-dot";
@@ -46,11 +43,6 @@ const TELEFERICO_GLOW_LAYER = "teleferico-glow";
 const TELEFERICO_STATIONS_LAYER = "teleferico-stations";
 const TELEFERICO_COLOR = "#00D4AA";
 const TELEFERICO_ROUTE_NAME = "Teleférico Uruapan";
-const TRANSFER_SOURCE = "transfer-source";
-const TRANSFER_SEG_A_LAYER = "transfer-seg-a";
-const TRANSFER_SEG_B_LAYER = "transfer-seg-b";
-const TRANSFER_WALK_LAYER = "transfer-walk";
-const TRANSFER_PIN_LAYER = "transfer-pin";
 const CAMERA_DURATION = 1200;
 const MIN_DRAW_DURATION = 1200;
 const MAX_DRAW_DURATION = 1800;
@@ -181,9 +173,11 @@ function setUserLocationLayerVisibility(map: mapboxgl.Map, visible: boolean) {
 }
 
 type MapProps = {
+  journeyFocus?: { request: number; coordinates: Coordinates[]; label: string; tripKey: string | null } | null;
   routes: RouteData[];
   nearbyRoutePaths: NearbyRoutePath[];
   nearbyFocusPoint?: Coordinates | null;
+  transferFocus?: { key: string; request: number; tripKey: string | null } | null;
   userLocationPoint?: Coordinates | null;
   userLocationAccuracyM?: number | null;
   selectedRouteId: number | null;
@@ -341,7 +335,7 @@ function glowOpacityExpression(
     return 0.0 as any;
   }
 
-  if (selectedRouteId === null && selectedSegmentActive) {
+  if (selectedSegmentActive) {
     return 0 as any;
   }
 
@@ -691,6 +685,11 @@ function applyRouteLayerStyles(
   );
 }
 
+function journeyCameraPadding(map: mapboxgl.Map) {
+  const height = map.getContainer().clientHeight;
+  return { top: Math.min(window.innerWidth >= 1024 ? 100 : 300, height * 0.42), right: 32, bottom: Math.min(180, height * 0.25), left: 32 };
+}
+
 function fitBoundsAnimated(
   map: mapboxgl.Map,
   bounds: [[number, number], [number, number]],
@@ -790,104 +789,6 @@ function renderUserLocationWhenReady(
   });
 }
 
-function clearTransferLayers(map: mapboxgl.Map) {
-  for (const layer of [TRANSFER_SEG_A_LAYER, TRANSFER_SEG_B_LAYER, TRANSFER_WALK_LAYER, TRANSFER_PIN_LAYER]) {
-    if (map.getLayer(layer)) map.removeLayer(layer);
-  }
-  if (map.getSource(TRANSFER_SOURCE)) map.removeSource(TRANSFER_SOURCE);
-}
-
-function renderTransferLayers(map: mapboxgl.Map, transfer: TransferOption) {
-  const geojson: GeoJSON.FeatureCollection = {
-    type: "FeatureCollection",
-    features: [
-      {
-        type: "Feature",
-        properties: { type: "segA" },
-        geometry: { type: "LineString", coordinates: transfer.segmentA }
-      },
-      {
-        type: "Feature",
-        properties: { type: "segB" },
-        geometry: { type: "LineString", coordinates: transfer.segmentB }
-      },
-      {
-        type: "Feature",
-        properties: { type: "walk", walkMeters: transfer.walkMeters },
-        geometry: {
-          type: "LineString",
-          coordinates: [transfer.transferPoint, transfer.segmentB[0]]
-        }
-      },
-      {
-        type: "Feature",
-        properties: { type: "pin" },
-        geometry: { type: "Point", coordinates: transfer.transferPoint }
-      }
-    ]
-  };
-
-  const source = map.getSource(TRANSFER_SOURCE) as mapboxgl.GeoJSONSource | undefined;
-  if (source) {
-    source.setData(geojson);
-  } else {
-    map.addSource(TRANSFER_SOURCE, { type: "geojson", data: geojson });
-  }
-
-  if (!map.getLayer(TRANSFER_SEG_A_LAYER)) {
-    map.addLayer({
-      id: TRANSFER_SEG_A_LAYER,
-      type: "line",
-      source: TRANSFER_SOURCE,
-      filter: ["==", ["get", "type"], "segA"],
-      layout: { "line-cap": "round", "line-join": "round" },
-      paint: { "line-color": "#60a5fa", "line-width": 5, "line-opacity": 0.95 }
-    });
-  }
-
-  if (!map.getLayer(TRANSFER_SEG_B_LAYER)) {
-    map.addLayer({
-      id: TRANSFER_SEG_B_LAYER,
-      type: "line",
-      source: TRANSFER_SOURCE,
-      filter: ["==", ["get", "type"], "segB"],
-      layout: { "line-cap": "round", "line-join": "round" },
-      paint: { "line-color": "#34d399", "line-width": 5, "line-opacity": 0.95 }
-    });
-  }
-
-  if (!map.getLayer(TRANSFER_WALK_LAYER)) {
-    map.addLayer({
-      id: TRANSFER_WALK_LAYER,
-      type: "line",
-      source: TRANSFER_SOURCE,
-      filter: ["==", ["get", "type"], "walk"],
-      layout: { "line-cap": "round", "line-join": "round" },
-      paint: {
-        "line-color": "#ffffff",
-        "line-width": 2.5,
-        "line-opacity": 0.7,
-        "line-dasharray": [2, 2.5]
-      }
-    });
-  }
-
-  if (!map.getLayer(TRANSFER_PIN_LAYER)) {
-    map.addLayer({
-      id: TRANSFER_PIN_LAYER,
-      type: "circle",
-      source: TRANSFER_SOURCE,
-      filter: ["==", ["get", "type"], "pin"],
-      paint: {
-        "circle-radius": 9,
-        "circle-color": "#f59e0b",
-        "circle-stroke-color": "#ffffff",
-        "circle-stroke-width": 2.5
-      }
-    });
-  }
-}
-
 function interpolatePoint(start: [number, number], end: [number, number], ratio: number): [number, number] {
   return [start[0] + (end[0] - start[0]) * ratio, start[1] + (end[1] - start[1]) * ratio];
 }
@@ -931,59 +832,6 @@ function shouldAnimateRouteDraw() {
   const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   return !coarsePointer && !reducedMotion;
-}
-
-function buildArrowsGeoJSON(segments: ArrowSegment[]): GeoJSON.FeatureCollection {
-  return {
-    type: "FeatureCollection",
-    features: segments.map((seg) => ({
-      type: "Feature",
-      properties: { color: seg.color, showLine: seg.showLine ? 1 : 0 },
-      geometry: { type: "LineString", coordinates: seg.coords }
-    }))
-  };
-}
-
-// Render a clean stroked chevron (V) pointing up, returned as raw RGBA for map.addImage.
-// Used as an SDF icon so we can tint it per-route via icon-color.
-function createChevronImage(): { width: number; height: number; data: Uint8Array } {
-  const size = 48;
-  if (typeof document === "undefined") {
-    return { width: size, height: size, data: new Uint8Array(size * size * 4) };
-  }
-  const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) {
-    return { width: size, height: size, data: new Uint8Array(size * size * 4) };
-  }
-
-  // Chevron pointing RIGHT (+x). With symbol-placement: "line" and
-  // icon-rotation-alignment: "map", Mapbox rotates the icon so its right
-  // edge faces the line's direction of travel — so "right" = "forward".
-  ctx.strokeStyle = "#ffffff";
-  ctx.lineWidth = size * 0.18;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  ctx.beginPath();
-  ctx.moveTo(size * 0.38, size * 0.20);
-  ctx.lineTo(size * 0.72, size * 0.50);
-  ctx.lineTo(size * 0.38, size * 0.80);
-  ctx.stroke();
-
-  const imageData = ctx.getImageData(0, 0, size, size);
-  return {
-    width: size,
-    height: size,
-    data: new Uint8Array(imageData.data.buffer.slice(0))
-  };
-}
-
-function ensureChevronImage(map: mapboxgl.Map) {
-  if (map.hasImage(ARROW_ICON_ID)) return;
-  const img = createChevronImage();
-  map.addImage(ARROW_ICON_ID, img, { sdf: true });
 }
 
 function renderDebugPointLayer(map: mapboxgl.Map, coordinates: Coordinates[], step: number) {
@@ -1108,9 +956,11 @@ function clearAllDebugLayers(map: mapboxgl.Map) {
 }
 
 function MapComponent({
+  journeyFocus = null,
   routes,
   nearbyRoutePaths,
   nearbyFocusPoint = null,
+  transferFocus = null,
   userLocationPoint = null,
   userLocationAccuracyM = null,
   selectedRouteId,
@@ -1137,6 +987,12 @@ function MapComponent({
 }: MapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
+  const handledTransferFocusRef = useRef<number | null>(null);
+  const handledJourneyFocusRef = useRef<number | null>(null);
+  const [journeyMoved, setJourneyMoved] = useState(false);
+  const [overviewFocus, setOverviewFocus] = useState<number | null>(null);
+  const [overviewTransferFocus, setOverviewTransferFocus] = useState<number | null>(null);
+  const [resumedJourneyFocus, setResumedJourneyFocus] = useState<number | null>(null);
   const routesRef = useRef(routes);
   const nearbyRoutePathsRef = useRef(nearbyRoutePaths);
   const selectedRouteIdRef = useRef(selectedRouteId);
@@ -1188,8 +1044,11 @@ function MapComponent({
   const [isLoading, setIsLoading] = useState(true);
   const [locationLoading, setLocationLoading] = useState(false);
   const [releasedTripKey, setReleasedTripKey] = useState<string | null>(null);
+  const [resumedTransferFocus, setResumedTransferFocus] = useState<number | null>(null);
   const isTripFollowing = Boolean(
-    tripModeActive && tripSessionKey && releasedTripKey !== tripSessionKey,
+    tripModeActive && tripSessionKey && releasedTripKey !== tripSessionKey
+      && !(transferFocus?.tripKey === tripSessionKey && transferFocus.request !== resumedTransferFocus)
+      && !(journeyFocus?.tripKey === tripSessionKey && journeyFocus.request !== resumedJourneyFocus),
   );
   const [debugActive] = useState(isDebugMode);
   const [storedDebugEditor, dispatchDebugEditor] = useReducer(
@@ -1317,81 +1176,32 @@ function MapComponent({
     debugPhaseRef.current = debugPhase;
   }, [debugPhase]);
 
-  // Update direction arrows whenever arrowSegments changes
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !isMapReadyRef.current) return;
+    renderJourneyLayers(map, arrowSegments, originPoint, destinationPoint,
+      Boolean(selectedTransfer) || Boolean(selectedRouteSegment?.length), Boolean(selectedTransfer));
+  }, [arrowSegments, destinationPoint, isLoading, originPoint, selectedRouteSegment, selectedTransfer]);
 
-    ensureChevronImage(map);
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !isMapReadyRef.current) return;
+    const onMove = (event: { originalEvent?: unknown }) => {
+      if (event.originalEvent) setJourneyMoved(true);
+    };
+    map.on("movestart", onMove);
+    return () => { map.off("movestart", onMove); };
+  }, [isLoading]);
 
-    const hasArrows = arrowSegments.length > 0;
-    const geojson = buildArrowsGeoJSON(arrowSegments);
-    const source = map.getSource(ARROWS_SOURCE) as mapboxgl.GeoJSONSource | undefined;
-    if (source) {
-      source.setData(geojson);
-    } else {
-      map.addSource(ARROWS_SOURCE, { type: "geojson", data: geojson });
-    }
-
-    // Defensive: hide arrow layers when there are no segments. Belt-and-suspenders
-    // alongside setData(empty) — guards against any stale render state on Mapbox.
-    const visibility = hasArrows ? "visible" : "none";
-    if (map.getLayer(ARROWS_LINE_LAYER)) {
-      map.setLayoutProperty(ARROWS_LINE_LAYER, "visibility", visibility);
-    }
-    if (map.getLayer(ARROWS_LAYER)) {
-      map.setLayoutProperty(ARROWS_LAYER, "visibility", visibility);
-    }
-
-    if (!map.getLayer(ARROWS_LINE_LAYER)) {
-      map.addLayer({
-        id: ARROWS_LINE_LAYER,
-        type: "line",
-        source: ARROWS_SOURCE,
-        filter: ["==", ["get", "showLine"], 1],
-        layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": ["get", "color"], "line-width": 5, "line-opacity": 0.92 }
-      });
-    }
-
-    // Direction chevrons placed along each LineString — zoom-dependent size
-    // and spacing so they remain visible at city zooms (11-13) and not too
-    // dense when zoomed in (15+).
-    if (!map.getLayer(ARROWS_LAYER)) {
-      map.addLayer({
-        id: ARROWS_LAYER,
-        type: "symbol",
-        source: ARROWS_SOURCE,
-        layout: {
-          "symbol-placement": "line",
-          "symbol-spacing": [
-            "interpolate", ["linear"], ["zoom"],
-            11, 55,
-            14, 90,
-            17, 130
-          ],
-          "icon-image": ARROW_ICON_ID,
-          "icon-rotation-alignment": "map",
-          "icon-pitch-alignment": "map",
-          "icon-allow-overlap": true,
-          "icon-ignore-placement": true,
-          "icon-keep-upright": false,
-          "icon-size": [
-            "interpolate", ["linear"], ["zoom"],
-            11, 0.35,
-            14, 0.55,
-            17, 0.85
-          ]
-        },
-        paint: {
-          "icon-color": ["get", "color"],
-          "icon-halo-color": "rgba(0, 0, 0, 0.55)",
-          "icon-halo-width": 1.2,
-          "icon-opacity": 0.95
-        }
-      });
-    }
-  }, [arrowSegments, isLoading]);
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !isMapReadyRef.current || !journeyFocus || handledJourneyFocusRef.current === journeyFocus.request) return;
+    const bounds = getBoundsFromCoordinates(journeyFocus.coordinates);
+    if (!bounds) return;
+    handledJourneyFocusRef.current = journeyFocus.request;
+    tripFollowingRef.current = false;
+    fitBoundsAnimated(map, bounds, { ...journeyCameraPadding(map), duration: 700, maxZoom: 17 });
+  }, [isLoading, journeyFocus, tripSessionKey]);
 
   // Toggle teleférico layer visibility + camera
   useEffect(() => {
@@ -1436,12 +1246,10 @@ function MapComponent({
     );
 
     if (!selectedTransfer) {
-      clearTransferLayers(map);
       lastFittedTransferKeyRef.current = null;
       return;
     }
 
-    renderTransferLayers(map, selectedTransfer);
 
     const allCoords = [...selectedTransfer.segmentA, ...selectedTransfer.segmentB];
     const bounds = getBoundsFromCoordinates(allCoords);
@@ -1451,6 +1259,17 @@ function MapComponent({
       fitBoundsAnimated(map, bounds, { top: 120, right: 32, bottom: 160, left: 32, duration: 1200, maxZoom: 15 });
     }
   }, [debugActive, isLoading, selectedTransfer]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !isMapReadyRef.current || !selectedTransfer || !transferFocus
+      || transferFocus.key !== getTransferSelectionKey(selectedTransfer)
+      || handledTransferFocusRef.current === transferFocus.request) return;
+    handledTransferFocusRef.current = transferFocus.request;
+    tripFollowingRef.current = false;
+    const bounds = getBoundsFromCoordinates([selectedTransfer.transferPoint, selectedTransfer.segmentB[0] ?? selectedTransfer.transferPoint]);
+    if (bounds) fitBoundsAnimated(map, bounds, { top: 260, right: 40, bottom: 170, left: 40, duration: 700, maxZoom: 17 });
+  }, [isLoading, selectedTransfer, transferFocus, tripModeActive, tripSessionKey]);
 
   useEffect(() => {
     tripModeActiveRef.current = tripModeActive;
@@ -1865,9 +1684,6 @@ function MapComponent({
         if (telefericoGeoJSONRef.current) {
           addTelefericoLayers(telefericoGeoJSONRef.current);
         }
-        if (selectedTransferRef.current) {
-          renderTransferLayers(map, selectedTransferRef.current);
-        }
         if (userLocationRef.current) {
           renderUserLocation(
             map,
@@ -1876,52 +1692,8 @@ function MapComponent({
           );
           setUserLocationLayerVisibility(map, !tripModeActiveRef.current);
         }
-        // Restore arrow layers after style reload (image is tied to style, re-add it)
-        ensureChevronImage(map);
-        const arrowGeojson = buildArrowsGeoJSON(arrowSegmentsRef.current);
-        if (!map.getSource(ARROWS_SOURCE)) {
-          map.addSource(ARROWS_SOURCE, { type: "geojson", data: arrowGeojson });
-        }
-        if (!map.getLayer(ARROWS_LINE_LAYER)) {
-          map.addLayer({
-            id: ARROWS_LINE_LAYER,
-            type: "line",
-            source: ARROWS_SOURCE,
-            filter: ["==", ["get", "showLine"], 1],
-            layout: { "line-cap": "round", "line-join": "round" },
-            paint: { "line-color": ["get", "color"], "line-width": 5, "line-opacity": 0.92 }
-          });
-        }
-        if (!map.getLayer(ARROWS_LAYER)) {
-          map.addLayer({
-            id: ARROWS_LAYER,
-            type: "symbol",
-            source: ARROWS_SOURCE,
-            layout: {
-              "symbol-placement": "line",
-              "symbol-spacing": [
-                "interpolate", ["linear"], ["zoom"],
-                11, 55, 14, 90, 17, 130
-              ],
-              "icon-image": ARROW_ICON_ID,
-              "icon-rotation-alignment": "map",
-              "icon-pitch-alignment": "map",
-              "icon-allow-overlap": true,
-              "icon-ignore-placement": true,
-              "icon-keep-upright": false,
-              "icon-size": [
-                "interpolate", ["linear"], ["zoom"],
-                11, 0.35, 14, 0.55, 17, 0.85
-              ]
-            },
-            paint: {
-              "icon-color": ["get", "color"],
-              "icon-halo-color": "rgba(0, 0, 0, 0.55)",
-              "icon-halo-width": 1.2,
-              "icon-opacity": 0.95
-            }
-          });
-        }
+        renderJourneyLayers(map, arrowSegmentsRef.current, originPointRef.current, destinationPointRef.current,
+          Boolean(selectedTransferRef.current) || Boolean(selectedRouteSegmentRef.current?.length), Boolean(selectedTransferRef.current));
         if (debugActive && debugCoordsRef.current.length > 0) {
           renderDebugPointLayer(map, debugCoordsRef.current, debugStepRef.current);
         }
@@ -2314,6 +2086,8 @@ function MapComponent({
     if (!map || !tripLocation) return;
     tripFollowingRef.current = true;
     setReleasedTripKey(null);
+    setResumedTransferFocus(transferFocus?.request ?? null);
+    setResumedJourneyFocus(journeyFocus?.request ?? null);
     map.easeTo({
       center: tripMarkerCoordinateRef.current ?? tripLocation,
       zoom: Math.max(map.getZoom(), 15.5),
@@ -2328,6 +2102,21 @@ function MapComponent({
     if (!tripModeActiveRef.current || !tripFollowingRef.current) return;
     tripFollowingRef.current = false;
     if (tripSessionKeyRef.current) setReleasedTripKey(tripSessionKeyRef.current);
+  };
+
+  const showWholeJourney = () => {
+    const map = mapRef.current;
+    if (!map) return;
+    const coordinates = arrowSegments.flatMap((segment) => segment.coords);
+    if (originPoint) coordinates.push(originPoint);
+    if (destinationPoint) coordinates.push(destinationPoint);
+    const bounds = getBoundsFromCoordinates(coordinates);
+    if (!bounds) return;
+    releaseTripCamera();
+    fitBoundsAnimated(map, bounds, { ...journeyCameraPadding(map), duration: 700, maxZoom: 15 });
+    setJourneyMoved(false);
+    setOverviewFocus(journeyFocus?.request ?? null);
+    setOverviewTransferFocus(transferFocus?.request ?? null);
   };
 
   if (!mapToken) {
@@ -2352,11 +2141,18 @@ function MapComponent({
         role="application"
         aria-label="Mapa interactivo de rutas de transporte de Uruapan. Toca para marcar puntos de origen y destino."
         onPointerDown={releaseTripCamera}
-        onWheel={releaseTripCamera}
+        onWheel={() => { setJourneyMoved(true); releaseTripCamera(); }}
       />
 
       {isLoading && (
         <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-b from-slate-950/20 to-transparent" aria-hidden="true" />
+      )}
+
+      {(journeyMoved || (journeyFocus && journeyFocus.request !== overviewFocus) || (transferFocus && transferFocus.request !== overviewTransferFocus)) && (selectedRouteSegment?.length || selectedTransfer) && (
+        <button type="button" onClick={showWholeJourney}
+          className="ov-panel ov-border ov-text absolute bottom-[170px] right-4 z-20 min-h-11 rounded-full border px-4 text-xs font-semibold shadow-lg lg:bottom-6">
+          Ver todo el viaje
+        </button>
       )}
 
       {/* Locate-me button + accuracy warning — top-right; en desktop debajo del control de zoom */}

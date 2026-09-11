@@ -15,6 +15,7 @@ export type ProductionRoute = {
   color: string;
   corridor_width_m: number;
   verified: boolean;
+  last_verified_at?: string | null;
   path: Coordinates[];
   landmarks: ProductionRouteLandmark[];
 };

@@ -13,6 +13,9 @@ import BottomSheet from "@/components/BottomSheet";
 import ChatBotLauncher from "@/components/ChatBotLauncher";
 import FareUpdateNotice from "@/components/FareUpdateNotice";
 import ActiveRouteSummary from "@/components/ActiveRouteSummary";
+import JourneyPreview from "@/components/JourneyPreview";
+import JourneyFeedback from "@/components/JourneyFeedback";
+import RouteFreshness from "@/components/RouteFreshness";
 import NearbyToast from "@/components/NearbyToast";
 import OnboardingGate from "@/components/OnboardingGate";
 import { DesktopMapSidebar, MobileMapControls } from "@/components/MapResponsiveControls";
@@ -37,9 +40,9 @@ import { addRecentTrip, getRecentTrips, RECENT_TRIPS_EVENT, type RecentTrip } fr
 import { formatRouteLabel, getRouteDestination } from "@/lib/route-names";
 import { trackRouteConsultation } from "@/lib/route-consultation-client";
 import type { Coordinates } from "@/lib/types";
-import { findMatchingTransfer } from "@/lib/transfer-selection";
+import { findMatchingTransfer, getTransferSelectionKey } from "@/lib/transfer-selection";
 import { buildSharedRouteSegment } from "@/lib/shared-route";
-import { formatCoordinateParam, getSharedTransferIdentity } from "@/lib/shared-map-state";
+import { getSharedTransferIdentity } from "@/lib/shared-map-state";
 import { haversineMeters } from "@/lib/geo";
 import { findNearbyRouteIds } from "@/lib/nearby-routes";
 import { consumeNearbyRoutesRequest, hasNearbyRoutesRequest } from "@/lib/nearby-request";
@@ -92,6 +95,7 @@ const RouteList = dynamic(loadRouteList, {
 const RoutePreviewSVG = dynamic(() => import("@/components/RoutePreviewSVG"));
 const RouteSchedule = dynamic(() => import("@/components/RouteSchedule"));
 const TripModePanel = dynamic(() => import("@/components/TripModePanel"));
+const PendingJourneyReports = dynamic(() => import("@/components/PendingJourneyReports"), { ssr: false });
 
 type RoutesMapMode = "all-visible" | "all-highlighted";
 const MAP_MODE_KEY = "rutas-map-mode";
@@ -229,9 +233,9 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   const [shouldLoadMap, setShouldLoadMap] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [routeListReady, setRouteListReady] = useState(false);
-  const [isResultSheetOpen, setIsResultSheetOpen] = useState(
-    Boolean(initialUrlState.sharedState?.origin && initialUrlState.sharedState.destination),
-  );
+  const [isResultSheetOpen, setIsResultSheetOpen] = useState(false);
+  const [journeyFocus, setJourneyFocus] = useState<{ request: number; coordinates: Coordinates[]; label: string; tripKey: string | null } | null>(null);
+  const [namedOrigin, setNamedOrigin] = useState<{ point: Coordinates; label: string } | null>(null);
   const {
     announceLandmark,
     cancelStop: cancelStopTrip,
@@ -247,6 +251,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     updateLocation: updateTripLocation,
   } = useTripSession();
   const [feedbackTripKey, setFeedbackTripKey] = useState<string | null>(null);
+  const [transferFocus, setTransferFocus] = useState<{ key: string; request: number; tripKey: string | null } | null>(null);
   const lastSavedTripKeyRef = useRef("");
   const {
     activePoint,
@@ -518,6 +523,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   }, [requestLocation, setManualOrigin, setManualOriginSource, setShowHint]);
 
   const handleMapPick = useCallback((point: Coordinates) => {
+    setIsResultSheetOpen(false);
     setShowHint(false);
     setSharedRouteSegment(null);
     setSharedSegmentColor(null);
@@ -577,6 +583,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
 
   // El mismo buscador permite fijar origen o destino según el punto activo.
   const handlePlaceSearch = useCallback((result: PlaceResult) => {
+    setIsResultSheetOpen(false);
     setSharedRouteSegment(null);
     setSharedSegmentColor(null);
     setSelectedTransfer(null);
@@ -584,6 +591,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     setShowHint(false);
 
     if (activePointRef.current === "origin") {
+      setNamedOrigin({ point: result.center, label: result.label });
       setManualOrigin(result.center);
       setManualOriginSource(result.source);
       clearAccuracyWarning();
@@ -694,14 +702,6 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     [bestSuggestion]
   );
 
-  // ── Aviso "prepárate para bajar" ─────────────────────────────────────────
-  // Con una ruta sugerida activa y GPS encendido, avisamos (vibración + toast)
-  // cuando el usuario se acerca a su punto de bajada. Se "arma" solo después
-  // de haber estado lejos (>500 m) para no disparar al planear viajes cortos.
-  const bestSuggestionRouteId = bestSuggestion?.routeId ?? null;
-  const activeTripKey = bestSuggestionRouteId !== null && destinationPoint
-    ? `${bestSuggestionRouteId}:${formatCoordinateParam(destinationPoint)}`
-    : null;
   const plannedJourney = useMemo<TripJourney | null>(() => {
     if (!destinationPoint) return null;
 
@@ -762,7 +762,11 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     ? getTripJourneyKey(plannedJourney)
     : null;
   const isTripActive = tripSession !== null && tripSession.key === plannedJourneyKey;
-  const feedbackGiven = activeTripKey !== null && feedbackTripKey === activeTripKey;
+  const feedbackKey = plannedJourneyKey ?? (selectedRoute ? `route:${selectedRoute.id}` : showTeleferico ? "teleferico" : null);
+  const feedbackGiven = feedbackKey !== null && feedbackTripKey === feedbackKey;
+  const feedbackRoutes = bestSuggestion ? [bestSuggestion.ruta]
+    : selectedTransfer ? [selectedTransfer.routeAName, selectedTransfer.routeBName]
+      : selectedRoute ? [selectedRoute.name] : showTeleferico ? ["Teleférico Uruapan"] : [];
   const tripLocationStatus = geoStatus === "error" || geoStatus === "outside" || geoStatus === "inaccurate"
     ? "unavailable"
     : liveLocation
@@ -871,18 +875,19 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   ]);
 
   const handleRouteFeedback = useCallback((util: "si" | "no") => {
-    if (activeTripKey) setFeedbackTripKey(activeTripKey);
-    const current = suggestions[0];
+    if (feedbackKey) setFeedbackTripKey(feedbackKey);
     try {
       track("ruta_feedback", {
         util,
-        ruta: current?.ruta ?? "desconocida",
+        ruta: bestSuggestion?.ruta ?? selectedTransfer?.routeAName ?? selectedRoute?.name ?? "Teleférico Uruapan",
+        tipo: selectedTransfer && !bestSuggestion ? "transbordo" : "directa",
+        ...(selectedTransfer && !bestSuggestion ? { ruta_destino: selectedTransfer.routeBName } : {}),
         destino_tipo: requestedDestination ? "busqueda" : "punto_mapa",
       });
     } catch {
       // analytics no disponible: ignorar
     }
-  }, [activeTripKey, suggestions, requestedDestination]);
+  }, [feedbackKey, bestSuggestion, selectedTransfer, selectedRoute, requestedDestination]);
 
   useEffect(() => {
     if (!isTripActive || !tripSession) return;
@@ -1042,17 +1047,25 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     return "No encontramos ruta directa. Ajusta origen o destino.";
   }, [activePoint, bestSuggestion, destinationPoint, flowStep, geoAccuracyWarn, geoStatus, isCalculatingSuggestions, manualOrigin, requestedDestination, transfers]);
 
-  // Abrir el result sheet una sola vez cuando el usuario coloca el pin B y termina el cálculo.
+  // Keep direct journeys on the map; open the sheet when the user needs to choose a transfer.
   // La ref evita re-aperturas causadas por refrescados del GPS.
   const resultSheetOpenedForDestRef = useRef<string | null>(null);
   useEffect(() => {
-    if (flowStep !== 3 || isCalculatingSuggestions) return;
+    if (flowStep !== 3 || isCalculatingSuggestions || !currentCalculation) return;
     const destKey = destinationPoint ? destinationPoint.join(",") : null;
     if (destKey && destKey !== resultSheetOpenedForDestRef.current) {
-      resultSheetOpenedForDestRef.current = destKey;
-      setIsResultSheetOpen(true);
+      if (bestSuggestion) {
+        resultSheetOpenedForDestRef.current = destKey;
+        return;
+      }
+      // Present choices after the map has rendered the calculation result.
+      const frame = window.requestAnimationFrame(() => {
+        resultSheetOpenedForDestRef.current = destKey;
+        setIsResultSheetOpen(true);
+      });
+      return () => window.cancelAnimationFrame(frame);
     }
-  }, [flowStep, isCalculatingSuggestions, destinationPoint]);
+  }, [bestSuggestion, currentCalculation, flowStep, isCalculatingSuggestions, destinationPoint]);
 
   useEffect(() => {
     if (!showHint) {
@@ -1067,6 +1080,21 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
       window.clearTimeout(timeout);
     };
   }, [flowStep, setShowHint, showHint]);
+
+  const focusJourneyPoint = (coordinates: Coordinates[], label: string) => {
+    activateMap();
+    setJourneyFocus((previous) => ({ request: (previous?.request ?? 0) + 1, coordinates, label, tripKey: isTripActive ? tripSession?.key ?? null : null }));
+    setIsResultSheetOpen(false);
+    setShowHint(false);
+  };
+  const journeyInstructionActions = selectedTransfer ? [
+    { label: "Sube aquí", onClick: () => focusJourneyPoint([selectedTransfer.segmentA[0]], "Subida") },
+    { label: "Ver caminata del transbordo", onClick: () => focusJourneyPoint([selectedTransfer.transferPoint, selectedTransfer.segmentB[0]], "Transbordo") },
+    { label: "Baja aquí", onClick: () => focusJourneyPoint([selectedTransfer.segmentB[selectedTransfer.segmentB.length - 1]], "Bajada") },
+  ] : bestSuggestion ? [
+    { label: "Sube aquí", onClick: () => focusJourneyPoint([bestSuggestion.segment[0]], "Subida") },
+    { label: "Baja aquí", onClick: () => focusJourneyPoint([bestSuggestion.segment[bestSuggestion.segment.length - 1]], "Bajada") },
+  ] : [];
 
   if (fetchError) {
     const offline = !isOnline;
@@ -1115,6 +1143,8 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
         />
 
         <RoutePlannerPoints
+          originPlaceLabel={namedOrigin && manualOrigin?.join(",") === namedOrigin.point.join(",") ? namedOrigin.label : originPoint ? findNearestRouteLandmark(originPoint, polylineRoutes.map((route) => route.landmarks), 100)?.name : undefined}
+          destinationPlaceLabel={destinationSource && requestedDestination ? requestedDestination : destinationPoint ? findNearestRouteLandmark(destinationPoint, polylineRoutes.map((route) => route.landmarks), 100)?.name : undefined}
           abExpanded={abExpanded}
           activePoint={activePoint}
           destinationPoint={destinationPoint}
@@ -1151,8 +1181,8 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
         {flowStep === 3 && !hideStep3 && (
           <div
             aria-live="polite"
-            className="ov-panel-soft w-full overflow-hidden rounded-2xl border shadow-[0_4px_24px_rgba(232,93,47,0.10)] backdrop-blur-xl transition-all duration-300"
-            style={{ borderLeftWidth: "3px", borderLeftColor: selectedRoute?.color ?? "#E85D2F" }}
+            className="ov-panel-soft w-full overflow-hidden rounded-2xl border shadow-lg transition-all duration-300"
+            style={{ borderLeftWidth: "3px", borderLeftColor: bestSuggestion?.routeColor ?? selectedRoute?.color ?? "#b8e840" }}
           >
             {isCalculatingSuggestions ? (
               <div className="flex items-center gap-3 px-4 py-3.5">
@@ -1162,9 +1192,8 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
             ) : bestSuggestion ? (
               <>
                 <DirectRouteResult
+                  showTitle={!isMobile}
                   alternatives={suggestions.slice(1)}
-                  feedbackGiven={feedbackGiven}
-                  isMobile={isMobile}
                   isTripActive={isTripActive}
                   route={bestSuggestion}
                   routeEta={bestSuggestionEta}
@@ -1178,14 +1207,13 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
                     setShowHint(true);
                     if (isMobile) setIsResultSheetOpen(false);
                   }}
-                  onFeedback={handleRouteFeedback}
-                  onPromote={promoteSuggestion}
-                  onShare={() => shareDirectRoute(bestSuggestion)}
-                  onShowAlternatives={() => {
-                    if (!isMobile) return;
-                    setIsResultSheetOpen(false);
-                    window.setTimeout(openRouteList, 50);
+                  onPromote={(routeId) => {
+                    setSelectedRouteId(null);
+                    setSharedRouteSegment(null);
+                    setSharedSegmentColor(null);
+                    promoteSuggestion(routeId);
                   }}
+                  onShare={() => shareDirectRoute(bestSuggestion)}
                   onToggleTrip={isTripActive ? handleStopTrip : handleStartTrip}
                   onViewMap={() => {
                     setShowHint(false);
@@ -1199,6 +1227,13 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
               </>
             ) : selectedTransfer ? (
               <SelectedTransferResult
+                transferWalkMinutes={walkMinutes(selectedTransfer.walkMeters)}
+                transferLandmark={findNearestRouteLandmark(selectedTransfer.transferPoint, [polylineRoutesById.get(selectedTransfer.routeAId)?.landmarks, polylineRoutesById.get(selectedTransfer.routeBId)?.landmarks], 300)?.name ?? null}
+                onViewTransfer={() => {
+                  activateMap();
+                  setTransferFocus((previous) => ({ key: getTransferSelectionKey(selectedTransfer), request: (previous?.request ?? 0) + 1, tripKey: isTripActive ? tripSession?.key ?? null : null }));
+                  if (isMobile) setIsResultSheetOpen(false);
+                }}
                 isTripActive={isTripActive}
                 transfer={selectedTransfer}
                 onClear={handleClearSelection}
@@ -1224,7 +1259,9 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
             )}
 
             <ActiveRouteSummary
+              showActions={!bestSuggestion && !selectedTransfer}
               instructions={routeTextSummary}
+              instructionActions={journeyInstructionActions}
               routeColor={selectedRoute?.color ?? null}
               routeName={selectedRoute?.name ?? null}
               showTeleferico={showTeleferico}
@@ -1232,8 +1269,12 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
               onClear={handleClearSelection}
               onShare={() => shareActiveSelection(selectedRoute, selectedSuggestion)}
             >
-              {selectedRoute && <RouteSchedule routeName={selectedRoute.name} />}
+              {!bestSuggestion && !selectedTransfer && selectedRoute && <RouteSchedule routeName={selectedRoute.name} />}
+              {!isCalculatingSuggestions && feedbackKey && feedbackRoutes.length > 0 && (
+                <JourneyFeedback key={feedbackKey} routes={feedbackRoutes} feedbackGiven={feedbackGiven} onFeedback={handleRouteFeedback} />
+              )}
             </ActiveRouteSummary>
+            {!isCalculatingSuggestions && <RouteFreshness routes={(bestSuggestion ? [polylineRoutesById.get(bestSuggestion.routeId)] : selectedTransfer ? [polylineRoutesById.get(selectedTransfer.routeAId), polylineRoutesById.get(selectedTransfer.routeBId)] : selectedRoute ? [selectedRoute] : []).filter((route) => route !== undefined)} />}
           </div>
         )}
       </>
@@ -1382,6 +1423,8 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
             routes={mapRoutes}
             nearbyRoutePaths={polylineRoutes}
             nearbyFocusPoint={nearbyRequested ? userLocation : null}
+            transferFocus={transferFocus}
+            journeyFocus={journeyFocus}
             userLocationPoint={userLocation}
             userLocationAccuracyM={locationAccuracyM}
             selectedRouteId={selectedRouteId}
@@ -1547,36 +1590,14 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
           className={`absolute inset-x-4 z-30 items-end gap-2 lg:hidden ${isTripActive ? "hidden" : "flex"}`}
           style={{ bottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }}
         >
-{/* Botón resultado — solo visible en paso 3 */}
-          <button
-            type="button"
-            onClick={() => setIsResultSheetOpen(true)}
-            aria-label="Ver resultado de ruta"
-            className={`ov-panel inline-flex h-12 max-w-[55%] items-center gap-2 rounded-2xl border pl-3.5 pr-4 text-[14px] font-semibold shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl transition active:scale-[0.97] ${
-              resultSheetOpen
-                ? "border-lima/50 shadow-[0_8px_32px_rgba(232,93,47,0.18)]"
-                : "hover:border-lima/40"
-            } ${flowStep === 3 ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}`}
-            style={{ transition: "opacity 250ms, border-color 200ms" }}
-          >
-            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0 text-lima" aria-hidden="true">
-              <path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13V7m0 13 6-3M9 7l6-3m6 17V4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            <span className="ov-text truncate">
-              {isCalculatingSuggestions
-                ? "Buscando..."
-                : bestSuggestion
-                  ? formatRouteLabel(bestSuggestion.ruta)
-                  : selectedTransfer
-                    ? `${selectedTransfer.routeAName} → ${selectedTransfer.routeBName}`
-                    : transfers.length > 0
-                      ? `${transfers.length} con transbordo`
-                      : "Sin ruta"}
-            </span>
-          </button>
+          {flowStep === 3 && !resultSheetOpen && !isSheetOpen && (
+            <div className="absolute inset-x-0 bottom-16">
+              <JourneyPreview route={bestSuggestion} transfer={selectedTransfer} pending={isCalculatingSuggestions} onOpen={() => setIsResultSheetOpen(true)} />
+            </div>
+          )}
 
           {/* Chat + Rutas apilados verticalmente — pegados a la esquina inferior derecha */}
-          <div className="flex shrink-0 flex-col items-end gap-2 self-end ml-auto">
+          <div className="flex shrink-0 flex-row items-end gap-2 self-end ml-auto">
             {/* Botón chat — se oculta cuando el sheet está abierto */}
             <div className={`pointer-events-auto transition-all duration-200 ${isSheetOpen ? "pointer-events-none opacity-0 translate-y-1" : "opacity-100 translate-y-0"}`}>
               <ChatBotLauncher />
@@ -1679,7 +1700,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
             : bestSuggestion
               ? formatRouteLabel(bestSuggestion.ruta)
               : selectedTransfer
-                ? `${selectedTransfer.routeAName} → ${selectedTransfer.routeBName}`
+                ? "Tu viaje con transbordo"
                 : transfers.length > 0
                   ? `${transfers.length} opciones con transbordo`
                   : "Sin ruta directa"
@@ -1692,6 +1713,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
       )}
 
       <OnboardingGate />
+      <PendingJourneyReports />
       <FareUpdateNotice deferUntilOnboarding />
     </main>
   );

@@ -99,8 +99,7 @@ describe("map route view model", () => {
       selectedRoute: makeRoute(),
       selectedSegment: [[-102.07, 19.41]],
       selectedTransfer: transfer,
-      sharedRouteSegment: [[-102.08, 19.4]],
-      sharedSegmentColor: "#ffffff",
+      selectedSegmentColor: "#ffffff",
     })).toEqual([
       { coords: transfer.segmentA, color: "#60a5fa", showLine: false },
       { coords: transfer.segmentB, color: "#34d399", showLine: false },

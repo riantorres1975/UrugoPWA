@@ -59,7 +59,16 @@ export function useMapRouteViewModel({
     () => suggestions.find((suggestion) => suggestion.routeId === selectedRouteId) ?? null,
     [selectedRouteId, suggestions],
   );
-  const selectedMapSegment = selectedSuggestion?.segment ?? sharedRouteSegment ?? null;
+  // A recommended journey is active even before a route is selected from the catalog.
+  const activeSuggestion = selectedTransfer
+    ? null
+    : selectedSuggestion ?? (selectedRoute ? null : bestSuggestion);
+  const selectedMapSegment = selectedTransfer
+    ? null
+    : activeSuggestion?.segment ?? sharedRouteSegment ?? null;
+  const selectedSegmentColor = activeSuggestion
+    ? activeSuggestion.routeColor ?? routesById.get(activeSuggestion.routeId)?.color ?? "#22c55e"
+    : sharedSegmentColor;
   const arrowSegments = useMemo(() => buildArrowSegments({
     destination,
     origin,
@@ -67,8 +76,7 @@ export function useMapRouteViewModel({
     selectedRoute,
     selectedSegment: selectedMapSegment,
     selectedTransfer,
-    sharedRouteSegment,
-    sharedSegmentColor,
+    selectedSegmentColor,
   }), [
     destination,
     origin,
@@ -76,8 +84,7 @@ export function useMapRouteViewModel({
     selectedMapSegment,
     selectedRoute,
     selectedTransfer,
-    sharedRouteSegment,
-    sharedSegmentColor,
+    selectedSegmentColor,
   ]);
   const mapRoutes = useMemo(() => applySelectedRouteSegment({
     routes: simplifiedMapRoutes,

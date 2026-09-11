@@ -13,7 +13,7 @@ test("el flujo móvil permite buscar un origen manual sin desbordar la pantalla"
   await originSearch.fill("Centro");
   await originSearch.press("Enter");
   await expect(page.locator('input[aria-label="Buscar destino"]:visible')).toBeVisible();
-  await expect(page.locator("span:visible", { hasText: "Origen ajustado" }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Origen ajustado manualmente, toca para cambiar" })).toContainText("Origen");
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(1);
@@ -37,7 +37,7 @@ test("permite reemplazar el GPS por un origen manual visible", async ({ page, co
   await originSearch.fill("Centro");
   await originSearch.press("Enter");
 
-  await expect(page.locator("span:visible", { hasText: "Origen ajustado" }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Origen ajustado manualmente, toca para cambiar" })).toContainText("Origen");
   await expect(manualOriginButton).toBeHidden();
 });
 
@@ -152,6 +152,7 @@ test("negar la geolocalización conserva el flujo de origen manual", async ({ pa
 });
 
 test("un enlace compartido hidrata origen y destino sin mostrar el paso inicial", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("rutas-uru-onboarded", "1"));
   const routeWorker = page.waitForEvent("worker");
   await page.goto("/mapa?a=-102.063030,19.421010&b=-102.042340,19.426870");
 
@@ -161,6 +162,7 @@ test("un enlace compartido hidrata origen y destino sin mostrar el paso inicial"
   await expect(page.getByText("PASO 1 DE 3", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Ver resultado de ruta" })).not.toContainText("Buscando...");
 
+  await page.getByRole("button", { name: "Ver resultado de ruta", exact: true }).click();
   const directResult = page.locator('[role="dialog"]:visible').filter({ hasText: "RUTA RECOMENDADA" });
   await expect(directResult).toBeVisible();
   await expect(directResult.getByRole("button", { name: "Cambiar punto de origen" })).toBeVisible();
@@ -177,6 +179,7 @@ test("un viaje en Teleférico continúa a pie desde la estación", async ({ page
   const resultButton = page.getByRole("button", { name: "Ver resultado de ruta" });
   await expect(resultButton).toContainText("Teleférico", { timeout: 10_000 });
 
+  await resultButton.click();
   const resultDialog = page.getByRole("dialog", { name: "Teleférico Uruapan", exact: true });
   await expect(resultDialog).toContainText("$12 tarjeta");
   await expect(resultDialog).toContainText("estación Hospital Regional");
@@ -208,8 +211,7 @@ test("una actualización del GPS no borra el transbordo seleccionado", async ({ 
   await page.addInitScript(() => localStorage.setItem("rutas-uru-onboarded", "1"));
   await page.goto("/mapa?b=-102.08,19.42");
 
-  const resultButton = page.getByRole("button", { name: "Ver resultado de ruta" });
-  await expect(resultButton).toContainText("con transbordo", { timeout: 10_000 });
+  await expect(page.getByRole("dialog").filter({ hasText: "CON TRANSBORDO" })).toBeVisible({ timeout: 10_000 });
 
   const transferOption = page.locator('button[aria-label^="Seleccionar transbordo de"]:visible').first();
   await expect(transferOption).toBeVisible();
@@ -246,8 +248,7 @@ test("un enlace compartido restaura el transbordo seleccionado", async ({ page, 
   });
   await page.goto("/mapa?b=-102.08,19.42");
 
-  const resultButton = page.getByRole("button", { name: "Ver resultado de ruta" });
-  await expect(resultButton).toContainText("con transbordo", { timeout: 10_000 });
+  await expect(page.getByRole("dialog").filter({ hasText: "CON TRANSBORDO" })).toBeVisible({ timeout: 10_000 });
 
   const transferOption = page.locator('button[aria-label^="Seleccionar transbordo de"]:visible').first();
   await expect(transferOption).toBeVisible();
@@ -288,6 +289,7 @@ test("el modo viaje sigue el GPS sin recuperar la cámara después de un gesto m
 
   const resultButton = page.getByRole("button", { name: "Ver resultado de ruta" });
   await expect(resultButton).not.toContainText("Buscando...", { timeout: 10_000 });
+  await resultButton.click();
   const startTripButton = page.locator('button[aria-label^="Iniciar viaje en"]:visible');
   await expect(startTripButton).toBeVisible();
   await startTripButton.click();
@@ -378,6 +380,7 @@ test("el modo viaje conserva la ruta durante una pérdida temporal de GPS", asyn
   await page.goto("/mapa?b=-102.042340,19.426870");
   const resultButton = page.getByRole("button", { name: "Ver resultado de ruta" });
   await expect(resultButton).not.toContainText("Buscando...", { timeout: 10_000 });
+  await resultButton.click();
   const startTripButton = page.locator('button[aria-label^="Iniciar viaje en"]:visible');
   await expect(startTripButton).toBeVisible();
   await startTripButton.click();
@@ -436,19 +439,18 @@ test("el modo viaje conserva un recorrido con transbordo", async ({ page, contex
   await page.addInitScript(() => localStorage.setItem("rutas-uru-onboarded", "1"));
   await page.goto("/mapa?b=-102.08,19.42");
 
-  const resultButton = page.getByRole("button", { name: "Ver resultado de ruta" });
-  await expect(resultButton).toContainText("con transbordo", { timeout: 10_000 });
+  await expect(page.getByRole("dialog").filter({ hasText: "CON TRANSBORDO" })).toBeVisible({ timeout: 10_000 });
   const transferOption = page
     .locator('button[aria-label^="Seleccionar transbordo de"]:visible')
     .first();
   const startTripButton = page.locator('button[aria-label="Iniciar viaje con transbordo"]:visible');
-  await expect(transferOption.or(startTripButton).first()).toBeVisible();
+  await expect(transferOption).toBeVisible();
+  const routeAName = (await transferOption.getAttribute("aria-label"))!.replace("Seleccionar transbordo de ", "").split(" a ")[0];
   if (!(await startTripButton.isVisible())) {
     await transferOption.click();
   }
 
   await expect(startTripButton).toBeVisible();
-  const routeAName = (await resultButton.innerText()).split("→")[0].trim();
   await page.evaluate(() => {
     const button = Array.from(
       document.querySelectorAll<HTMLButtonElement>('button[aria-label="Iniciar viaje con transbordo"]'),

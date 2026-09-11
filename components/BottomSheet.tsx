@@ -169,7 +169,7 @@ export default function BottomSheet({
         aria-hidden={!open}
         inert={!open ? true : undefined}
         style={{ transform: baseTransform, height: "80dvh", background: "var(--ov-bg)", borderTop: "1px solid var(--ov-border)" }}
-        className={`fixed inset-x-0 bottom-0 z-40 rounded-t-[28px] shadow-soft will-change-transform lg:hidden ${
+        className={`fixed inset-x-0 bottom-0 z-40 flex flex-col rounded-t-[28px] shadow-soft will-change-transform lg:hidden ${
           isDragging ? "transition-none" : "transition-[transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
         }`}
       >
@@ -180,7 +180,7 @@ export default function BottomSheet({
           onPointerUp={onPointerEnd}
           onPointerCancel={onPointerEnd}
           style={{ borderBottomColor: "var(--ov-border)" }}
-          className="relative cursor-grab touch-none select-none border-b px-5 pb-4 pt-3.5 active:cursor-grabbing"
+          className="relative shrink-0 cursor-grab touch-none select-none border-b px-5 pb-4 pt-3.5 active:cursor-grabbing"
         >
           <div className="mx-auto mb-3 h-1 w-10 rounded-full" style={{ background: "var(--ov-border2, rgba(60,100,40,0.25))" }} />
 
@@ -224,11 +224,10 @@ export default function BottomSheet({
         <div
           aria-hidden={isMini || !open}
           inert={isMini || !open ? true : undefined}
-          className={`overflow-y-auto overscroll-contain px-5 pt-5 transition-opacity duration-200 ${
+          className={`min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-5 transition-opacity duration-200 ${
             snapPoints && snap === "mini" ? "pointer-events-none opacity-0" : "opacity-100"
           }`}
           style={{
-            height: "calc(80dvh - 78px)",
             paddingBottom: "calc(2rem + env(safe-area-inset-bottom, 0px))",
           }}
         >

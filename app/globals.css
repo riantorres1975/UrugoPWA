@@ -30,7 +30,7 @@
   --ov-border:     rgba(140,200,80,0.10);
   --ov-border2:    rgba(140,200,80,0.20);
   --ov-text:       #e8f2d8;
-  --ov-text-muted: rgba(168,200,136,0.65);
+  --ov-text-muted: #b4c6a5;
   --ov-pill-bg:    rgba(106,171,72,0.08);
 
   /* Compatibilidad con variables antiguas */
@@ -74,7 +74,7 @@
   --ov-border:     rgba(184,232,64,0.14);
   --ov-border2:    rgba(184,232,64,0.24);
   --ov-text:       #e8f2d8;
-  --ov-text-muted: rgba(168,200,136,0.72);
+  --ov-text-muted: #b4c6a5;
   --ov-pill-bg:    rgba(184,232,64,0.09);
 }
 

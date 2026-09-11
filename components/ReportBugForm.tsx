@@ -9,8 +9,10 @@ import {
   LoaderCircle,
   MapPin,
   MapPinned,
+  PlayCircle,
   Send,
   Smartphone,
+  X,
 } from "lucide-react";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import RouteProposalMap from "@/components/RouteProposalMap";
@@ -18,6 +20,12 @@ import type { CommunityReportType } from "@/lib/community-report";
 import type { Coordinates } from "@/lib/types";
 
 const subscribeBrowserContext = () => () => {};
+const subscribeReducedMotion = (onStoreChange: () => void) => {
+  const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+  mediaQuery.addEventListener("change", onStoreChange);
+  return () => mediaQuery.removeEventListener("change", onStoreChange);
+};
+const getReducedMotionPreference = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const CUSTOM_ROUTE_VALUE = "__custom__";
 
 type ReportChoice = {
@@ -99,7 +107,9 @@ export default function ReportBugForm({
   const [website, setWebsite] = useState("");
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [submitError, setSubmitError] = useState("");
+  const [showRouteGuide, setShowRouteGuide] = useState(false);
   const sourceUrl = useSyncExternalStore(subscribeBrowserContext, getSourceUrl, () => "");
+  const prefersReducedMotion = useSyncExternalStore(subscribeReducedMotion, getReducedMotionPreference, () => false);
 
   const selectedChoice = REPORT_CHOICES.find((choice) => choice.value === reportType) ?? REPORT_CHOICES[0];
   const requiresRoute = ROUTE_REPORT_TYPES.includes(reportType);
@@ -123,7 +133,10 @@ export default function ReportBugForm({
 
   function chooseReportType(value: CommunityReportType) {
     setReportType(value);
-    if (!PATH_REPORT_TYPES.includes(value)) setProposedPath([]);
+    if (!PATH_REPORT_TYPES.includes(value)) {
+      setProposedPath([]);
+      setShowRouteGuide(false);
+    }
     if (value === "route_missing") {
       setSelectedRouteKey(CUSTOM_ROUTE_VALUE);
       setRouteName("");
@@ -258,6 +271,57 @@ export default function ReportBugForm({
             <span className="text-xs font-bold uppercase text-[var(--public-muted)]">¿Cómo se conoce?</span>
             <input value={routeName} onChange={(event) => setRouteName(event.target.value)} required maxLength={120} placeholder="Ej. La Llanitos, Ruta 26..." className={`${fieldClass} h-14`} />
           </label>
+        )}
+
+        {PATH_REPORT_TYPES.includes(reportType) && (
+          <div className="mt-5 border-y border-[var(--public-border)] py-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase text-[#74dceb]">Ejemplo rápido</p>
+                <p className="mt-1 text-sm leading-6 text-[var(--public-secondary)]">Mira cómo seleccionar una ruta y marcar las calles correctas.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowRouteGuide((visible) => !visible)}
+                aria-expanded={showRouteGuide}
+                aria-controls="route-report-guide"
+                className="inline-flex h-11 shrink-0 items-center justify-center gap-2 border border-[#48cce0]/40 px-4 text-sm font-bold text-[#8de6f1] transition hover:border-[#48cce0] hover:bg-[#48cce0]/10"
+              >
+                {showRouteGuide ? <X className="h-4 w-4" aria-hidden="true" /> : <PlayCircle className="h-4 w-4" aria-hidden="true" />}
+                {showRouteGuide ? "Ocultar ejemplo" : "Ver ejemplo"}
+              </button>
+            </div>
+
+            {showRouteGuide && (
+              <figure id="route-report-guide" className="mt-4 overflow-hidden border border-[#48cce0]/25 bg-[#070c06]">
+                <video
+                  className="mx-auto block aspect-[320/311] w-full max-w-[640px] bg-[#070c06] object-contain"
+                  controls
+                  autoPlay={!prefersReducedMotion}
+                  loop
+                  muted
+                  playsInline
+                  preload="metadata"
+                  aria-label="Ejemplo para reportar y dibujar la corrección de una ruta"
+                >
+                  <source src="/readme/reportar-ruta.mp4" type="video/mp4" />
+                  Tu navegador no puede reproducir este ejemplo.
+                </video>
+                <figcaption className="grid grid-cols-2 border-t border-[var(--public-border)] text-[11px] font-bold leading-4 text-[var(--public-muted)] sm:grid-cols-4">
+                  {[
+                    "Elige el problema",
+                    "Selecciona la ruta",
+                    "Marca las calles",
+                    "Envía la referencia",
+                  ].map((step, index) => (
+                    <span key={step} className="border-[var(--public-border)] px-3 py-3 odd:border-r sm:border-r sm:last:border-r-0">
+                      <span className="mr-1 text-[var(--public-accent)]">{index + 1}.</span> {step}
+                    </span>
+                  ))}
+                </figcaption>
+              </figure>
+            )}
+          </div>
         )}
 
         <label className="mt-4 block">

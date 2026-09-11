@@ -93,6 +93,13 @@ export function getRouteDestination(routeName: string): string | null {
   return LOOKUP.get(normalize(routeName)) ?? null;
 }
 
+/** Public route identity, shared by route pages and reports from the map. */
+export function getRouteKey(routeName: string): string {
+  const slug = (value: string) => normalize(value).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const destination = getRouteDestination(routeName);
+  return `${slug(routeName)}${destination ? `-${slug(destination)}` : ""}`;
+}
+
 export function getRouteSearchTerms(routeName: string): string[] {
   const destino = getRouteDestination(routeName);
   const terms: string[] = [];

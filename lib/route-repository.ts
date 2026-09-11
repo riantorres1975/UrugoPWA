@@ -46,6 +46,8 @@ function parseDatabaseRoute(value: unknown): ProductionRoute | null {
     color: row.color,
     corridor_width_m: row.corridor_width_m,
     verified: row.verified,
+    last_verified_at: typeof row.last_verified_at === "string" && Number.isFinite(Date.parse(row.last_verified_at))
+      ? new Date(row.last_verified_at).toISOString() : null,
     path: row.path,
     landmarks: row.landmarks,
   };
@@ -69,7 +71,7 @@ export async function getPublishedRouteData(): Promise<RouteDataBundle> {
 
   const { data, error } = await supabase
     .from("routes")
-    .select("id,name,original_name,color,corridor_width_m,verified,path,landmarks,data_version,updated_at")
+    .select("id,name,original_name,color,corridor_width_m,verified,last_verified_at,path,landmarks,data_version,updated_at")
     .eq("publication_status", "published")
     .eq("operational_status", "active")
     .order("id", { ascending: true });

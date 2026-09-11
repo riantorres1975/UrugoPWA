@@ -162,8 +162,7 @@ export function buildArrowSegments({
   selectedRoute,
   selectedSegment,
   selectedTransfer,
-  sharedRouteSegment,
-  sharedSegmentColor,
+  selectedSegmentColor,
 }: {
   destination: Coordinates | null;
   origin: Coordinates | null;
@@ -171,8 +170,7 @@ export function buildArrowSegments({
   selectedRoute: ProductionRoute | null;
   selectedSegment: Coordinates[] | null;
   selectedTransfer: TransferOption | null;
-  sharedRouteSegment: Coordinates[] | null;
-  sharedSegmentColor: string | null;
+  selectedSegmentColor: string | null;
 }): MapArrowSegment[] {
   if (selectedTransfer) {
     return [
@@ -181,8 +179,8 @@ export function buildArrowSegments({
     ];
   }
 
-  if (sharedRouteSegment && sharedSegmentColor && !selectedRoute) {
-    return [{ coords: sharedRouteSegment, color: sharedSegmentColor, showLine: true }];
+  if (selectedSegment && selectedSegmentColor && !selectedRoute) {
+    return [{ coords: selectedSegment, color: selectedSegmentColor, showLine: true }];
   }
 
   if (selectedSegment && selectedRoute) {

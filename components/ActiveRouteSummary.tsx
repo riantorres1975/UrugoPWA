@@ -16,8 +16,10 @@ type ActiveRouteSummaryProps = {
   routeName: string | null;
   showTeleferico: boolean;
   transfer: TransferOption | null;
+  showActions?: boolean;
   onClear: () => void;
   onShare: () => void;
+  instructionActions?: ({ label: string; onClick: () => void } | null)[];
 };
 
 export default function ActiveRouteSummary({
@@ -27,14 +29,16 @@ export default function ActiveRouteSummary({
   routeName,
   showTeleferico,
   transfer,
+  showActions = true,
   onClear,
   onShare,
+  instructionActions,
 }: ActiveRouteSummaryProps) {
   const hasActiveSelection = Boolean(routeName || showTeleferico || transfer);
 
   return (
     <>
-      {hasActiveSelection && (
+      {hasActiveSelection && showActions && (
         <div className="ov-border flex items-center gap-2 border-t px-4 py-2.5">
           {transfer ? (
             <span className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
@@ -77,11 +81,16 @@ export default function ActiveRouteSummary({
       {instructions && (
         <section className="ov-border border-t px-4 py-3" aria-label={instructions.title}>
           <h2 className="ov-text-muted text-[11px] font-bold uppercase tracking-[0.18em]">{instructions.title}</h2>
-          <ol className="ov-text mt-2 space-y-1.5 text-[12px] leading-5">
-            {instructions.items.map((item) => (
+          <ol className="ov-text mt-3 space-y-3 text-[13px] leading-5">
+            {instructions.items.map((item, index) => (
               <li key={item} className="flex gap-2">
-                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-lima" aria-hidden="true" />
-                <span>{item}</span>
+                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-lima/10 text-[11px] font-bold text-lima" aria-hidden="true">{index + 1}</span>
+                <div className="min-w-0 flex-1"><p>{item}</p>
+                  {instructionActions?.[index] && <button type="button" onClick={instructionActions[index]!.onClick}
+                    className="mt-1 inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-xs font-semibold text-lima underline decoration-lima/40 underline-offset-4 hover:bg-lima/10">
+                    {instructionActions[index]!.label}<span aria-hidden="true">↗</span>
+                  </button>}
+                </div>
               </li>
             ))}
           </ol>

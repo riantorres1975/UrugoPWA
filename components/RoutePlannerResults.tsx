@@ -8,51 +8,45 @@ import type { TransferOption } from "@/lib/transfers";
 
 type DirectRouteResultProps = {
   alternatives: RouteOption[];
-  feedbackGiven: boolean;
-  isMobile: boolean;
+  showTitle?: boolean;
   isTripActive: boolean;
   route: RouteOption;
   routeEta: number | null;
   onEditDestination: () => void;
   onEditOrigin: () => void;
-  onFeedback: (useful: "si" | "no") => void;
   onPromote: (routeId: number) => void;
   onShare: () => void;
-  onShowAlternatives: () => void;
   onToggleTrip: () => void;
   onViewMap: () => void;
 };
 
 export function DirectRouteResult({
   alternatives,
-  feedbackGiven,
-  isMobile,
+  showTitle = true,
   isTripActive,
   route,
   routeEta,
   onEditDestination,
   onEditOrigin,
-  onFeedback,
   onPromote,
   onShare,
-  onShowAlternatives,
   onToggleTrip,
   onViewMap,
 }: DirectRouteResultProps) {
   return (
     <div className="px-4 py-3">
-      <p className="text-[10px] font-bold tracking-[2px] text-lima">RUTA RECOMENDADA</p>
-      <p className="ov-text mt-0.5 truncate font-display text-[17px] font-bold leading-tight">
+      <p className="ov-text-muted text-[10px] font-bold tracking-[2px]">RUTA RECOMENDADA</p>
+      {showTitle && <p className="ov-text mt-1 font-display text-[17px] font-bold leading-tight">
         {formatRouteLabel(route.ruta)}
-      </p>
+      </p>}
 
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
-        <span className="inline-flex items-center gap-1 rounded-lg border border-lima/25 bg-lima/10 px-2.5 py-1 text-[12px] font-semibold text-lima">
+        <span className="inline-flex items-center gap-1 rounded-lg border ov-border ov-pill ov-text px-2.5 py-1 text-[12px] font-semibold">
           <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3" aria-hidden="true">
             <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
             <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
           </svg>
-          {routeEta} min aprox
+          {routeEta !== null ? `~${routeEta} min en ruta` : "Tiempo por confirmar"}
         </span>
         {routeEta !== null && (
           <span className="ov-pill ov-border ov-text-muted inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[12px] font-medium">
@@ -65,25 +59,20 @@ export function DirectRouteResult({
         <span className="ov-pill ov-border ov-text-muted inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[12px] font-medium">
           {getJourneyFareSummary([route.ruta]).badge}
         </span>
-        {alternatives.length > 0 && (
-          <button
-            type="button"
-            onClick={onShowAlternatives}
-            className={`ov-pill ov-border ov-text-muted inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[12px] font-medium transition active:scale-[0.97] hover:border-lima/40 hover:text-lima ${isMobile ? "cursor-pointer" : "cursor-default"}`}
-          >
-            <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3" aria-hidden="true">
-              <path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13V7m0 13 6-3M9 7l6-3m6 17V4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            +{alternatives.length} alternativa{alternatives.length > 1 ? "s" : ""}
-          </button>
-        )}
+
       </div>
 
-      <div className="mt-3 flex items-center gap-2">
+      <TripToggleButton
+        active={isTripActive}
+        label={`Iniciar viaje en ${formatRouteLabel(route.ruta)}`}
+        onClick={onToggleTrip}
+      />
+
+      <div className="mt-3 grid grid-cols-2 gap-2">
         <button
           type="button"
           onClick={onEditOrigin}
-          className="ov-pill ov-border ov-text-muted inline-flex h-10 flex-1 items-center justify-center gap-1 rounded-xl border text-[12px] font-semibold transition active:scale-[0.97]"
+          className="ov-pill ov-border ov-text-muted inline-flex min-h-11 flex-1 items-center justify-center gap-1 rounded-xl border text-[12px] font-semibold transition active:scale-[0.97]"
           aria-label="Cambiar punto de origen"
         >
           <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0" aria-hidden="true">
@@ -95,7 +84,7 @@ export function DirectRouteResult({
         <button
           type="button"
           onClick={onEditDestination}
-          className="ov-pill ov-border ov-text-muted inline-flex h-10 flex-1 items-center justify-center gap-1 rounded-xl border text-[12px] font-semibold transition active:scale-[0.97]"
+          className="ov-pill ov-border ov-text-muted inline-flex min-h-11 flex-1 items-center justify-center gap-1 rounded-xl border text-[12px] font-semibold transition active:scale-[0.97]"
           aria-label="Cambiar destino"
         >
           <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0" aria-hidden="true">
@@ -107,15 +96,15 @@ export function DirectRouteResult({
         <button
           type="button"
           onClick={onShare}
-          className="ov-pill ov-border ov-text-muted inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition active:scale-[0.97]"
+          className="ov-pill ov-border ov-text inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border text-[12px] font-semibold transition active:scale-[0.97]"
           aria-label={`Compartir ruta ${formatRouteLabel(route.ruta)}`}
         >
-          <ShareIcon />
+          <ShareIcon /> Compartir
         </button>
         <button
           type="button"
           onClick={onViewMap}
-          className="inline-flex h-10 flex-[2] items-center justify-center gap-1.5 rounded-xl bg-verde text-[12px] font-bold text-ink-900 shadow-[0_2px_12px_rgba(232,93,47,0.35)] transition active:scale-[0.97]"
+          className="ov-pill ov-border ov-text border inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl text-[12px] font-semibold transition active:scale-[0.97]"
           aria-label={`Ver ${formatRouteLabel(route.ruta)} en el mapa`}
         >
           <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
@@ -125,16 +114,12 @@ export function DirectRouteResult({
         </button>
       </div>
 
-      <TripToggleButton
-        active={isTripActive}
-        label={`Iniciar viaje en ${formatRouteLabel(route.ruta)}`}
-        onClick={onToggleTrip}
-      />
 
       {alternatives.length > 0 && (
-        <div className="mt-3 space-y-1.5">
-          <p className="ov-text-muted text-[10px] font-bold uppercase tracking-widest">Alternativas</p>
-          {alternatives.slice(0, 3).map((alternative) => {
+        <details className="ov-border mt-3 border-t" key={route.routeId}>
+          <summary className="ov-text-muted min-h-11 cursor-pointer py-3 text-[12px] font-semibold marker:text-lima">Ver {alternatives.length} alternativa{alternatives.length > 1 ? "s" : ""}</summary>
+          <div className="space-y-2">
+          {alternatives.map((alternative) => {
             const alternativeWalk = Math.round(alternative.distanciaA + alternative.distanciaB);
             const routeWalk = Math.round(route.distanciaA + route.distanciaB);
             const lessWalk = alternativeWalk < routeWalk;
@@ -145,37 +130,27 @@ export function DirectRouteResult({
                 key={alternative.routeId}
                 type="button"
                 onClick={() => onPromote(alternative.routeId)}
-                className="ov-pill ov-border flex w-full items-center gap-2 rounded-xl border px-2.5 py-2 text-left transition active:scale-[0.99] hover:border-lima/40"
+                className="ov-pill ov-border flex w-full flex-wrap items-center gap-2 rounded-xl border px-3 py-3 text-left transition active:scale-[0.99] hover:border-lima/40"
                 aria-label={`Usar ${formatRouteLabel(alternative.ruta)} como ruta recomendada`}
               >
                 <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: alternative.routeColor ?? "#6aab48" }} aria-hidden="true" />
-                <span className="ov-text min-w-0 flex-1 truncate text-[12px] font-semibold">
+                <span className="ov-text min-w-0 flex-1 text-[12px] font-semibold leading-5">
                   {formatRouteLabel(alternative.ruta)}
                 </span>
-                {lessWalk && <ComparisonBadge variant="walk">Menos caminata</ComparisonBadge>}
-                {!lessWalk && faster && <ComparisonBadge variant="fast">Más rápida</ComparisonBadge>}
-                <span className="ov-text-muted shrink-0 text-[11px]">
-                  {alternative.estimatedMinutes} min · {alternativeWalk} m a pie
+                <span className="ov-text-muted flex w-full flex-wrap items-center gap-2 pl-4 text-[11px]">
+                  <span>~{alternative.estimatedMinutes} min · {alternativeWalk} m a pie · ${getJourneyFareSummary([alternative.ruta]).totalMxn}</span>
+                  <span>Sin transbordo</span>
+                  {lessWalk && <ComparisonBadge variant="walk">Menos caminata</ComparisonBadge>}
+                  {faster && <ComparisonBadge variant="fast">Más rápida</ComparisonBadge>}
                 </span>
               </button>
             );
           })}
-        </div>
+          </div>
+        </details>
       )}
 
-      <div className="ov-border mt-3 flex min-h-8 items-center justify-between gap-2 border-t pt-2">
-        {feedbackGiven ? (
-          <p className="ov-text-muted text-[11px]">¡Gracias! Tu opinión ayuda a mejorar las rutas.</p>
-        ) : (
-          <>
-            <p className="ov-text-muted text-[11px]">¿Te sirvió esta ruta?</p>
-            <div className="flex gap-1.5">
-              <FeedbackButton label="Sí" onClick={() => onFeedback("si")} />
-              <FeedbackButton label="No" negative onClick={() => onFeedback("no")} />
-            </div>
-          </>
-        )}
-      </div>
+
     </div>
   );
 }
@@ -183,6 +158,9 @@ export function DirectRouteResult({
 type SelectedTransferResultProps = {
   isTripActive: boolean;
   transfer: TransferOption;
+  transferLandmark: string | null;
+  transferWalkMinutes: number;
+  onViewTransfer: () => void;
   onClear: () => void;
   onShare: () => void;
   onToggleTrip: () => void;
@@ -191,6 +169,9 @@ type SelectedTransferResultProps = {
 export function SelectedTransferResult({
   isTripActive,
   transfer,
+  transferLandmark,
+  transferWalkMinutes,
+  onViewTransfer,
   onClear,
   onShare,
   onToggleTrip,
@@ -198,33 +179,40 @@ export function SelectedTransferResult({
   return (
     <div className="px-4 py-3">
       <p className="text-[10px] font-bold tracking-[2px] text-avocado-400">TRANSBORDO SELECCIONADO</p>
-      <div className="mt-2 flex items-center gap-2">
-        <span className="ov-text flex-1 truncate text-[13px] font-semibold">{transfer.routeAName}</span>
-        <TransferIcon />
-        <span className="ov-text flex-1 truncate text-[13px] font-semibold">{transfer.routeBName}</span>
-      </div>
-      <p className="ov-text-muted mt-1 text-[11px]">
-        Camina ~{Math.round(transfer.walkMeters)} m en el punto de transbordo
-        <span className="mx-1.5 opacity-40">·</span>
-        {getJourneyFareSummary([transfer.routeAName, transfer.routeBName]).badge}
-      </p>
+      <ol className="mt-3" aria-label="Tramos del viaje">
+        <li className="flex gap-3">
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-blue-400 text-xs font-bold text-ink-900" aria-hidden="true">1</span>
+          <div><p className="text-[11px] text-blue-400">Sube a la primera ruta</p><p className="ov-text text-[13px] font-semibold leading-5">{formatRouteLabel(transfer.routeAName)}</p></div>
+        </li>
+        <li className="ml-3.5 border-l-2 border-dashed border-cream-100/30 py-3 pl-6">
+          <p className="ov-text text-xs leading-5">Baja de <span className="font-semibold text-blue-400">{formatRouteLabel(transfer.routeAName)}</span></p>
+          <p className="ov-text mt-1 text-[13px] font-medium">Camina ~{Math.round(transfer.walkMeters)} m · {transferWalkMinutes} min</p>
+          <p className="ov-text-muted mt-1 text-xs leading-5">{transferLandmark ? `Cambia cerca de ${transferLandmark}` : "Ubica el enlace a pie aproximado en el mapa"}</p>
+        </li>
+        <li className="flex gap-3">
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-emerald-400 text-xs font-bold text-ink-900" aria-hidden="true">2</span>
+          <div><p className="text-[11px] text-emerald-400">Sube a la segunda ruta</p><p className="ov-text text-[13px] font-semibold leading-5">{formatRouteLabel(transfer.routeBName)}</p></div>
+        </li>
+      </ol>
+      <p className="ov-text mt-3 text-[13px] font-semibold">{getJourneyFareSummary([transfer.routeAName, transfer.routeBName]).badge}</p>
       <TripToggleButton active={isTripActive} className="mt-3" label="Iniciar viaje con transbordo" onClick={onToggleTrip} />
-      <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
+      <button type="button" onClick={onViewTransfer} className="ov-pill ov-border ov-text mt-2 min-h-11 w-full rounded-xl border px-3 text-[13px] font-semibold">Ver dónde cambiar</button>
+      <div className="mt-2 grid grid-cols-2 gap-2">
         <button
           type="button"
           onClick={onClear}
-          className="ov-pill ov-border ov-text-muted h-9 shrink-0 rounded-lg border px-3 text-[11px] font-semibold transition active:scale-[0.97]"
+          className="ov-pill ov-border ov-text min-h-11 rounded-xl border px-3 text-[12px] font-semibold transition active:scale-[0.97]"
           aria-label="Limpiar ruta seleccionada"
         >
-          Limpiar
+          Cambiar rutas
         </button>
         <button
           type="button"
           onClick={onShare}
-          className="ov-pill ov-border ov-text-muted inline-flex h-10 w-10 items-center justify-center rounded-xl border transition active:scale-[0.97]"
+          className="ov-pill ov-border ov-text inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border text-[12px] font-semibold transition active:scale-[0.97]"
           aria-label="Compartir transbordo"
         >
-          <ShareIcon />
+          <ShareIcon /> Compartir
         </button>
       </div>
     </div>
@@ -251,15 +239,19 @@ export function TransferOptionsResult({
               type="button"
               onClick={() => onSelect(transfer)}
               aria-label={`Seleccionar transbordo de ${transfer.routeAName} a ${transfer.routeBName}`}
-              className="flex w-full items-center gap-2 rounded-xl border border-avocado-400/20 bg-avocado-400/8 px-3 py-2 text-left transition active:scale-[0.99] hover:bg-avocado-400/12"
+              className="flex w-full flex-wrap items-center gap-2 rounded-xl border border-avocado-400/20 bg-avocado-400/8 px-3 py-3 text-left transition active:scale-[0.99] hover:bg-avocado-400/12"
             >
               <TransferIcon />
               <span className="min-w-0 flex-1">
-                <span className="ov-text block truncate text-[12px] font-semibold">{transfer.routeAName}</span>
-                <span className="ov-text-muted block truncate text-[11px]">→ transbordo → {transfer.routeBName}</span>
+                <span className="ov-text block text-[12px] font-semibold">{formatRouteLabel(transfer.routeAName)}</span>
+                <span className="ov-text-muted block text-[11px]">→ {formatRouteLabel(transfer.routeBName)}</span>
               </span>
               <span className="shrink-0 rounded-full bg-avocado-400/15 px-2 py-0.5 text-[10px] font-semibold text-avocado-600">
-                ~{Math.round(transfer.walkMeters)}m
+                ~{Math.round(transfer.walkMeters)} m a pie
+              </span>
+              <span className="ov-text-muted flex w-full flex-wrap gap-2 pl-6 text-[11px]">
+                <span>1 transbordo · ${getJourneyFareSummary([transfer.routeAName, transfer.routeBName]).totalMxn} total</span>
+                {transfer.walkMeters === Math.min(...transfers.map((option) => option.walkMeters)) && transfers.some((option) => option.walkMeters > transfer.walkMeters) && <span className="text-avocado-400">Menos caminata en el cambio</span>}
               </span>
             </button>
           </li>
@@ -296,21 +288,6 @@ function ComparisonBadge({ children, variant }: { children: ReactNode; variant: 
     }`}>
       {children}
     </span>
-  );
-}
-
-function FeedbackButton({ label, negative = false, onClick }: { label: string; negative?: boolean; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`ov-pill ov-border ov-text-muted inline-flex h-8 items-center gap-1 rounded-full border px-3 text-[11px] font-semibold transition active:scale-[0.96] ${negative ? "hover:border-red-400/50 hover:text-red-400" : "hover:border-emerald-400/50 hover:text-emerald-400"}`}
-    >
-      <svg viewBox="0 0 24 24" fill="none" className={`h-3 w-3 ${negative ? "rotate-180" : ""}`} aria-hidden="true">
-        <path d="M7 11v9m0-9 3.4-6.8A2 2 0 0 1 14 5v4h4.4a2 2 0 0 1 2 2.4l-1.2 6A2 2 0 0 1 17.2 19H7m0-8H4v9h3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-      {label}
-    </button>
   );
 }
 

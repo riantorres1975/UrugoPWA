@@ -8,6 +8,7 @@ const baseUrl = process.env.BASE_URL ?? "http://localhost:3000";
 const workspace = resolve(process.cwd());
 const frameDir = resolve(workspace, ".cache", "readme-report-demo");
 const outputPath = join(workspace, "public", "readme", "reportar-ruta.gif");
+const videoOutputPath = join(workspace, "public", "readme", "reportar-ruta.mp4");
 
 if (!frameDir.startsWith(`${workspace}${sep}`)) {
   throw new Error("El directorio temporal debe permanecer dentro del proyecto.");
@@ -236,5 +237,19 @@ const result = spawnSync(ffmpeg, [
 ], { stdio: "inherit" });
 
 if (result.status !== 0) throw new Error(`ffmpeg terminó con código ${result.status ?? "desconocido"}.`);
+
+const videoResult = spawnSync(ffmpeg, [
+  "-y",
+  "-framerate", "10",
+  "-i", join(frameDir, "frame-%03d.png"),
+  "-vf", "scale=640:-2:flags=lanczos",
+  "-c:v", "libx264",
+  "-crf", "26",
+  "-pix_fmt", "yuv420p",
+  "-movflags", "+faststart",
+  videoOutputPath,
+], { stdio: "inherit" });
+
+if (videoResult.status !== 0) throw new Error(`ffmpeg terminó el MP4 con código ${videoResult.status ?? "desconocido"}.`);
 await rm(frameDir, { recursive: true, force: true });
-console.log(`[readme] Report demo updated: ${outputPath}`);
+console.log(`[readme] Report demos updated: ${outputPath}, ${videoOutputPath}`);

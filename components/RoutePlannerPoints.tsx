@@ -5,6 +5,8 @@ import type { GeoStatus } from "@/hooks/useUruapanGeolocation";
 import type { Coordinates } from "@/lib/types";
 
 type RoutePlannerPointsProps = {
+  originPlaceLabel?: string;
+  destinationPlaceLabel?: string;
   abExpanded: boolean;
   activePoint: ActivePoint;
   destinationPoint: Coordinates | null;
@@ -25,6 +27,8 @@ type RoutePlannerPointsProps = {
 };
 
 export default function RoutePlannerPoints({
+  originPlaceLabel,
+  destinationPlaceLabel,
   abExpanded,
   activePoint,
   destinationPoint,
@@ -75,7 +79,7 @@ export default function RoutePlannerPoints({
             <button
               type="button"
               onClick={() => onSelectPoint("origin")}
-              className={`inline-flex h-10 min-w-0 flex-1 items-center gap-1.5 rounded-xl border px-3 text-[13px] font-semibold transition active:scale-[0.97] ${
+              className={`inline-flex min-h-16 min-w-0 flex-1 items-center gap-1.5 rounded-xl border px-2 py-2 text-left text-[13px] font-semibold transition active:scale-[0.97] ${
                 originPoint
                   ? "border-lima/50 bg-lima/15 text-lima"
                   : activePoint === "origin"
@@ -84,22 +88,16 @@ export default function RoutePlannerPoints({
               }`}
               aria-label={getOriginAriaLabel({ geoAccuracyWarning, geoStatus, manualOrigin, userLocation })}
             >
-              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" className="hidden h-4 w-4 shrink-0 min-[380px]:block" aria-hidden="true">
                 <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                 <circle cx="12" cy="10" r="2" fill="currentColor" />
               </svg>
-              <span className="min-w-0 flex-1 truncate">
-                {manualOrigin
-                  ? "Origen ajustado"
-                  : geoStatus === "outside"
-                    ? "Origen manual"
-                    : geoAccuracyWarning
-                      ? "GPS impreciso"
-                      : userLocation
-                        ? "Mi ubicación"
-                        : "Origen"}
+              <span className="min-w-0 flex-1">
+                <span className="block">Origen</span>
+                <span className="ov-text-muted mt-0.5 line-clamp-2 break-words text-[10px] font-medium leading-[14px]">
+                  {manualOrigin ? originPlaceLabel ?? "Marcado en mapa" : geoStatus === "outside" ? "Elige en Uruapan" : geoAccuracyWarning ? "GPS impreciso" : userLocation ? "Mi ubicación" : "Elige un lugar"}
+                </span>
               </span>
-              {originPoint && !geoAccuracyWarning && (geoStatus !== "outside" || manualOrigin) && <CheckIcon />}
               {(geoAccuracyWarning || geoStatus === "outside") && !manualOrigin && (
                 <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-amber-400" aria-hidden="true" />
               )}
@@ -111,7 +109,7 @@ export default function RoutePlannerPoints({
               type="button"
               onClick={() => onSelectPoint("destination")}
               disabled={!originPoint}
-              className={`inline-flex h-10 min-w-0 flex-1 items-center gap-1.5 rounded-xl border px-3 text-[13px] font-semibold transition active:scale-[0.97] disabled:opacity-40 ${
+              className={`inline-flex min-h-16 min-w-0 flex-1 items-center gap-1.5 rounded-xl border px-2 py-2 text-left text-[13px] font-semibold transition active:scale-[0.97] disabled:opacity-40 ${
                 destinationPoint
                   ? "border-lima/50 bg-lima/15 text-lima"
                   : activePoint === "destination"
@@ -120,12 +118,13 @@ export default function RoutePlannerPoints({
               }`}
               aria-label={destinationPoint ? "Destino marcado, toca para cambiar" : "Toca el mapa para marcar tu destino"}
             >
-              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" className="hidden h-4 w-4 shrink-0 min-[380px]:block" aria-hidden="true">
                 <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.8" />
                 <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.5" />
               </svg>
-              <span className="min-w-0 flex-1 truncate">{destinationPoint ? "Destino marcado" : "Destino"}</span>
-              {destinationPoint && <CheckIcon />}
+              <span className="min-w-0 flex-1"><span className="block">Destino</span>
+                <span className="ov-text-muted mt-0.5 line-clamp-2 break-words text-[10px] font-medium leading-[14px]">{destinationPoint ? destinationPlaceLabel ?? "Marcado en mapa" : "Elige un lugar"}</span>
+              </span>
             </button>
 
             {(originPoint || destinationPoint) && (
@@ -203,7 +202,6 @@ export default function RoutePlannerPoints({
     </>
   );
 }
-
 function getOriginAriaLabel({
   geoAccuracyWarning,
   geoStatus,
@@ -243,14 +241,6 @@ function ArrowIcon({ className }: { className: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
       <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className="ml-auto h-3.5 w-3.5 shrink-0 text-lima" aria-hidden="true">
-      <path d="M5 12l5 5L20 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
