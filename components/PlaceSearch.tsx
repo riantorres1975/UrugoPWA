@@ -115,6 +115,7 @@ export default function PlaceSearch({
     }
     addRecentPlace(result);
     setRecents(getRecentPlaces());
+    document.querySelector<HTMLInputElement>("input:focus")?.blur();
     onSelect(result);
     // Limpiar el buscador tras aplicar la búsqueda (el destino queda marcado en el mapa).
     updateQuery("");
@@ -288,7 +289,7 @@ export default function PlaceSearch({
                 aria-selected={index === activeIndex}
                 onClick={() => handleSelect(result)}
                 onMouseEnter={() => setActiveIndex(index)}
-                className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition ${
+                className={`flex w-full select-none items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition ${
                   index === activeIndex ? "bg-lima/10" : "hover:bg-lima/5"
                 }`}
               >

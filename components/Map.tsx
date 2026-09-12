@@ -14,6 +14,7 @@ import {
 } from "@/lib/map";
 import type { Coordinates, RouteData } from "@/lib/types";
 import { haversineMeters } from "@/lib/geo";
+import { getSafeCameraPadding, type CameraPadding } from "@/lib/map-camera";
 import { findNearbyRouteIds, type NearbyRoutePath } from "@/lib/nearby-routes";
 import type { TripJourney, TripProgress } from "@/lib/trip-mode";
 import {
@@ -690,6 +691,11 @@ function journeyCameraPadding(map: mapboxgl.Map) {
   return { top: Math.min(window.innerWidth >= 1024 ? 100 : 300, height * 0.42), right: 32, bottom: Math.min(180, height * 0.25), left: 32 };
 }
 
+function cameraPadding(map: mapboxgl.Map, requested: CameraPadding) {
+  const container = map.getContainer();
+  return getSafeCameraPadding(container.clientWidth, container.clientHeight, requested);
+}
+
 function fitBoundsAnimated(
   map: mapboxgl.Map,
   bounds: [[number, number], [number, number]],
@@ -702,13 +708,14 @@ function fitBoundsAnimated(
     duration: number;
   }
 ) {
+  // A search can finish while the keyboard is resizing the map. Synchronize its
+  // dimensions before calculating bounds and never retain this fit's margins.
+  const container = map.getContainer();
+  if (!container.clientWidth || !container.clientHeight) return;
+  map.resize();
   map.fitBounds(bounds, {
-    padding: {
-      top: options.top,
-      right: options.right,
-      bottom: options.bottom,
-      left: options.left
-    },
+    padding: cameraPadding(map, options),
+    retainPadding: false,
     maxZoom: options.maxZoom,
     duration: options.duration,
     essential: true,
@@ -1218,9 +1225,9 @@ function MapComponent({
 
     if (showTeleferico) {
       // Fly to encompass all stations: E6 (west) → E1 (east)
-      map.fitBounds(
+      fitBoundsAnimated(map,
         [[-102.0769769, 19.396299], [-102.02093, 19.4306165]],
-        { padding: { top: 100, right: 32, bottom: 180, left: 32 }, duration: 1200, maxZoom: 14 }
+        { top: 100, right: 32, bottom: 180, left: 32, duration: 1200, maxZoom: 14 }
       );
     }
   }, [showTeleferico]);
@@ -1353,7 +1360,8 @@ function MapComponent({
         zoom: Math.max(map.getZoom(), 15.5),
         duration,
         easing: cameraEasing,
-        padding: { top: 96, right: 24, bottom: 150, left: 24 },
+        padding: cameraPadding(map, { top: 96, right: 24, bottom: 150, left: 24 }),
+        retainPadding: false,
         essential: true,
       });
     }
@@ -1806,7 +1814,8 @@ function MapComponent({
           center: effectiveDestination,
           zoom: Math.max(currentZoom, 14),
           duration: 600,
-          padding: { top: 220, right: 32, bottom: 200, left: 32 },
+          padding: cameraPadding(map, { top: 220, right: 32, bottom: 200, left: 32 }),
+          retainPadding: false,
           essential: true
         });
       }
@@ -1826,7 +1835,8 @@ function MapComponent({
       zoom: 15.5,
       duration: 900,
       essential: true,
-      padding: { top: 130, right: 24, bottom: 150, left: 24 },
+      padding: cameraPadding(map, { top: 130, right: 24, bottom: 150, left: 24 }),
+      retainPadding: false,
     });
   }, [isLoading, nearbyFocusPoint, tripModeActive]);
 
@@ -2093,7 +2103,8 @@ function MapComponent({
       zoom: Math.max(map.getZoom(), 15.5),
       duration: 700,
       easing: cameraEasing,
-      padding: { top: 96, right: 24, bottom: 150, left: 24 },
+      padding: cameraPadding(map, { top: 96, right: 24, bottom: 150, left: 24 }),
+      retainPadding: false,
       essential: true,
     });
   };
