@@ -1587,7 +1587,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
         {/* ── MOBILE ONLY: FAB row — Resultado (izq) + Rutas (der) ── */}
         {!isDesktopLayout && (
         <div
-          className={`absolute inset-x-4 z-30 items-end gap-2 lg:hidden ${isTripActive ? "hidden" : "flex"}`}
+          className={`absolute inset-x-4 z-20 items-end gap-2 lg:hidden ${isTripActive ? "hidden" : "flex"}`}
           style={{ bottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }}
         >
           {flowStep === 3 && !resultSheetOpen && !isSheetOpen && (

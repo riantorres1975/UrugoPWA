@@ -212,6 +212,9 @@ export default function PlaceSearch({
         <ul
           id={listboxId}
           role="listbox"
+          // Keep the keyboard/layout stable until click applies the selection.
+          // Unlike touchstart cancellation, this still allows touch scrolling.
+          onMouseDown={(event) => event.preventDefault()}
           className="ov-panel absolute z-50 mt-2 max-h-72 w-full overflow-y-auto overscroll-contain rounded-2xl border p-1.5 shadow-[0_12px_40px_rgba(0,0,0,0.35)] backdrop-blur-xl"
           style={{ borderColor: "var(--ov-border)" }}
         >
@@ -288,7 +291,6 @@ export default function PlaceSearch({
                 role="option"
                 aria-selected={index === activeIndex}
                 onClick={() => handleSelect(result)}
-                onMouseEnter={() => setActiveIndex(index)}
                 className={`flex w-full select-none items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition ${
                   index === activeIndex ? "bg-lima/10" : "hover:bg-lima/5"
                 }`}

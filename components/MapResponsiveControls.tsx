@@ -142,7 +142,7 @@ export function MobileMapControls({
   routesMapMode: RoutesMapMode;
 }) {
   return (
-    <section className="pointer-events-none absolute inset-x-0 top-0 z-20 px-4 pt-safe-or-4 lg:hidden">
+    <section className="pointer-events-none absolute inset-x-0 top-0 z-30 px-4 pt-safe-or-4 lg:hidden">
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72 bg-gradient-to-b from-black/45 via-black/20 to-transparent" aria-hidden="true" />
       <div className="flex items-center gap-1 pr-10">
         <div className="ov-panel pointer-events-auto inline-flex items-center gap-1.5 rounded-2xl border px-2 py-2 shadow-[0_4px_24px_rgba(0,0,0,0.18)] backdrop-blur-xl">
