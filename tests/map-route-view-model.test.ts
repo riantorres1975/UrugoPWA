@@ -94,6 +94,22 @@ describe("direct journey map rendering", () => {
     expect(view.arrowSegments).toEqual([{ coords: segment, color: route.color, showLine: true }]);
   });
 
+  it.each([null, [-102.025, 19.405] as Coordinates])("shows both complete directions with origin %j and no destination", (origin) => {
+    const returning: ProductionRoute = {
+      ...route, id: 27, original_name: "Ruta 26 Vuelta",
+      path: [[-102.05, 19.43], [-102.06, 19.42], [-102.03, 19.39]],
+    };
+    const view = renderViewModel({
+      origin, destination: null, suggestions: [], selectedRouteId: route.id,
+      routes: [route, returning],
+    });
+    expect(view.selectedMapSegment).toBeNull();
+    expect(view.arrowSegments).toEqual([
+      { coords: route.path, color: route.color, showLine: true },
+      { coords: returning.path, color: route.color, showLine: true },
+    ]);
+  });
+
   it("draws both transfer legs without retaining the direct journey segment", () => {
     const segmentB: Coordinates[] = [segment[1], [-102.05, 19.45]];
     const view = renderViewModel({

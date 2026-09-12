@@ -1880,20 +1880,23 @@ function MapComponent({
       transferRouteIdsRef.current,
       debugActive
     );
-    map.stop();
-
     if (selectedRouteId !== null) {
       const route = routes.find((item) => item.id === selectedRouteId);
       if (route) {
+        map.stop();
         const selectedCoordinates = selectedSegmentActive && selectedRouteSegment ? selectedRouteSegment : route.coordenadas;
-        const bounds = getBoundsFromCoordinates(selectedCoordinates);
+        const fullRouteLines = arrowSegmentsRef.current.filter((segment) => segment.showLine);
+        const hasArrowLines = fullRouteLines.length > 0;
+        const bounds = getBoundsFromCoordinates(hasArrowLines
+          ? fullRouteLines.flatMap((segment) => segment.coords)
+          : selectedCoordinates);
         const routeFitKey = `${selectedRouteId}:${selectedSegmentActive ? "segment" : "full"}`;
         if (lastFittedRouteKeyRef.current !== routeFitKey) {
           lastFittedRouteKeyRef.current = routeFitKey;
           fitBoundsAnimated(map, bounds, {
-            top: 116,
+            top: window.innerWidth >= 1024 ? 116 : Math.min(380, map.getContainer().clientHeight * 0.45),
             right: 32,
-            bottom: 154,
+            bottom: 96,
             left: 32,
             duration: CAMERA_DURATION,
             maxZoom: 15
@@ -1905,8 +1908,6 @@ function MapComponent({
         );
 
         // Skip draw animation when arrow segments are providing the visual lines (ida+vuelta mode)
-        const hasArrowLines = arrowSegmentsRef.current.some((s) => s.showLine);
-
         if (!hasArrowLines && featureIndex !== -1 && selectedCoordinates.length > SHORT_ROUTE_THRESHOLD && shouldAnimateRouteDraw()) {
           const duration = getDrawDuration(selectedCoordinates.length);
           const token = animationTokenRef.current + 1;
@@ -1969,7 +1970,7 @@ function MapComponent({
 
     lastFittedRouteKeyRef.current = null;
     source.setData(routeFeatures);
-  }, [debugActive, routeFeatures, routes, selectedRouteId, selectedRouteSegment, stopRouteAnimation]);
+  }, [debugActive, isLoading, routeFeatures, routes, selectedRouteId, selectedRouteSegment, stopRouteAnimation]);
 
   useEffect(() => {
     const map = mapRef.current;

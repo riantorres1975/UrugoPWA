@@ -156,8 +156,6 @@ export function buildLandmarksByRouteName(routes: ProductionRoute[]) {
 }
 
 export function buildArrowSegments({
-  destination,
-  origin,
   routes,
   selectedRoute,
   selectedSegment,
@@ -187,7 +185,9 @@ export function buildArrowSegments({
     return [{ coords: selectedSegment, color: selectedRoute.color, showLine: false }];
   }
 
-  if (selectedRoute && !origin && !destination) {
+  // A GPS fix is not a planned journey. Keep both directions visible when
+  // browsing the catalog; an actual journey segment takes precedence above.
+  if (selectedRoute) {
     return routes
       .filter((route) => route.name === selectedRoute.name)
       .map((route) => ({ coords: route.path, color: selectedRoute.color, showLine: true }));

@@ -49,6 +49,10 @@ test("el teclado no aleja el encuadre hasta mostrar todo el país", async ({ pag
 });
 
 test("elegir un destino reciente cierra el teclado y conserva la búsqueda", async ({ page }) => {
+  // Exercise the real camera without requiring a Mapbox token in CI.
+  await page.route("https://api.mapbox.com/styles/v1/**", (route) => route.fulfill({
+    json: { version: 8, sources: {}, layers: [] },
+  }));
   await page.addInitScript(() => {
     localStorage.setItem("rutas-uru-onboarded", "1");
     localStorage.setItem("urugo-recent-places", JSON.stringify([{
