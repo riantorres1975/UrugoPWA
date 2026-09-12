@@ -35,6 +35,10 @@ const SECTIONS = [
     body: "Si envías una corrección, UruGo guarda el tipo de reporte, la ruta o lugar indicado, tu descripción, el contacto que decidas proporcionar y, si dibujas un recorrido, sus coordenadas aproximadas. Esa propuesta permanece privada durante la revisión. La dirección IP no se conserva: se transforma en una huella no reversible para limitar abuso. Las confirmaciones y reportes resueltos se eliminan después de 180 días; los que sigan abiertos, después de 365 días. La bitácora privada de decisiones se conserva hasta 365 días. Ningún aporte modifica el mapa automáticamente."
   },
   {
+    title: "Opiniones de viajes",
+    body: "Al responder si una ruta o transbordo te sirvió, guardamos en Supabase tu respuesta, las rutas, la fecha y el motivo opcional. El navegador crea un identificador aleatorio y el servidor guarda una huella derivada para evitar votos repetidos del mismo dispositivo durante el día. Estas opiniones no incluyen coordenadas ni tu IP en claro. Solo el equipo administrador puede consultarlas para priorizar revisiones y evaluar mejoras. Puedes borrar el identificador local desde la configuración del navegador."
+  },
+  {
     title: "Servicios de terceros",
     body: "Mapbox muestra el mapa y resuelve búsquedas de lugares. Vercel Analytics y Speed Insights recopilan métricas técnicas agregadas. Para ordenar las rutas más consultadas, UruGo suma de forma anónima cuándo se abre una ficha o se selecciona una ruta en el mapa; solo guarda la ruta, el día, el contexto y un contador, nunca la ubicación, IP, cuenta ni un identificador del visitante. El navegador evita repetir la misma consulta durante el día. Las mediciones de rendimiento del cálculo solo incluyen rangos de tiempo, motor y tipo de resultado; no contienen coordenadas, nombres de lugares ni el recorrido elegido. UruGo también elimina de la URL los parámetros sensibles. DeepSeek procesa los mensajes que envías voluntariamente al asistente junto con contexto de rutas cercanas. Los errores inesperados generan una huella técnica anónima para detectar fallos repetidos; no se envían el mensaje del error, la traza, las búsquedas ni la ubicación."
   },

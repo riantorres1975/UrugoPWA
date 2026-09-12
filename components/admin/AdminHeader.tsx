@@ -1,4 +1,4 @@
-import { ClipboardList, KeyRound, LogOut, RadioTower, Route } from "lucide-react";
+import { ClipboardList, KeyRound, LogOut, RadioTower, Route, ThumbsUp } from "lucide-react";
 import Link from "next/link";
 import { signOutAdmin } from "@/app/admin/actions";
 import Logo from "@/components/Logo";
@@ -6,7 +6,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 type Props = {
   email: string;
-  active: "integrations" | "reports" | "routes" | "signals";
+  active: "integrations" | "reports" | "routes" | "signals" | "feedback";
 };
 
 function PendingCount({ count }: { count: number }) {
@@ -52,6 +52,9 @@ export default async function AdminHeader({ email, active }: Props) {
           </Link>
           <Link href="/admin/signals" className={linkClass(active === "signals")} aria-current={active === "signals" ? "page" : undefined}>
             <RadioTower className="h-4 w-4" aria-hidden="true" /> Señales <PendingCount count={pendingSignals} />
+          </Link>
+          <Link href="/admin/feedback" className={linkClass(active === "feedback")} aria-current={active === "feedback" ? "page" : undefined}>
+            <ThumbsUp className="h-4 w-4" aria-hidden="true" /> Opiniones
           </Link>
           <Link href="/admin/integrations" className={linkClass(active === "integrations")} aria-current={active === "integrations" ? "page" : undefined}>
             <KeyRound className="h-4 w-4" aria-hidden="true" /> Integraciones

@@ -1,6 +1,7 @@
 import { expect, test } from "./fixtures";
 
 test.beforeEach(async ({ page }) => {
+  await page.route("**/api/community/journey-feedback", (route) => route.fulfill({ status: 200, json: { ok: true } }));
   await page.addInitScript(() => {
     localStorage.setItem("rutas-uru-onboarded", "1");
     Object.defineProperty(navigator, "share", { configurable: true, value: async () => undefined });
@@ -64,6 +65,8 @@ test("transbordo: califica, elige tramo y reintenta un reporte sin perder el tex
   await page.screenshot({ animations: "disabled", scale: "css", path: testInfo.outputPath("transbordo.png") });
   await panel.getByRole("button", { name: "No", exact: true }).click();
   await expect(panel.getByText("Gracias por tu opinión.")).toBeVisible();
+  await panel.getByRole("button", { name: "Ahora no", exact: true }).click();
+  await panel.getByRole("button", { name: "Reportar un problema", exact: true }).click();
   await expect(panel.getByRole("heading", { name: "¿Qué salió mal?" })).toBeVisible();
   await expect(panel.getByRole("button", { name: "Enviar reporte", exact: true })).toBeDisabled();
   await panel.getByLabel("¿En qué ruta ocurrió?").selectOption(routeB);
@@ -99,12 +102,56 @@ test("una opinión negativa permite enviar un motivo sin escribir detalles", asy
   const secondary = await panel.getByRole("button", { name: /Compartir/ }).boundingBox();
   expect(primary!.y).toBeLessThan(secondary!.y);
   await panel.getByRole("button", { name: "No", exact: true }).click();
+  await panel.getByRole("button", { name: "Ahora no", exact: true }).click();
+  await panel.getByRole("button", { name: "Reportar un problema", exact: true }).click();
   await expect(panel.getByRole("heading", { name: "¿Qué salió mal?" })).toBeVisible();
   await panel.getByRole("radio", { name: "La ruta ya no circula" }).check();
   await expect(panel.getByLabel("Cuéntanos un poco más")).toHaveValue("");
   await panel.getByRole("button", { name: "Enviar reporte", exact: true }).click();
   await expect(panel.getByText("Reporte enviado. Gracias por ayudarnos.")).toBeVisible();
   expect(submitted).toMatchObject({ reportType: "route_inactive", description: "Problema indicado durante el viaje: La ruta ya no circula." });
+});
+
+test("guarda una valoración y añade el motivo a la misma combinación", async ({ page }) => {
+  const votes: Record<string, unknown>[] = [];
+  await page.route("**/api/community/journey-feedback", async (route) => {
+    votes.push(route.request().postDataJSON());
+    await route.fulfill({ status: 200, json: { ok: true } });
+  });
+  await page.goto("/mapa?a=-102.063030,19.421010&b=-102.042340,19.426870");
+  await page.getByRole("button", { name: "Ver resultado de ruta", exact: true }).click();
+  const feedback = page.locator('[role="dialog"]:visible').getByRole("region", { name: "Opinión y reporte del viaje" });
+  await feedback.getByRole("button", { name: "No", exact: true }).click();
+  await expect(feedback.getByText("Gracias por tu opinión.")).toBeVisible();
+  await feedback.getByRole("radio", { name: "No pasó el camión", exact: true }).check();
+  await feedback.getByRole("button", { name: "Guardar motivo", exact: true }).click();
+  await expect(feedback.getByText("Motivo guardado: No pasó el camión")).toBeVisible();
+  expect(votes).toHaveLength(2);
+  expect(votes[0]).toMatchObject({ useful: false, reason: null });
+  expect(votes[1]).toEqual({ ...votes[0], reason: "bus_missing" });
+  expect(votes[0]).not.toHaveProperty("coordinates");
+  await page.reload();
+  await page.getByRole("button", { name: "Ver resultado de ruta", exact: true }).click();
+  await expect(feedback.getByText("Motivo guardado: No pasó el camión")).toBeVisible();
+  expect(votes).toHaveLength(2);
+});
+
+test("no agradece un voto fallido y permite reintentar con el mismo dispositivo", async ({ page }) => {
+  const votes: Record<string, unknown>[] = [];
+  await page.route("**/api/community/journey-feedback", async (route) => {
+    votes.push(route.request().postDataJSON());
+    await route.fulfill(votes.length === 1 ? { status: 503, json: { error: "No pudimos guardar tu opinión. Intenta de nuevo." } } : { status: 200, json: { ok: true } });
+  });
+  await page.goto("/mapa?a=-102.063030,19.421010&b=-102.042340,19.426870");
+  await page.getByRole("button", { name: "Ver resultado de ruta", exact: true }).click();
+  const feedback = page.locator('[role="dialog"]:visible').getByRole("region", { name: "Opinión y reporte del viaje" });
+  await feedback.getByRole("button", { name: "Sí", exact: true }).click();
+  await expect(feedback.getByRole("alert")).toContainText("No pudimos guardar");
+  await expect(feedback.getByText("Gracias por tu opinión.")).toHaveCount(0);
+  await feedback.getByRole("button", { name: "Sí", exact: true }).click();
+  await expect(feedback.getByText("Gracias por tu opinión.")).toBeVisible();
+  expect(votes).toHaveLength(2);
+  expect(votes[1]).toEqual(votes[0]);
 });
 
 test("un reporte sin conexión sobrevive a recargar y se envía al recuperarla", async ({ page, context }) => {

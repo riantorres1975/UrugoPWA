@@ -8,13 +8,12 @@ const SIDEBAR_DEFAULT_MD = 380; // px en breakpoint md (768–1023px)
 const SIDEBAR_DEFAULT_LG = 420; // px en breakpoint lg (1024px+)
 const SIDEBAR_MIN = 300;        // px mínimo al arrastrar
 const SIDEBAR_MAX = 520;        // px máximo al arrastrar
-import { track } from "@vercel/analytics";
 import BottomSheet from "@/components/BottomSheet";
 import ChatBotLauncher from "@/components/ChatBotLauncher";
 import FareUpdateNotice from "@/components/FareUpdateNotice";
 import ActiveRouteSummary from "@/components/ActiveRouteSummary";
 import JourneyPreview from "@/components/JourneyPreview";
-import JourneyFeedback from "@/components/JourneyFeedback";
+const JourneyFeedback = dynamic(() => import("@/components/JourneyFeedback"), { ssr: false });
 import RouteFreshness from "@/components/RouteFreshness";
 import NearbyToast from "@/components/NearbyToast";
 import OnboardingGate from "@/components/OnboardingGate";
@@ -250,7 +249,6 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     start: startTripSession,
     updateLocation: updateTripLocation,
   } = useTripSession();
-  const [feedbackTripKey, setFeedbackTripKey] = useState<string | null>(null);
   const [transferFocus, setTransferFocus] = useState<{ key: string; request: number; tripKey: string | null } | null>(null);
   const lastSavedTripKeyRef = useRef("");
   const {
@@ -763,7 +761,6 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     : null;
   const isTripActive = tripSession !== null && tripSession.key === plannedJourneyKey;
   const feedbackKey = plannedJourneyKey ?? (selectedRoute ? `route:${selectedRoute.id}` : showTeleferico ? "teleferico" : null);
-  const feedbackGiven = feedbackKey !== null && feedbackTripKey === feedbackKey;
   const feedbackRoutes = bestSuggestion ? [bestSuggestion.ruta]
     : selectedTransfer ? [selectedTransfer.routeAName, selectedTransfer.routeBName]
       : selectedRoute ? [selectedRoute.name] : showTeleferico ? ["Teleférico Uruapan"] : [];
@@ -873,21 +870,6 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     setSharedSegmentColor,
     setShowHint,
   ]);
-
-  const handleRouteFeedback = useCallback((util: "si" | "no") => {
-    if (feedbackKey) setFeedbackTripKey(feedbackKey);
-    try {
-      track("ruta_feedback", {
-        util,
-        ruta: bestSuggestion?.ruta ?? selectedTransfer?.routeAName ?? selectedRoute?.name ?? "Teleférico Uruapan",
-        tipo: selectedTransfer && !bestSuggestion ? "transbordo" : "directa",
-        ...(selectedTransfer && !bestSuggestion ? { ruta_destino: selectedTransfer.routeBName } : {}),
-        destino_tipo: requestedDestination ? "busqueda" : "punto_mapa",
-      });
-    } catch {
-      // analytics no disponible: ignorar
-    }
-  }, [feedbackKey, bestSuggestion, selectedTransfer, selectedRoute, requestedDestination]);
 
   useEffect(() => {
     if (!isTripActive || !tripSession) return;
@@ -1271,7 +1253,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
             >
               {!bestSuggestion && !selectedTransfer && selectedRoute && <RouteSchedule routeName={selectedRoute.name} />}
               {!isCalculatingSuggestions && feedbackKey && feedbackRoutes.length > 0 && (
-                <JourneyFeedback key={feedbackKey} routes={feedbackRoutes} feedbackGiven={feedbackGiven} onFeedback={handleRouteFeedback} />
+                <JourneyFeedback key={feedbackKey} routes={feedbackRoutes} />
               )}
             </ActiveRouteSummary>
             {!isCalculatingSuggestions && <RouteFreshness routes={(bestSuggestion ? [polylineRoutesById.get(bestSuggestion.routeId)] : selectedTransfer ? [polylineRoutesById.get(selectedTransfer.routeAId), polylineRoutesById.get(selectedTransfer.routeBId)] : selectedRoute ? [selectedRoute] : []).filter((route) => route !== undefined)} />}
