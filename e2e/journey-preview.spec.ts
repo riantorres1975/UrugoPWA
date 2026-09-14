@@ -46,8 +46,9 @@ test("las alternativas muestran tiempos y caminatas sin desbordar en móvil", as
   const panel = page.locator('[role="dialog"]:visible').filter({ hasText: "RUTA RECOMENDADA" });
   await panel.locator("summary").click();
   const alternative = panel.getByRole("button", { name: /como ruta recomendada/ }).first();
-  await expect(alternative).toContainText("Sin transbordo");
-  await expect(alternative).toContainText(/\d+ m a pie/);
+  const comparison = panel.getByRole("article").filter({ has: page.getByRole("button", { name: /como ruta recomendada/ }) }).first();
+  await expect(comparison).toContainText("Sin transbordo");
+  await expect(comparison).toContainText(/\d+ m a pie/);
   await alternative.scrollIntoViewIfNeeded();
   await page.screenshot({ path: testInfo.outputPath("alternativas-320.png") });
   expect(await alternative.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);

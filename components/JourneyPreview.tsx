@@ -22,6 +22,7 @@ export default function JourneyPreview({ route, transfer, pending, onOpen }: {
           {names.length > 0 && <>
             <span>{transfer ? "1 transbordo" : isTelefericoRouteName(names[0]) ? "Teleférico" : "1 camión"}</span>
             {route && !transfer && <span>· ~{route.estimatedMinutes} min</span>}
+            {transfer?.estimatedMinutes && <span>· ~{transfer.estimatedMinutes} min</span>}
             <span>· ${getJourneyFareSummary(names).totalMxn}{transfer ? " total" : ""}</span>
           </>}
           {!names.length && <span>Toca para ver los detalles</span>}

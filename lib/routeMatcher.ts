@@ -1,5 +1,5 @@
 import type { Coordinates, ProductionRouteLandmark } from "@/lib/types";
-import { getSchedule } from "@/lib/schedules";
+import { diverseJourneys, rankJourneys, journeyMinutes, journeyScore, expectedWait, type JourneyCost, type JourneyPreference } from "@/lib/journey-ranking";
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -36,6 +36,7 @@ export type PolylineRouteMatch = {
   expectedWaitMinutes: number;
   estimatedMinutes: number;
   score: number;
+  cost?: JourneyCost;
 };
 
 export type RankedRoutes = {
@@ -59,18 +60,9 @@ export type RouteMetrics = {
 
 const EARTH_R = 6_371_000;
 const toRad = (d: number) => (d * Math.PI) / 180;
-const WALK_SPEED_M_PER_MIN = 75;
 const BUS_SPEED_M_PER_MIN = 300;
-const DEFAULT_WAIT_MINUTES = 7.5;
 const TELEFERICO_ROUTE_NAME = "Teleférico Uruapan";
 const routeMetricsCache = new WeakMap<Coordinates[], RouteMetrics>();
-
-function expectedWaitMinutes(routeName: string): number {
-  const schedule = getSchedule(routeName);
-  if (!schedule) return DEFAULT_WAIT_MINUTES;
-  if (schedule.continuous) return 2.5;
-  return (schedule.freqMin + schedule.freqMax) / 4;
-}
 
 // Equirectangular projection to metric XY, accurate within ~0.1% for city-scale areas.
 function toMetricXY(coord: Coordinates, refLat: number): [number, number] {
@@ -314,7 +306,7 @@ export function isRouteValid(
   return { originSeg, destSeg };
 }
 
-function buildSegmentBetween(route: PolylineRoute, originSeg: ClosestOnPath, destSeg: ClosestOnPath): Coordinates[] {
+export function buildSegmentBetween(route: PolylineRoute, originSeg: ClosestOnPath, destSeg: ClosestOnPath): Coordinates[] {
   if (usesStationOnlyAccess(route)) {
     const startIndex = originSeg.segmentIndex;
     const endIndex = destSeg.segmentIndex;
@@ -335,27 +327,36 @@ function buildSegmentBetween(route: PolylineRoute, originSeg: ClosestOnPath, des
 
 /**
  * Evaluates all routes, discards invalid ones, deduplicates by route name keeping
- * the best-scoring direction, then returns up to 3 results sorted by score.
- *
- * Score is the estimated door-to-door time: walking + expected wait + ride.
+ * a suitable direction, then preserves the recommended, closest and fastest options.
+ * Preference scores include walking and transfer penalties; ETA is kept separate.
  */
 export function findBestRoutes(
   origin: Coordinates,
   destination: Coordinates,
-  routes: PolylineRoute[]
+  routes: PolylineRoute[],
+  preference: JourneyPreference = "nearby",
+  limit = 3,
 ): PolylineRouteMatch[] {
   const byRouteName = new Map<string, PolylineRouteMatch>();
 
   for (const route of routes) {
-    const result = isRouteValid(origin, destination, route);
+    const accesses = getAccessCandidates(origin, route);
+    const exits = getAccessCandidates(destination, route);
+    const pairs = accesses.flatMap((originSeg) => exits
+      .filter((destSeg) => usesStationOnlyAccess(route) ? destSeg.segmentIndex !== originSeg.segmentIndex : destSeg.progressM > originSeg.progressM + 1)
+      .map((destSeg) => ({ originSeg, destSeg, cost: {
+        originWalkM: originSeg.distM, destinationWalkM: destSeg.distM, transferWalkM: 0,
+        rideMinutes: Math.abs(destSeg.progressM - originSeg.progressM) / BUS_SPEED_M_PER_MIN,
+        waitMinutes: expectedWait(route.name), transfers: 0,
+      } })));
+    const result = rankJourneys(pairs, preference)[0];
     if (!result) continue;
-
-    const { originSeg, destSeg } = result;
+    const { originSeg, destSeg, cost } = result;
     const segment = buildSegmentBetween(route, originSeg, destSeg);
     const routeLengthM = getRouteLength(segment);
     const rideMinutes = routeLengthM / BUS_SPEED_M_PER_MIN;
-    const waitMinutes = expectedWaitMinutes(route.name);
-    const score = (originSeg.distM + destSeg.distM) / WALK_SPEED_M_PER_MIN + rideMinutes + waitMinutes;
+    const waitMinutes = cost.waitMinutes;
+    const score = journeyScore(cost, preference);
     const routeKey = route.name.trim().toLocaleLowerCase("es-MX");
 
     const existing = byRouteName.get(routeKey);
@@ -376,14 +377,50 @@ export function findBestRoutes(
       routeLengthM,
       rideMinutes: Math.max(1, Math.ceil(rideMinutes)),
       expectedWaitMinutes: Math.ceil(waitMinutes),
-      estimatedMinutes: Math.max(1, Math.ceil(score)),
+      estimatedMinutes: Math.max(1, Math.ceil(journeyMinutes(cost))),
       score,
+      cost,
     });
   }
 
-  return Array.from(byRouteName.values())
-    .sort((a, b) => a.score - b.score)
-    .slice(0, 3);
+  const ranked = rankJourneys(Array.from(byRouteName.values()) as (PolylineRouteMatch & { cost: JourneyCost })[], preference);
+  return limit === Infinity ? ranked : diverseJourneys(ranked, limit);
+}
+
+/** Distinct nearby access points, preserving different passes through the same area. */
+export function getAccessCandidates(point: Coordinates, route: PolylineRoute, limit = 8): ClosestOnPath[] {
+  if (route.path.length < 2 || !isPointWithinRouteBounds(point, getRouteMetrics(route.path), route.corridor_width_m)) return [];
+  const metrics = getRouteMetrics(route.path);
+  const candidates: ClosestOnPath[] = [];
+  if (usesStationOnlyAccess(route)) {
+    route.path.forEach((station, index) => {
+      const distM = haversineDistanceM(point, station);
+      if (distM <= route.corridor_width_m) candidates.push({ distM, segmentIndex: index, segmentT: 0, projectedPoint: station, progressM: metrics.cumulativeLengthsM[index] });
+    });
+  } else {
+    for (let index = 0; index < route.path.length - 1; index++) {
+      const projection = projectAccess(point, route, index);
+      if (projection.distM <= route.corridor_width_m) candidates.push(projection);
+    }
+  }
+  candidates.sort((a, b) => a.distM - b.distM);
+  const distinct: ClosestOnPath[] = [];
+  for (const candidate of candidates) {
+    if (distinct.every((existing) => Math.abs(existing.progressM - candidate.progressM) > 100)) distinct.push(candidate);
+    if (distinct.length === limit) break;
+  }
+  return distinct;
+}
+
+export function projectAccess(point: Coordinates, route: PolylineRoute, index: number): ClosestOnPath {
+  const a = route.path[index], b = route.path[index + 1] ?? a;
+  const refLat = (point[1] + a[1] + b[1]) / 3;
+  const [px, py] = toMetricXY(point, refLat), [ax, ay] = toMetricXY(a, refLat), [bx, by] = toMetricXY(b, refLat);
+  const dx = bx - ax, dy = by - ay, length = dx * dx + dy * dy;
+  const t = length ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / length)) : 0;
+  const metrics = getRouteMetrics(route.path);
+  return { distM: Math.hypot(px - ax - t * dx, py - ay - t * dy), segmentIndex: index, segmentT: t,
+    projectedPoint: interpolateCoord(a, b, t), progressM: metrics.cumulativeLengthsM[index] + (metrics.segmentLengthsM[index] ?? 0) * t };
 }
 
 /**

@@ -21,6 +21,7 @@ type UseMapRouteSelectionOptions = {
   initialShowTeleferico: boolean;
   origin: Coordinates | null;
   transfers: TransferOption[];
+  recommendedTransfer?: TransferOption;
 };
 
 export function useMapRouteSelection({
@@ -32,11 +33,13 @@ export function useMapRouteSelection({
   initialShowTeleferico,
   origin,
   transfers,
+  recommendedTransfer,
 }: UseMapRouteSelectionOptions) {
   const [selectedRouteId, setSelectedRouteId] = useState<number | null>(null);
   const [hoveredRouteId, setHoveredRouteId] = useState<number | null>(null);
   const [showTeleferico, setShowTeleferico] = useState(initialShowTeleferico);
   const [transferSelection, setTransferSelection] = useState<TransferSelection | null>(null);
+  const [dismissedRecommendation, setDismissedRecommendation] = useState<string | null>(null);
   const { share, status: shareStatus } = useShareRoute();
 
   const selectedTransfer = useMemo(
@@ -45,11 +48,12 @@ export function useMapRouteSelection({
       calculationKey,
       hasCurrentCalculation,
       transfers,
-    ),
-    [calculationKey, hasCurrentCalculation, transferSelection, transfers],
+    ) ?? (selectedRouteId === null && dismissedRecommendation !== calculationKey ? recommendedTransfer ?? null : null),
+    [calculationKey, hasCurrentCalculation, transferSelection, transfers, recommendedTransfer, selectedRouteId, dismissedRecommendation],
   );
 
   const setSelectedTransfer = useCallback((transfer: TransferOption | null) => {
+    setDismissedRecommendation(calculationKey);
     setTransferSelection(transfer && calculationKey ? { calculationKey, transfer } : null);
   }, [calculationKey]);
 

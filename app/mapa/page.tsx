@@ -20,12 +20,13 @@ import OnboardingGate from "@/components/OnboardingGate";
 import { DesktopMapSidebar, MobileMapControls } from "@/components/MapResponsiveControls";
 import RoutePlannerSearch from "@/components/RoutePlannerSearch";
 import RoutePlannerPoints from "@/components/RoutePlannerPoints";
-import {
-  DirectRouteResult,
-  EmptyRouteResult,
-  SelectedTransferResult,
-  TransferOptionsResult,
-} from "@/components/RoutePlannerResults";
+const DirectRouteResult = dynamic(() => import("@/components/RoutePlannerResults").then((module) => module.DirectRouteResult));
+const EmptyRouteResult = dynamic(() => import("@/components/RoutePlannerResults").then((module) => module.EmptyRouteResult));
+const SelectedTransferResult = dynamic(() => import("@/components/RoutePlannerResults").then((module) => module.SelectedTransferResult));
+const TransferOptionsResult = dynamic(() => import("@/components/RoutePlannerResults").then((module) => module.TransferOptionsResult));
+const JourneyPreferences = dynamic(() => import("@/components/JourneyPreferences"));
+const JourneyAlternatives = dynamic(() => import("@/components/JourneyAlternatives"));
+import { useJourneyPreference } from "@/hooks/useJourneyPreference";
 import TripOverlays from "@/components/TripOverlays";
 import { geocodePlace, type PlaceResult } from "@/lib/geocode";
 import { useFavoriteRoutes } from "@/hooks/useFavoriteRoutes";
@@ -294,6 +295,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   const routesMapMode = useSyncExternalStore<RoutesMapMode>(subscribeMapMode, getMapModeSnapshot, () => "all-visible");
   const isDesktopLayout = useSyncExternalStore(subscribeDesktopLayout, getDesktopLayoutSnapshot, () => false);
   const isOnline = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
+  const [journeyPreference, setJourneyPreference] = useJourneyPreference();
   const {
     alternativeRouteIds: alternativeSuggestedRouteIds,
     calculationKey,
@@ -307,7 +309,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     retry: retryRouteData,
     suggestions,
     transfers,
-  } = useRouteData({ destination: destinationPoint, isOnline, origin: originPoint });
+  } = useRouteData({ destination: destinationPoint, isOnline, origin: originPoint, preference: journeyPreference });
   const {
     clearSelection: handleClearSelection,
     hoveredRouteId,
@@ -332,6 +334,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     initialShowTeleferico: initialUrlState.sharedState?.showTeleferico ?? false,
     origin: originPoint,
     transfers,
+    recommendedTransfer: currentCalculation?.recommendedTransfer,
   });
   const recentTripsSnapshot = useSyncExternalStore(subscribeRecentTrips, getRecentTripsSnapshot, () => "[]");
   const lastTrip = useMemo(() => (JSON.parse(recentTripsSnapshot) as RecentTrip[])[0] ?? null, [recentTripsSnapshot]);
@@ -1022,12 +1025,16 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
       return `${formatRouteLabel(bestSuggestion.ruta)} es la mejor opción.`;
     }
 
+    if (selectedTransfer) {
+      return "Revisa dónde subir, cambiar de ruta y bajar en tu viaje.";
+    }
+
     if (transfers.length > 0) {
       return "No hay ruta directa. Hay opciones con transbordo.";
     }
 
     return "No encontramos ruta directa. Ajusta origen o destino.";
-  }, [activePoint, bestSuggestion, destinationPoint, flowStep, geoAccuracyWarn, geoStatus, isCalculatingSuggestions, manualOrigin, requestedDestination, transfers]);
+  }, [activePoint, bestSuggestion, destinationPoint, flowStep, geoAccuracyWarn, geoStatus, isCalculatingSuggestions, manualOrigin, requestedDestination, selectedTransfer, transfers]);
 
   // Keep direct journeys on the map; open the sheet when the user needs to choose a transfer.
   // La ref evita re-aperturas causadas por refrescados del GPS.
@@ -1166,6 +1173,11 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
             className="ov-panel-soft w-full overflow-hidden rounded-2xl border shadow-lg transition-all duration-300"
             style={{ borderLeftWidth: "3px", borderLeftColor: bestSuggestion?.routeColor ?? selectedRoute?.color ?? "#b8e840" }}
           >
+            <JourneyPreferences value={journeyPreference} disabled={isTripActive} onChange={(preference) => {
+              handleClearSelection();
+              clearSharedRoute();
+              setJourneyPreference(preference);
+            }} />
             {isCalculatingSuggestions ? (
               <div className="flex items-center gap-3 px-4 py-3.5">
                 <span className="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-lima/60 border-t-transparent" />
@@ -1175,7 +1187,6 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
               <>
                 <DirectRouteResult
                   showTitle={!isMobile}
-                  alternatives={suggestions.slice(1)}
                   isTripActive={isTripActive}
                   route={bestSuggestion}
                   routeEta={bestSuggestionEta}
@@ -1188,12 +1199,6 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
                     setActivePoint("origin");
                     setShowHint(true);
                     if (isMobile) setIsResultSheetOpen(false);
-                  }}
-                  onPromote={(routeId) => {
-                    setSelectedRouteId(null);
-                    setSharedRouteSegment(null);
-                    setSharedSegmentColor(null);
-                    promoteSuggestion(routeId);
                   }}
                   onShare={() => shareDirectRoute(bestSuggestion)}
                   onToggleTrip={isTripActive ? handleStopTrip : handleStartTrip}
@@ -1240,6 +1245,21 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
               />
             )}
 
+            {!isCalculatingSuggestions && !isTripActive && (bestSuggestion || selectedTransfer) && (
+              <JourneyAlternatives routes={suggestions} transfers={transfers} activeRoute={bestSuggestion} activeTransfer={selectedTransfer}
+                onRoute={(routeId) => {
+                  setSelectedTransfer(null);
+                  setSelectedRouteId(null);
+                  clearSharedRoute();
+                  promoteSuggestion(routeId);
+                }}
+                onTransfer={(transfer) => {
+                  setSelectedRouteId(null);
+                  clearSharedRoute();
+                  setSelectedTransfer(transfer);
+                }}
+              />
+            )}
             <ActiveRouteSummary
               showActions={!bestSuggestion && !selectedTransfer}
               instructions={routeTextSummary}

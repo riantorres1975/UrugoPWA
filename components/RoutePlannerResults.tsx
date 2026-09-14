@@ -1,34 +1,30 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { getJourneyFareSummary } from "@/lib/journey-guidance";
 import type { RouteOption } from "@/lib/route-calculation";
 import { formatRouteLabel } from "@/lib/route-names";
 import type { TransferOption } from "@/lib/transfers";
+import JourneyWalkingSummary from "@/components/JourneyWalkingSummary";
 
 type DirectRouteResultProps = {
-  alternatives: RouteOption[];
   showTitle?: boolean;
   isTripActive: boolean;
   route: RouteOption;
   routeEta: number | null;
   onEditDestination: () => void;
   onEditOrigin: () => void;
-  onPromote: (routeId: number) => void;
   onShare: () => void;
   onToggleTrip: () => void;
   onViewMap: () => void;
 };
 
 export function DirectRouteResult({
-  alternatives,
   showTitle = true,
   isTripActive,
   route,
   routeEta,
   onEditDestination,
   onEditOrigin,
-  onPromote,
   onShare,
   onToggleTrip,
   onViewMap,
@@ -62,6 +58,7 @@ export function DirectRouteResult({
 
       </div>
 
+      <JourneyWalkingSummary cost={route.cost} />
       <TripToggleButton
         active={isTripActive}
         label={`Iniciar viaje en ${formatRouteLabel(route.ruta)}`}
@@ -113,44 +110,6 @@ export function DirectRouteResult({
           Ver en mapa
         </button>
       </div>
-
-
-      {alternatives.length > 0 && (
-        <details className="ov-border mt-3 border-t" key={route.routeId}>
-          <summary className="ov-text-muted min-h-11 cursor-pointer py-3 text-[12px] font-semibold marker:text-lima">Ver {alternatives.length} alternativa{alternatives.length > 1 ? "s" : ""}</summary>
-          <div className="space-y-2">
-          {alternatives.map((alternative) => {
-            const alternativeWalk = Math.round(alternative.distanciaA + alternative.distanciaB);
-            const routeWalk = Math.round(route.distanciaA + route.distanciaB);
-            const lessWalk = alternativeWalk < routeWalk;
-            const faster = alternative.estimatedMinutes < route.estimatedMinutes;
-
-            return (
-              <button
-                key={alternative.routeId}
-                type="button"
-                onClick={() => onPromote(alternative.routeId)}
-                className="ov-pill ov-border flex w-full flex-wrap items-center gap-2 rounded-xl border px-3 py-3 text-left transition active:scale-[0.99] hover:border-lima/40"
-                aria-label={`Usar ${formatRouteLabel(alternative.ruta)} como ruta recomendada`}
-              >
-                <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: alternative.routeColor ?? "#6aab48" }} aria-hidden="true" />
-                <span className="ov-text min-w-0 flex-1 text-[12px] font-semibold leading-5">
-                  {formatRouteLabel(alternative.ruta)}
-                </span>
-                <span className="ov-text-muted flex w-full flex-wrap items-center gap-2 pl-4 text-[11px]">
-                  <span>~{alternative.estimatedMinutes} min · {alternativeWalk} m a pie · ${getJourneyFareSummary([alternative.ruta]).totalMxn}</span>
-                  <span>Sin transbordo</span>
-                  {lessWalk && <ComparisonBadge variant="walk">Menos caminata</ComparisonBadge>}
-                  {faster && <ComparisonBadge variant="fast">Más rápida</ComparisonBadge>}
-                </span>
-              </button>
-            );
-          })}
-          </div>
-        </details>
-      )}
-
-
     </div>
   );
 }
@@ -195,6 +154,8 @@ export function SelectedTransferResult({
         </li>
       </ol>
       <p className="ov-text mt-3 text-[13px] font-semibold">{getJourneyFareSummary([transfer.routeAName, transfer.routeBName]).badge}</p>
+      {transfer.estimatedMinutes !== undefined && <p className="ov-text-muted mt-1 text-xs">~{Math.round(transfer.estimatedMinutes)} min puerta a puerta</p>}
+      <JourneyWalkingSummary cost={transfer.cost} />
       <TripToggleButton active={isTripActive} className="mt-3" label="Iniciar viaje con transbordo" onClick={onToggleTrip} />
       <button type="button" onClick={onViewTransfer} className="ov-pill ov-border ov-text mt-2 min-h-11 w-full rounded-xl border px-3 text-[13px] font-semibold">Ver dónde cambiar</button>
       <div className="mt-2 grid grid-cols-2 gap-2">
@@ -247,11 +208,11 @@ export function TransferOptionsResult({
                 <span className="ov-text-muted block text-[11px]">→ {formatRouteLabel(transfer.routeBName)}</span>
               </span>
               <span className="shrink-0 rounded-full bg-avocado-400/15 px-2 py-0.5 text-[10px] font-semibold text-avocado-600">
-                ~{Math.round(transfer.walkMeters)} m a pie
+                ~{Math.round(transfer.cost ? transfer.cost.originWalkM + transfer.cost.transferWalkM + transfer.cost.destinationWalkM : transfer.walkMeters)} m a pie en total
               </span>
               <span className="ov-text-muted flex w-full flex-wrap gap-2 pl-6 text-[11px]">
                 <span>1 transbordo · ${getJourneyFareSummary([transfer.routeAName, transfer.routeBName]).totalMxn} total</span>
-                {transfer.walkMeters === Math.min(...transfers.map((option) => option.walkMeters)) && transfers.some((option) => option.walkMeters > transfer.walkMeters) && <span className="text-avocado-400">Menos caminata en el cambio</span>}
+                {transfer.estimatedMinutes !== undefined && <span>~{Math.round(transfer.estimatedMinutes)} min puerta a puerta</span>}
               </span>
             </button>
           </li>
@@ -278,16 +239,6 @@ export function EmptyRouteResult({ onMoveDestination }: { onMoveDestination: () 
       </div>
       <MoveDestinationButton onClick={onMoveDestination} />
     </div>
-  );
-}
-
-function ComparisonBadge({ children, variant }: { children: ReactNode; variant: "walk" | "fast" }) {
-  return (
-    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
-      variant === "walk" ? "bg-emerald-500/10 text-emerald-400" : "bg-sky-500/10 text-sky-400"
-    }`}>
-      {children}
-    </span>
   );
 }
 

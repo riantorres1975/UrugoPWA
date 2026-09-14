@@ -47,7 +47,7 @@ export function resolveTransferSelection(
   transfers: TransferOption[],
 ): TransferOption | null {
   if (!selection || !calculationKey) return null;
-  if (selection.calculationKey === calculationKey || !calculationReady) {
+  if (!calculationReady) {
     return selection.transfer;
   }
 

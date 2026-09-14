@@ -16,7 +16,7 @@ const directRoute: PolylineRoute = {
 };
 
 describe("calculateRouteOptions", () => {
-  it("prioriza una ruta directa sin calcular transbordos", () => {
+  it("ofrece la ruta directa cuando no existe una combinación con otra ruta", () => {
     const result = calculateRouteOptions(
       [directRoute],
       [-102.078, 19.4],

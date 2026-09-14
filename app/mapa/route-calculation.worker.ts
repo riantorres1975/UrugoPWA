@@ -28,7 +28,7 @@ workerScope.onmessage = (event) => {
       type: "result",
       requestId: message.requestId,
       key: message.key,
-      result: calculateRouteOptions(routes, message.origin, message.destination),
+      result: calculateRouteOptions(routes, message.origin, message.destination, message.preference),
     });
   } catch {
     workerScope.postMessage({

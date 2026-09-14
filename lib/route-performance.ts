@@ -26,14 +26,12 @@ export function buildRouteCalculationPerformance(
   durationMs: number,
   engine: RouteCalculationEngine,
 ): RouteCalculationPerformance {
-  const resultType = result.suggestions.length > 0
+  const resultType = result.recommendedTransfer ? "transfer" : result.suggestions.length > 0
     ? "direct"
     : result.transfers.length > 0
       ? "transfer"
       : "none";
-  const optionCount = result.suggestions.length > 0
-    ? result.suggestions.length
-    : result.transfers.length;
+  const optionCount = result.suggestions.length + result.transfers.length;
 
   return {
     duration_bucket: getRouteCalculationDurationBucket(durationMs),

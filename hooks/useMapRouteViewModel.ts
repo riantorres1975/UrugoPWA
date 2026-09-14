@@ -54,7 +54,7 @@ export function useMapRouteViewModel({
     () => new Map(suggestions.map((suggestion) => [suggestion.routeId, suggestion.direccion])),
     [suggestions],
   );
-  const bestSuggestion = suggestions[0] ?? null;
+  const bestSuggestion = selectedTransfer ? null : suggestions[0] ?? null;
   const selectedSuggestion = useMemo(
     () => suggestions.find((suggestion) => suggestion.routeId === selectedRouteId) ?? null,
     [selectedRouteId, suggestions],
