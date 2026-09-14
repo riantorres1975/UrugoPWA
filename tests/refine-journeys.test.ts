@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { approximateWalk } from "@/lib/walking-directions";
 import type { Coordinates } from "@/lib/types";
 import { calculateRouteOptions } from "@/lib/route-calculation";
+import type { TransferOption } from "@/lib/transfers";
 import { buildJourneyDetails } from "@/lib/map-journey-geometry";
 
 const mocks = vi.hoisted(() => ({ walk: vi.fn(), quality: vi.fn() }));
@@ -47,5 +48,33 @@ describe("refining the finalists", () => {
     expect(features.some((item) => item.properties?.label === "A pie · por calles" && item.geometry.type === "LineString" && item.geometry.coordinates.length === 3)).toBe(true);
     const moved = buildJourneyDetails([{ color: "red", coords: route.segment }], [-102.07, 19.42], destination, true, false, walking).features;
     expect(moved.filter((item) => item.properties?.label === "A pie · por calles")).toHaveLength(1);
+  });
+
+  it("replaces an unnecessary transfer after checking streets, but keeps a transfer that avoids a long walk", async () => {
+    const direct = result().suggestions[0];
+    direct.cost = { originWalkM: 28, destinationWalkM: 650, transferWalkM: 0, rideMinutes: 26, waitMinutes: 2, transfers: 0 };
+    const change: Coordinates = [-102.044, 19.421];
+    const transfer: TransferOption = {
+      routeAId: direct.routeId, routeBId: 3, routeAName: direct.ruta, routeBName: "C",
+      routeAStartIndex: 0, routeATransferIndex: 1, routeBTransferIndex: 0, routeBEndIndex: 1,
+      transferPoint: change, segmentA: [direct.segment[0], change], segmentB: [change, [-102.04, 19.4205]],
+      walkMeters: 0, score: 0,
+      cost: { originWalkM: 28, destinationWalkM: 168, transferWalkM: 0, rideMinutes: 24, waitMinutes: 6, transfers: 1 },
+    };
+    const initial = { suggestions: [direct], transfers: [transfer], alternativeRouteIds: [], recommendedTransfer: transfer };
+    let directExitWalk = 350;
+    mocks.walk.mockImplementation(async (from: Coordinates, to: Coordinates) => {
+      const distanceM = to === destination ? (from === direct.segment.at(-1) ? directExitWalk : 168) : from === origin ? 28 : 0;
+      return { ...approximateWalk(from, to), status: "street", distanceM, minutes: distanceM / 75 };
+    });
+    const refined = await refineJourneys(initial, origin, destination, "nearby", new AbortController().signal);
+    expect(refined.recommendedTransfer).toBeUndefined();
+    expect(refined.suggestions[0].ruta).toBe(direct.ruta);
+    expect(refined.transfers).toHaveLength(1);
+    expect(refined.transfers[0].walking?.destination.distanceM).toBe(168);
+
+    directExitWalk = 950;
+    const detour = await refineJourneys(initial, origin, destination, "nearby", new AbortController().signal);
+    expect(detour.recommendedTransfer?.routeBName).toBe("C");
   });
 });

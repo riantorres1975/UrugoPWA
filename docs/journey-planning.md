@@ -15,6 +15,14 @@ Las dos primeras añaden cuatro puntos por transbordo, para representar la
 incomodidad de cambiar de vehículo. Estos puntos **no se suman a la duración**.
 Los parámetros están en `lib/journey-ranking.ts`.
 
+En Menos caminata y Equilibrada, si encabeza la lista un transbordo se compara
+con la mejor directa que esté dentro de cinco minutos de la opción más rápida.
+Se recomienda la directa si el cambio ahorra menos de 300 m a pie y menos de
+cinco minutos de viaje. El transbordo sigue disponible para elección manual.
+La regla se repite después de verificar las caminatas por calles, sin modificar
+la duración ni el modo Más rápida. No se elimina un cambio por la longitud del
+tramo en camión: un tramo corto podría evitar una barrera peatonal.
+
 La duración incluye caminar desde el origen, caminar al cambiar de ruta, caminar
 hasta el destino, viajar y esperar cada vehículo. Se asumen 75 m/min caminando,
 300 m/min en transporte y una espera de la mitad de la frecuencia media conocida

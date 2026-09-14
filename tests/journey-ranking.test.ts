@@ -12,6 +12,36 @@ const route = (id: number, path: PolylineRoute["path"], corridor = 550): Polylin
 });
 
 describe("preferencias de viaje", () => {
+  it.each(["nearby", "balanced"] as const)("%s prefiere un camión por un ahorro pequeño y conserva el cambio como alternativa", (preference) => {
+    const direct = { cost: cost(400, 34) };
+    const transfer = { cost: cost(196, 31, 1) };
+    expect(journeyScore(transfer.cost, preference)).toBeLessThan(journeyScore(direct.cost, preference));
+    expect(rankJourneys([transfer, direct], preference)).toEqual([direct, transfer]);
+    expect(rankJourneys([direct, transfer], preference)).toEqual([direct, transfer]);
+    expect(journeyMinutes(direct.cost)).toBe(34);
+  });
+
+  it("conserva un transbordo que ahorra al menos 300 metros", () => {
+    const direct = { cost: cost(496, 34) };
+    const transfer = { cost: cost(196, 33, 1) };
+    expect(rankJourneys([direct, transfer], "nearby")[0]).toBe(transfer);
+  });
+
+  it("conserva un transbordo que ahorra cinco minutos aunque la caminata sea similar", () => {
+    const direct = { cost: cost(250, 36) };
+    const transfer = { cost: cost(196, 31, 1) };
+    expect(rankJourneys([direct, transfer], "nearby")[0]).toBe(transfer);
+  });
+
+  it("no promueve una directa fuera de la tolerancia de tiempo ni cambia Más rápida", () => {
+    const direct = { cost: cost(400, 37) };
+    const transfer = { cost: cost(196, 31, 1) };
+    expect(rankJourneys([direct, transfer], "nearby")[0]).toBe(transfer);
+    expect(rankJourneys([{ cost: cost(400, 34) }, transfer], "fastest")[0]).toBe(transfer);
+    expect(rankJourneys([transfer], "nearby")).toEqual([transfer]);
+    expect(rankJourneys([], "nearby")).toEqual([]);
+  });
+
   it("ahorra 300 m de caminata aunque el viaje tarde un minuto más", () => {
     const fast = { id: "fast", cost: cost(520, 20) };
     const close = { id: "close", cost: cost(210, 21) };

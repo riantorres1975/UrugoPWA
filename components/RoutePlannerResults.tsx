@@ -145,7 +145,7 @@ export function SelectedTransferResult({
         </li>
         <li className="ml-3.5 border-l-2 border-dashed border-cream-100/30 py-3 pl-6">
           <p className="ov-text text-xs leading-5">Baja de <span className="font-semibold text-blue-400">{formatRouteLabel(transfer.routeAName)}</span></p>
-          <p className="ov-text mt-1 text-[13px] font-medium">Camina ~{Math.round(transfer.walkMeters)} m · {transferWalkMinutes} min</p>
+          <p className="ov-text mt-1 text-[13px] font-medium">{Math.round(transfer.walkMeters) === 0 ? "Cambio en el mismo punto del mapa" : `Camina ~${Math.round(transfer.walkMeters)} m · ${transferWalkMinutes} min`}</p>
           <p className="ov-text-muted mt-1 text-xs leading-5">{transferLandmark ? `Cambia cerca de ${transferLandmark}` : "Ubica el enlace a pie aproximado en el mapa"}</p>
         </li>
         <li className="flex gap-3">
