@@ -13,6 +13,7 @@ import {
   URUAPAN_CENTER
 } from "@/lib/map";
 import type { Coordinates, RouteData } from "@/lib/types";
+import type { JourneyWalking } from "@/lib/journey-walking";
 import { haversineMeters } from "@/lib/geo";
 import { getSafeCameraPadding, type CameraPadding } from "@/lib/map-camera";
 import { findNearbyRouteIds, type NearbyRoutePath } from "@/lib/nearby-routes";
@@ -187,6 +188,7 @@ type MapProps = {
   bestSuggestedRouteId: number | null;
   selectedRouteSegment: Coordinates[] | null;
   arrowSegments?: ArrowSegment[];
+  journeyWalking?: JourneyWalking;
   originPoint: [number, number] | null;
   destinationPoint: [number, number] | null;
   showTeleferico?: boolean;
@@ -976,6 +978,7 @@ function MapComponent({
   bestSuggestedRouteId,
   selectedRouteSegment,
   arrowSegments = [],
+  journeyWalking,
   originPoint,
   destinationPoint,
   showTeleferico = false,
@@ -1029,6 +1032,7 @@ function MapComponent({
   const showTelefericoRef = useRef(showTeleferico);
   const telefericoGeoJSONRef = useRef<any>(null);
   const arrowSegmentsRef = useRef(arrowSegments);
+  const journeyWalkingRef = useRef(journeyWalking);
   const selectedTransferRef = useRef(selectedTransfer);
   const tripModeActiveRef = useRef(tripModeActive);
   const tripSessionKeyRef = useRef(tripSessionKey);
@@ -1174,6 +1178,7 @@ function MapComponent({
   useEffect(() => {
     arrowSegmentsRef.current = arrowSegments;
   }, [arrowSegments]);
+  useEffect(() => { journeyWalkingRef.current = journeyWalking; }, [journeyWalking]);
 
   useEffect(() => {
     debugStepRef.current = debugStep;
@@ -1187,8 +1192,8 @@ function MapComponent({
     const map = mapRef.current;
     if (!map || !isMapReadyRef.current) return;
     renderJourneyLayers(map, arrowSegments, originPoint, destinationPoint,
-      Boolean(selectedTransfer) || Boolean(selectedRouteSegment?.length), Boolean(selectedTransfer));
-  }, [arrowSegments, destinationPoint, isLoading, originPoint, selectedRouteSegment, selectedTransfer]);
+      Boolean(selectedTransfer) || Boolean(selectedRouteSegment?.length), Boolean(selectedTransfer), journeyWalking);
+  }, [arrowSegments, destinationPoint, isLoading, journeyWalking, originPoint, selectedRouteSegment, selectedTransfer]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -1701,7 +1706,7 @@ function MapComponent({
           setUserLocationLayerVisibility(map, !tripModeActiveRef.current);
         }
         renderJourneyLayers(map, arrowSegmentsRef.current, originPointRef.current, destinationPointRef.current,
-          Boolean(selectedTransferRef.current) || Boolean(selectedRouteSegmentRef.current?.length), Boolean(selectedTransferRef.current));
+          Boolean(selectedTransferRef.current) || Boolean(selectedRouteSegmentRef.current?.length), Boolean(selectedTransferRef.current), journeyWalkingRef.current);
         if (debugActive && debugCoordsRef.current.length > 0) {
           renderDebugPointLayer(map, debugCoordsRef.current, debugStepRef.current);
         }
@@ -2120,6 +2125,11 @@ function MapComponent({
     const map = mapRef.current;
     if (!map) return;
     const coordinates = arrowSegments.flatMap((segment) => segment.coords);
+    if (journeyWalking) {
+      for (const leg of [journeyWalking.origin, journeyWalking.transfer, journeyWalking.destination]) {
+        if (leg?.status === "street") coordinates.push(...leg.coordinates);
+      }
+    }
     if (originPoint) coordinates.push(originPoint);
     if (destinationPoint) coordinates.push(destinationPoint);
     const bounds = getBoundsFromCoordinates(coordinates);

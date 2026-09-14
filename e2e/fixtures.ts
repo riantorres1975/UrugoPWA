@@ -13,6 +13,10 @@ export const test = base.extend<BrowserErrorFixtures>({
     };
 
     page.on("pageerror", recordPageError);
+    // General UI tests must not spend Directions quota or depend on live opinions.
+    // Walking-specific tests replace these handlers with deterministic provider fixtures.
+    await page.route("https://api.mapbox.com/directions/v5/mapbox/walking/**", (route) => route.fulfill({ status: 503, json: {} }));
+    await page.route("**/api/community/journey-quality", (route) => route.fulfill({ json: { signals: [] } }));
     await use();
     page.off("pageerror", recordPageError);
 

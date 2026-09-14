@@ -19,10 +19,37 @@ La versión `20260912182324` se aplicó al proyecto UruGo el 12 de septiembre de
 - El navegador conserva un UUID aleatorio. El servidor almacena únicamente su HMAC, sin coordenadas, IP en claro ni agente del navegador en la tabla de opiniones. Borrar los datos del navegador crea otra identidad; también existe un límite de solicitudes por IP.
 - No se muestra agradecimiento hasta confirmar el guardado. Sin conexión se informa del fallo y se permite reintentar; las opiniones no se guardan en la bandeja de reportes pendientes.
 - La vista administrativa agrupa todas las filas del periodo en Postgres, sin truncarlas al límite de resultados de la API. Las fechas son inclusivas y se comparan con el periodo inmediatamente anterior de igual duración.
-- Las opiniones orientan revisiones manuales; no alteran el cálculo de rutas. Los votos anteriores que solo se enviaron a Vercel no se recuperan con esta migración.
+- Las opiniones orientan revisiones manuales y, con suficiente evidencia, un ajuste limitado del orden de las opciones (ver abajo). Los votos anteriores que solo se enviaron a Vercel no se recuperan con esta migración.
 - RLS está activado. `anon` y `authenticated` no pueden leer, escribir ni ejecutar las funciones. El servidor valida las rutas, el origen, el cuerpo y el acceso administrativo.
 
+## Calibración de recomendaciones
+
+El servidor consulta la tabla existente, en páginas de 1,000 filas, y agrupa los
+últimos 30 días. Cada dispositivo cuenta una sola vez por combinación ordenada,
+usando su respuesta más reciente. No necesita otra migración. Los agregados se
+reutilizan cinco minutos; los identificadores se mantienen solo durante la consulta
+del servidor y nunca se incluyen en `/api/community/journey-quality`.
+
+Un aviso requiere 20 dispositivos, opiniones en al menos tres días, 60% negativas
+y al menos cinco con el mismo motivo específico. Produce un ajuste de 1 a 2 puntos
+en Menos caminata y Equilibrada. No cambia la duración, no elimina rutas, no edita
+trazados y no altera el modo Más rápida. Solo afecta a la combinación exacta;
+las opiniones de un transbordo no se atribuyen automáticamente a sus dos rutas.
+
+La página `/admin/feedback` muestra estos umbrales, la evidencia actual y la
+comprobación sugerida. El filtro de fechas del informe no cambia la ventana de
+30 días utilizada por el planificador.
+
+Si falla la lectura, vence la señal o la consulta supera 50,000 filas/5 segundos,
+el planificador sigue con tiempos y caminatas, sin penalizaciones. Nunca se usa
+una muestra truncada para penalizar una ruta. A ese volumen conviene trasladar
+este agregado a una función de Postgres. La comprobación del 14 de septiembre de
+2026 respondió correctamente y encontró cero opiniones recientes.
+
 ## Validación
+
+`tests/journey-quality*.test.ts` cubre deduplicación, umbrales, API pública y efecto
+acotado en el orden. No se insertan votos de prueba en producción.
 
 Pruebas de validación/API/administración: `pnpm exec vitest run tests/journey-feedback*.test.ts`.
 Pruebas móviles: `pnpm exec playwright test e2e/journey-feedback.spec.ts`.

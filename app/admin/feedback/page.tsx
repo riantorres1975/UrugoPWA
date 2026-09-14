@@ -6,6 +6,8 @@ import { FEEDBACK_REASONS } from "@/lib/journey-feedback";
 import { feedbackPeriod, feedbackTotals, type FeedbackSummary } from "@/lib/journey-feedback-admin";
 import { formatRouteLabel } from "@/lib/route-names";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
+import { loadJourneyQuality } from "@/lib/journey-quality-server";
+import { qualitySignal, QUALITY_MESSAGES } from "@/lib/journey-quality";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +19,10 @@ export default async function JourneyOpinionsPage({ searchParams }: {
   const supabase = createSupabaseAdminClient();
   if (!supabase) redirect("/admin/login");
   const period = feedbackPeriod(params.desde, params.hasta);
-  const { data, error } = await supabase.rpc("journey_feedback_summary", { p_from: period.fromTimestamp, p_until: period.untilTimestamp });
+  const [{ data, error }, qualityGroups] = await Promise.all([
+    supabase.rpc("journey_feedback_summary", { p_from: period.fromTimestamp, p_until: period.untilTimestamp }),
+    loadJourneyQuality().catch(() => null),
+  ]);
   const summary = (data ?? { groups: [], previous: { total: 0, positive: 0 } }) as FeedbackSummary;
   const totals = feedbackTotals(summary.groups);
   const positiveRate = totals.total ? Math.round(totals.positive / totals.total * 100) : null;
@@ -46,7 +51,19 @@ export default async function JourneyOpinionsPage({ searchParams }: {
           {[["Opiniones recibidas", totals.total], ["Respuestas positivas", positiveRate === null ? "—" : `${positiveRate}%`], ["Respuestas negativas", totals.negative]].map(([label, value]) => <div key={label} className="px-4 py-6"><p className="text-sm text-[#a8c888]">{label}</p><strong className="mt-2 block font-serif text-5xl tabular-nums">{value}</strong></div>)}
         </section>
         <p className="my-4 text-sm text-[#a8c888]">{delta === null ? "La comparación aparecerá cuando ambos periodos tengan opiniones." : `${delta > 0 ? "+" : ""}${delta} puntos porcentuales frente al periodo anterior (${summary.previous.total} opiniones).`}</p>
-        <div className="mb-6 rounded-lg border-l-2 border-[#b8e840] bg-[#b8e840]/5 p-4 text-sm leading-6 text-[#a8c888]">Revisa primero las combinaciones con más respuestas negativas. Considera siempre cuántas personas respondieron: menos de 5 opiniones se señala como muestra pequeña. Estos datos no cambian automáticamente las recomendaciones.</div>
+        <div className="mb-6 rounded-lg border-l-2 border-[#b8e840] bg-[#b8e840]/5 p-4 text-sm leading-6 text-[#a8c888]">Las señales del planificador usan los últimos 30 días, independientemente del filtro de fechas: al menos 20 dispositivos, opiniones en 3 días, 60% negativas y 5 con el mismo motivo. Se cuenta solo la última opinión de cada dispositivo por combinación. El ajuste es de hasta 2 puntos en Menos caminata y Equilibrada; no altera el tiempo estimado ni elimina rutas.</div>
+        <section aria-label="Señales que usa el planificador" className="mb-7 rounded-xl border border-white/10 p-5">
+          <h2 className="font-serif text-2xl font-bold">Señales del planificador · últimos 30 días</h2>
+          {qualityGroups === null ? <p className="mt-3 text-sm text-amber-200">No se pudieron consultar las señales. El planificador seguirá usando tiempos y caminatas sin ajustes por opiniones.</p> : qualityGroups.length === 0 ? <p className="mt-3 text-sm text-[#a8c888]">Aún no hay opiniones suficientes para calibrar las recomendaciones.</p> : <ul className="mt-4 space-y-4">{qualityGroups.map((group) => {
+            const signal = qualitySignal(group);
+            return <li key={group.route_keys.join("|")} className="border-t border-white/10 pt-3 text-sm">
+              <p className="font-bold">{group.route_names.map((name) => formatRouteLabel(name)).join(" → ")}</p>
+              <p className="mt-1 text-[#a8c888]">{group.devices} dispositivos · {group.negative} opiniones negativas · {group.active_days} días con opiniones.</p>
+              <p className="mt-1 text-[#b8e840]">{signal ? `${QUALITY_MESSAGES[signal.concern]} Ajuste: ${signal.penalty.toFixed(1)} puntos.` : "Sin ajuste: todavía no alcanza los umbrales de evidencia."}</p>
+              {signal && <p className="mt-1 text-[#a8c888]">{signal.concern === "transfer_far" ? "Revisa el enlace peatonal y los puntos de cambio." : signal.concern === "bus_missing" ? "Comprueba frecuencia, horario y continuidad del servicio." : "Contrasta el trazado con el recorrido actual antes de editarlo."}</p>}
+            </li>;
+          })}</ul>}
+        </section>
         <h2 className="mb-4 font-serif text-2xl font-bold">Rutas y transbordos por revisar</h2>
         {summary.groups.length === 0 ? <div className="rounded-xl border border-dashed border-white/15 px-6 py-14 text-center"><p className="font-serif text-2xl">Aún no hay opiniones en estas fechas.</p><p className="mt-3 text-sm text-[#a8c888]">Aquí aparecerán las nuevas respuestas enviadas desde el mapa.</p></div> : <div className="space-y-4">
           {summary.groups.map((group) => {

@@ -14,17 +14,19 @@ export type JourneyCost = {
   rideMinutes: number;
   waitMinutes: number;
   transfers: number;
+  walkingMinutes?: number;
+  reliabilityPenalty?: number;
 };
 export function totalWalk(cost: JourneyCost) {
   return cost.originWalkM + cost.destinationWalkM + cost.transferWalkM;
 }
 export function journeyMinutes(cost: JourneyCost) {
-  return totalWalk(cost) / WALK_SPEED + cost.rideMinutes + cost.waitMinutes;
+  return (cost.walkingMinutes ?? totalWalk(cost) / WALK_SPEED) + cost.rideMinutes + cost.waitMinutes;
 }
 export function journeyScore(cost: JourneyCost, preference: JourneyPreference) {
   const weight = preference === "nearby" ? 3 : preference === "balanced" ? 2 : 1;
-  return journeyMinutes(cost) + (weight - 1) * totalWalk(cost) / WALK_SPEED
-    + (preference === "fastest" ? 0 : 4 * cost.transfers);
+  return journeyMinutes(cost) + (weight - 1) * (cost.walkingMinutes ?? totalWalk(cost) / WALK_SPEED)
+    + (preference === "fastest" ? 0 : 4 * cost.transfers + Math.max(0, Math.min(2, cost.reliabilityPenalty ?? 0)));
 }
 
 // Preserve distinct trade-offs instead of dropping the closest option at the first cut.

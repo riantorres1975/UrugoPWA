@@ -309,7 +309,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     retry: retryRouteData,
     suggestions,
     transfers,
-  } = useRouteData({ destination: destinationPoint, isOnline, origin: originPoint, preference: journeyPreference });
+  } = useRouteData({ destination: destinationPoint, isOnline, origin: originPoint, preference: journeyPreference, freezeRecommendation: tripSession !== null });
   const {
     clearSelection: handleClearSelection,
     hoveredRouteId,
@@ -1178,6 +1178,8 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
               clearSharedRoute();
               setJourneyPreference(preference);
             }} />
+            {!isCalculatingSuggestions && currentCalculation?.refinement === "pending" && !isTripActive && <p role="status" className="ov-text-muted px-4 py-2 text-xs">Comprobando los accesos a pie por calles…</p>}
+            {!!currentCalculation?.unreachableCount && <p className="ov-text-muted px-4 py-2 text-xs">Descartamos {currentCalculation.unreachableCount} {currentCalculation.unreachableCount === 1 ? "opción sin conexión peatonal encontrada" : "opciones sin conexión peatonal encontrada"}.</p>}
             {isCalculatingSuggestions ? (
               <div className="flex items-center gap-3 px-4 py-3.5">
                 <span className="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-lima/60 border-t-transparent" />
@@ -1435,6 +1437,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
             bestSuggestedRouteId={mapBestSuggestedRouteId}
             selectedRouteSegment={selectedMapSegment}
             arrowSegments={arrowSegments}
+            journeyWalking={selectedTransfer?.walking ?? selectedSuggestion?.walking ?? bestSuggestion?.walking}
             originPoint={originPoint}
             destinationPoint={destinationPoint}
             showTeleferico={showTeleferico}

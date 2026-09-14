@@ -3,6 +3,7 @@ import { buildSegmentBetween, getAccessCandidates, usesStationOnlyAccess, type P
 import { getRouteConnections } from "./route-connections";
 import { BUS_SPEED, diverseJourneys, expectedWait, journeyMinutes, journeyScore, rankJourneys, type JourneyCost, type JourneyPreference } from "./journey-ranking";
 import type { Coordinates } from "./types";
+import type { JourneyWalking } from "./journey-walking";
 
 export type TransferOption = {
   routeAId: number; routeBId: number; routeAName: string; routeBName: string;
@@ -11,6 +12,8 @@ export type TransferOption = {
   walkMeters: number; score: number;
   cost?: JourneyCost;
   estimatedMinutes?: number;
+  walking?: JourneyWalking;
+  communityConcern?: string;
 };
 
 export function computeTransferOptionsFromPolylines(routes: PolylineRoute[], origin: Coordinates, destination: Coordinates, preference: JourneyPreference = "nearby", limit = 5): TransferOption[] {

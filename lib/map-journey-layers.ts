@@ -3,6 +3,7 @@ import type { FeatureCollection } from "geojson";
 import { buildJourneyDetails } from "@/lib/map-journey-geometry";
 import type { MapArrowSegment } from "@/lib/map-route-view";
 import type { Coordinates } from "@/lib/types";
+import type { JourneyWalking } from "@/lib/journey-walking";
 
 const SOURCE = "arrows-source";
 const DETAILS = "journey-details";
@@ -40,6 +41,7 @@ export function renderJourneyLayers(
   destination: Coordinates | null,
   active: boolean,
   transfer: boolean,
+  walking?: JourneyWalking,
 ) {
   ensureChevron(map);
   updateSource(map, SOURCE, {
@@ -49,7 +51,7 @@ export function renderJourneyLayers(
       geometry: { type: "LineString", coordinates: segment.coords },
     })),
   });
-  updateSource(map, DETAILS, buildJourneyDetails(segments, origin, destination, active, transfer));
+  updateSource(map, DETAILS, buildJourneyDetails(segments, origin, destination, active, transfer, walking));
 
   const layers: mapboxgl.AnyLayer[] = [
     {

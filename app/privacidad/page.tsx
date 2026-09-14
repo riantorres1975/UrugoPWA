@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 const SECTIONS = [
   {
     title: "Uso de ubicación",
-    body: `Si autorizas la ubicación, el navegador la usa para encontrar rutas cercanas. ${APP_BRAND.name} no la guarda en una base de datos. Al usar el asistente, la posición se redondea y se procesa temporalmente en el servidor para identificar rutas cercanas; las coordenadas exactas no se envían al proveedor de inteligencia artificial.`
+    body: `Si autorizas la ubicación, el navegador la usa para encontrar rutas cercanas. ${APP_BRAND.name} no la guarda en una base de datos. Al planear un viaje con conexión, envía a Mapbox las coordenadas de los accesos a pie de las opciones finalistas, incluido el origen y destino elegidos, para calcular caminatas por calles. Estos resultados se conservan temporalmente en la memoria del navegador durante la sesión. Al usar el asistente, la posición se redondea y se procesa temporalmente en el servidor para identificar rutas cercanas; las coordenadas exactas no se envían al proveedor de inteligencia artificial.`
   },
   {
     title: "Datos offline",
@@ -36,7 +36,7 @@ const SECTIONS = [
   },
   {
     title: "Opiniones de viajes",
-    body: "Al responder si una ruta o transbordo te sirvió, guardamos en Supabase tu respuesta, las rutas, la fecha y el motivo opcional. El navegador crea un identificador aleatorio y el servidor guarda una huella derivada para evitar votos repetidos del mismo dispositivo durante el día. Estas opiniones no incluyen coordenadas ni tu IP en claro. Solo el equipo administrador puede consultarlas para priorizar revisiones y evaluar mejoras. Puedes borrar el identificador local desde la configuración del navegador."
+    body: "Al responder si una ruta o transbordo te sirvió, guardamos en Supabase tu respuesta, las rutas, la fecha y el motivo opcional. El navegador crea un identificador aleatorio y el servidor guarda una huella derivada para evitar votos repetidos del mismo dispositivo durante el día. Estas opiniones no incluyen coordenadas ni tu IP en claro. Solo el equipo administrador puede consultar las opiniones individuales. Cuando existen suficientes respuestas de distintos dispositivos y días, publicamos avisos agregados y aplicamos un ajuste limitado al orden de las recomendaciones. No publicamos identificadores ni votos individuales. Puedes borrar el identificador local desde la configuración del navegador."
   },
   {
     title: "Servicios de terceros",

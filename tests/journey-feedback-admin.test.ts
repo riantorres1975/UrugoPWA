@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({ access: vi.fn(), rpc: vi.fn(), client: vi.fn()
 vi.mock("@/lib/admin-auth", () => ({ getAdminAccess: mocks.access }));
 vi.mock("@/lib/supabase/server", () => ({ createSupabaseAdminClient: mocks.client }));
 vi.mock("@/components/admin/AdminHeader", () => ({ default: () => null }));
+vi.mock("@/lib/journey-quality-server", () => ({ loadJourneyQuality: async () => [] }));
 vi.mock("next/navigation", () => ({ redirect: (url: string) => { throw new Error(`redirect:${url}`); } }));
 import JourneyOpinionsPage from "@/app/admin/feedback/page";
 

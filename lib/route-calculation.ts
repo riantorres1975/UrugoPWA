@@ -2,6 +2,7 @@ import { findBestRoutes, getRouteMetrics, type PolylineRoute } from "@/lib/route
 import { diverseJourneys, rankJourneys, type JourneyCost, type JourneyPreference } from "@/lib/journey-ranking";
 import { computeTransferOptionsFromPolylines, type TransferOption } from "@/lib/transfers";
 import type { Coordinates, RouteDirection } from "@/lib/types";
+import type { JourneyWalking } from "@/lib/journey-walking";
 
 export type RouteOption = {
   routeId: number;
@@ -18,6 +19,8 @@ export type RouteOption = {
   score: number;
   routeColor?: string;
   cost?: JourneyCost;
+  walking?: JourneyWalking;
+  communityConcern?: string;
 };
 
 export type RouteCalculationResult = {
@@ -25,6 +28,8 @@ export type RouteCalculationResult = {
   alternativeRouteIds: number[];
   transfers: TransferOption[];
   recommendedTransfer?: TransferOption;
+  refinement?: "pending" | "complete";
+  unreachableCount?: number;
 };
 
 export type RouteCalculationWorkerRequest =

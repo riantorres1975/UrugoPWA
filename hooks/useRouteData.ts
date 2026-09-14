@@ -33,11 +33,13 @@ export function useRouteData({
   isOnline,
   origin,
   preference = "nearby",
+  freezeRecommendation = false,
 }: {
   destination: Coordinates | null;
   isOnline: boolean;
   origin: Coordinates | null;
   preference?: JourneyPreference;
+  freezeRecommendation?: boolean;
 }) {
   const [polylineRoutes, setPolylineRoutes] = useState<ProductionRoute[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,6 +51,7 @@ export function useRouteData({
   const routeCalculationRequestRef = useRef(0);
   const [routeWorkerFailed, setRouteWorkerFailed] = useState(false);
   const [routeCalculation, setRouteCalculation] = useState<RouteCalculation | null>(null);
+  const preferredRouteRef = useRef<{ key: string; id: number } | null>(null);
 
   useEffect(() => {
     const connectionWasRestored = isOnline && !wasOnlineRef.current;
@@ -178,10 +181,11 @@ export function useRouteData({
     const requestId = ++routeCalculationRequestRef.current;
     const worker = routeWorkerRef.current;
     let calculationStartedAt: number | null = null;
+    let cancelled = false;
 
     const applyResult = (result: RouteCalculationResult, engine: RouteCalculationEngine) => {
-      if (routeCalculationRequestRef.current !== requestId) return;
-      setRouteCalculation({ key: calculationKey, ...result });
+      if (cancelled || routeCalculationRequestRef.current !== requestId) return;
+      setRouteCalculation({ key: calculationKey, ...result, refinement: "pending" });
       const durationMs = calculationStartedAt === null
         ? Number.NaN
         : performance.now() - calculationStartedAt;
@@ -237,11 +241,38 @@ export function useRouteData({
 
     return () => {
       window.clearTimeout(timer);
+      cancelled = true;
       if (worker) worker.removeEventListener("message", handleMessage);
     };
   }, [calculationKey, destination, origin, preference, routeWorkerFailed, routesForMatching]);
 
+  useEffect(() => {
+    if (!origin || !destination || !routeCalculation || routeCalculation.key !== calculationKey
+      || routeCalculation.refinement !== "pending" || freezeRecommendation) return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      void import("@/lib/refine-journeys").then(({ refineJourneys }) =>
+        refineJourneys(routeCalculation, origin, destination, preference, controller.signal)
+      ).then((result) => {
+        if (controller.signal.aborted) return;
+        setRouteCalculation((current) => {
+          if (!current || current.key !== calculationKey) return current;
+          const preferred = preferredRouteRef.current;
+          if (preferred?.key === calculationKey) {
+            result.suggestions.sort((a, b) => Number(b.routeId === preferred.id) - Number(a.routeId === preferred.id));
+            result.recommendedTransfer = undefined;
+          }
+          return { ...result, key: current.key, alternativeRouteIds: result.suggestions.slice(1).map((route) => route.routeId) };
+        });
+      }).catch(() => {
+        if (!controller.signal.aborted) setRouteCalculation((current) => current?.key === calculationKey ? { ...current, refinement: "complete" } : current);
+      });
+    }, 400);
+    return () => { controller.abort(); window.clearTimeout(timer); };
+  }, [calculationKey, destination, freezeRecommendation, origin, preference, routeCalculation]);
+
   const promoteSuggestion = useCallback((routeId: number) => {
+    if (calculationKey) preferredRouteRef.current = { key: calculationKey, id: routeId };
     setRouteCalculation((current) => {
       if (!current || current.key !== calculationKey) return current;
       const index = current.suggestions.findIndex((suggestion) => suggestion.routeId === routeId);
