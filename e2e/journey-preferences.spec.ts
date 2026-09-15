@@ -1,6 +1,49 @@
 import { expect, test } from "./fixtures";
 
 for (const fallback of [false, true]) {
+  test(`los límites de caminata y tiempo se aplican y persisten (${fallback ? "sin worker" : "worker"})`, async ({ page }, testInfo) => {
+    await page.addInitScript((disableWorker) => {
+      localStorage.setItem("rutas-uru-onboarded", "1");
+      if (disableWorker) {
+        const NativeWorker = window.Worker;
+        window.Worker = new Proxy(NativeWorker, { construct(target, args) {
+          if (args[1]?.name === "urugo-route-calculation") throw new Error("Test fallback");
+          return Reflect.construct(target, args);
+        } });
+      }
+    }, fallback);
+    await page.route("**/api/rutas-polyline", (request) => request.fulfill({ json: [
+      { id: 1, name: "Ruta cercana", original_name: "Ruta cercana Ida", color: "#00aa00", corridor_width_m: 400,
+        path: [[-102.06, 19.42], [-102.06, 19.393], [-102.04, 19.393], [-102.04, 19.42]] },
+      { id: 2, name: "Ruta rápida", original_name: "Ruta rápida Ida", color: "#0088ff", corridor_width_m: 400,
+        path: [[-102.06, 19.4225], [-102.04, 19.4225]] },
+    ] }));
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.goto("/mapa?a=-102.060000,19.420000&b=-102.040000,19.420000");
+    const preview = page.getByRole("button", { name: "Ver resultado de ruta", exact: true });
+    await expect(preview).toContainText("Ruta rápida", { timeout: 15000 });
+    await preview.click();
+    const panel = page.getByRole("dialog");
+    await panel.getByRole("button", { name: /Ajustar caminata y tiempo/ }).click();
+    await panel.getByLabel("Tiempo extra por caminar menos").selectOption("15");
+    await expect(panel.getByRole("button", { name: "Iniciar viaje en Ruta cercana", exact: true })).toBeVisible();
+    await expect(panel.getByLabel("Comparación de esta opción")).toContainText("m menos");
+    await panel.getByLabel("Caminata máxima en todo el viaje").selectOption("300");
+    await panel.getByRole("button", { name: "Más rápida", exact: true }).click();
+    await expect(panel.getByRole("button", { name: "Iniciar viaje en Ruta cercana", exact: true })).toBeVisible();
+    expect(await panel.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
+    await page.screenshot({ path: testInfo.outputPath("ajustes-caminata.png"), animations: "disabled" });
+    await page.reload();
+    await expect(preview).toContainText("Ruta cercana");
+    await preview.click();
+    await panel.getByRole("button", { name: /Ajustar caminata y tiempo/ }).click();
+    await expect(panel.getByLabel("Caminata máxima en todo el viaje")).toHaveValue("300");
+    await panel.getByRole("button", { name: "Menos caminata", exact: true }).click();
+    await expect(panel.getByLabel("Tiempo extra por caminar menos")).toHaveValue("15");
+  });
+}
+
+for (const fallback of [false, true]) {
   test(`la preferencia cambia la recomendación y se conserva al recargar (${fallback ? "sin worker" : "worker"})`, async ({ page }, testInfo) => {
     await page.addInitScript((disableWorker) => {
       localStorage.setItem("rutas-uru-onboarded", "1");

@@ -12,6 +12,15 @@ La migración crea una tabla y dos funciones nuevas; no modifica las rutas ni lo
 
 La versión `20260912182324` se aplicó al proyecto UruGo el 12 de septiembre de 2026 y se registró en `supabase_migrations.schema_migrations`. Se verificó el guardado y la actualización del motivo dentro de una transacción revertida, sin conservar opiniones de prueba.
 
+La ampliación `20260914225022_expand_journey_feedback_reasons.sql` se aplicó el
+15 de septiembre de 2026 y quedó registrada en el historial. Añade `boarding_far`
+(subida lejana), `alighting_far` (bajada lejana) y `walking_blocked` (acceso peatonal
+bloqueado). Conserva las opiniones, los permisos y las firmas de las funciones.
+El resumen administrativo incluye contadores separados para estos motivos.
+Se verificaron guardado, actualización, agregación y permisos en Supabase con
+datos temporales revertidos mediante savepoint, sin conservar votos de prueba.
+La prueba repetible está en `tests/sql/journey-feedback-reasons.sql`.
+
 ## Uso y límites
 
 - La opinión se guarda inmediatamente. El motivo negativo es opcional y actualiza la misma fila.
@@ -35,6 +44,9 @@ y al menos cinco con el mismo motivo específico. Produce un ajuste de 1 a 2 pun
 en Menos caminata y Equilibrada. No cambia la duración, no elimina rutas, no edita
 trazados y no altera el modo Más rápida. Solo afecta a la combinación exacta;
 las opiniones de un transbordo no se atribuyen automáticamente a sus dos rutas.
+Los nuevos motivos usan los mismos umbrales; un aviso de acceso bloqueado por sí
+solo no elimina una ruta ni modifica su geometría. El panel administrativo indica
+qué acceso o recorrido debe comprobarse.
 
 La página `/admin/feedback` muestra estos umbrales, la evidencia actual y la
 comprobación sugerida. El filtro de fechas del informe no cambia la ventana de

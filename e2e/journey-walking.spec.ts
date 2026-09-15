@@ -61,3 +61,27 @@ test("mantiene opciones aproximadas cuando no se puede consultar al proveedor", 
   await expect(panel.getByLabel("Caminata del viaje").first()).toContainText("no pudimos comprobar", { timeout: 15000 });
   await expect(panel.getByRole("button", { name: "Iniciar viaje en Acceso cercano", exact: true })).toBeVisible();
 });
+
+test("recupera una reserva cuando ninguna finalista tiene acceso peatonal", async ({ page }) => {
+  await page.route("**/api/rutas-polyline", (route) => route.fulfill({ json: [19.421, 19.422, 19.423, 19.424].map((lat, index) => ({
+    id: index + 1, name: `Acceso ${index + 1}`, original_name: `Acceso ${index + 1} Ida`, color: "#0088ff", corridor_width_m: 550,
+    path: [[-102.06, lat], [-102.04, lat]],
+  })) }));
+  let requests = 0;
+  await page.route("https://api.mapbox.com/directions/v5/mapbox/walking/**", async (route) => {
+    requests++;
+    const coordinates = new URL(route.request().url()).pathname.split("/").at(-1)!.split(";").map((part) => part.split(",").map(Number));
+    const available = coordinates.some((point) => Math.abs(point[1] - 19.424) < 0.000001);
+    await route.fulfill({ json: available ? { code: "Ok", routes: [{ distance: 450, duration: 360, geometry: { type: "LineString", coordinates } }] } : { code: "NoRoute" } });
+  });
+  await page.goto("/mapa?a=-102.060000,19.420000&b=-102.040000,19.420000");
+  const preview = page.getByRole("button", { name: "Ver resultado de ruta", exact: true });
+  await expect(preview).toContainText("Acceso 4", { timeout: 15000 });
+  await preview.click();
+  const panel = page.getByRole("dialog");
+  await expect(panel.getByText(/Revisamos 1 opción adicional/)).toBeVisible();
+  expect(requests).toBeLessThanOrEqual(18);
+  await panel.getByRole("button", { name: /Ajustar caminata y tiempo/ }).click();
+  await panel.getByLabel("Caminata máxima en todo el viaje").selectOption("300");
+  await expect(panel.getByLabel("Comparación de esta opción")).toContainText("Ninguna de las opciones encontradas cumple el límite de 300 m", { timeout: 15000 });
+});

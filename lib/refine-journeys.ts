@@ -1,4 +1,5 @@
-import { journeyMinutes, journeyScore, rankJourneys, type JourneyCost, type JourneyPreference } from "@/lib/journey-ranking";
+import { journeyMinutes, journeyScore, rankJourneys, totalWalk, type JourneyCost, type JourneyPreference } from "@/lib/journey-ranking";
+import { DEFAULT_JOURNEY_SETTINGS, type JourneySettings } from "@/lib/journey-settings";
 import { walkingLegs, type JourneyWalking } from "@/lib/journey-walking";
 import { getWalkingDirections } from "@/lib/walking-directions";
 import { findQualitySignal, QUALITY_MESSAGES, type JourneyQualitySignal } from "@/lib/journey-quality";
@@ -19,8 +20,9 @@ export function applyJourneyQuality(cost: JourneyCost, names: string[], signals:
   return { cost: { ...cost, reliabilityPenalty: quality?.penalty ?? 0 }, communityConcern: quality ? QUALITY_MESSAGES[quality.concern] : undefined };
 }
 
-export async function refineJourneys(result: RouteCalculationResult, origin: Coordinates, destination: Coordinates, preference: JourneyPreference, signal: AbortSignal): Promise<RouteCalculationResult> {
-  // Only the three finalists: at most nine directions requests, two running at once.
+export async function refineJourneys(result: RouteCalculationResult, origin: Coordinates, destination: Coordinates, preference: JourneyPreference, signal: AbortSignal, settings: JourneySettings = DEFAULT_JOURNEY_SETTINGS): Promise<RouteCalculationResult> {
+  // Three finalists plus at most three reserves when needed: <=18 directions
+  // requests, two concurrent, with shared accesses deduplicated across batches.
   const qualityPromise = getJourneyQuality(signal);
   const jobs = new Map<string, Promise<Awaited<ReturnType<typeof getWalkingDirections>>>>();
   const lanes = [Promise.resolve(), Promise.resolve()];
@@ -36,7 +38,8 @@ export async function refineJourneys(result: RouteCalculationResult, origin: Coo
     return job;
   };
   let unreachableCount = 0;
-  const candidates = await Promise.all([...result.suggestions.map((direct) => ({ direct, transfer: undefined })), ...result.transfers.map((transfer) => ({ direct: undefined, transfer }))].slice(0, 3).map(async (item): Promise<Candidate | null> => {
+  let largeDetour = false;
+  const refine = async (item: { direct?: RouteOption; transfer?: TransferOption }): Promise<Candidate | null> => {
     if (signal.aborted) throw signal.reason;
     const first = item.direct?.segment ?? item.transfer!.segmentA;
     const last = item.direct?.segment ?? item.transfer!.segmentB;
@@ -50,13 +53,35 @@ export async function refineJourneys(result: RouteCalculationResult, origin: Coo
     if (walkingLegs(walking).some((leg) => leg.status === "unreachable")) { unreachableCount++; return null; }
     const names = item.direct ? [item.direct.ruta] : [item.transfer!.routeAName, item.transfer!.routeBName];
     const quality = applyJourneyQuality(refineJourneyCost(originalCost, walking), names, await qualityPromise);
+    const extraWalk = totalWalk(quality.cost) - totalWalk(originalCost);
+    if (extraWalk >= 200 && totalWalk(quality.cost) >= totalWalk(originalCost) * 1.5) largeDetour = true;
     const shared = { ...quality, walking, estimatedMinutes: Math.max(1, Math.ceil(journeyMinutes(quality.cost))), score: journeyScore(quality.cost, preference) };
     if (item.direct) return { cost: quality.cost, direct: { ...item.direct, ...shared, distanciaA: walking.origin.distanceM, distanciaB: walking.destination.distanceM } };
     return { cost: quality.cost, transfer: { ...item.transfer!, ...shared, walkMeters: walking.transfer!.distanceM } };
-  }));
-  const ranked = rankJourneys(candidates.filter((item): item is Candidate => item !== null), preference);
+  };
+  const initial = [...result.suggestions.map((direct) => ({ direct })), ...result.transfers.map((transfer) => ({ transfer }))].slice(0, 3);
+  const candidates = (await Promise.all(initial.map(refine))).filter((item): item is Candidate => item !== null);
+  const noMatchForWalkLimit = settings.maxWalkM !== null && !candidates.some((item) => totalWalk(item.cost) <= settings.maxWalkM!);
+  let checkedReserveCount = 0;
+  if (unreachableCount || largeDetour || noMatchForWalkLimit) {
+    if (signal.aborted) throw signal.reason;
+    const key = (item: { direct?: RouteOption; transfer?: TransferOption }) => item.direct
+      ? `r${item.direct.routeId}` : `t${item.transfer!.routeAId}:${item.transfer!.routeBId}`;
+    const seen = new Set(initial.map(key));
+    const reserves = (result.reserveCandidates ?? []).filter((item) => {
+      const identity = key(item);
+      if (seen.has(identity)) return false;
+      seen.add(identity);
+      return true;
+    }).slice(0, 3);
+    checkedReserveCount = reserves.length;
+    candidates.push(...(await Promise.all(reserves.map(refine))).filter((item): item is Candidate => item !== null));
+  }
+  if (signal.aborted) throw signal.reason;
+  // Keep reachable original choices so late refinement cannot remove a manual pick.
+  const ranked = rankJourneys(candidates, preference, settings);
   const suggestions = ranked.flatMap((item) => item.direct ? [item.direct] : []);
   const transfers = ranked.flatMap((item) => item.transfer ? [item.transfer] : []);
   return { suggestions, transfers, alternativeRouteIds: suggestions.slice(1).map((item) => item.routeId),
-    recommendedTransfer: suggestions.length ? ranked[0]?.transfer : undefined, refinement: "complete", unreachableCount };
+    recommendedTransfer: suggestions.length ? ranked[0]?.transfer : undefined, refinement: "complete", unreachableCount, checkedReserveCount };
 }

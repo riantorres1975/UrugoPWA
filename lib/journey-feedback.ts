@@ -2,6 +2,9 @@ export const FEEDBACK_REASONS = {
   bus_missing: "No pasó el camión",
   route_incorrect: "El recorrido es incorrecto",
   transfer_far: "El transbordo está lejos",
+  boarding_far: "La subida queda lejos",
+  alighting_far: "La bajada queda lejos",
+  walking_blocked: "No se puede caminar por ahí",
   other: "Otro problema",
 } as const;
 

@@ -15,6 +15,12 @@ describe("opiniones de viajes", () => {
       expect(parseJourneyFeedback(invalid)).toBeNull();
     }
   });
+  it.each(["boarding_far", "alighting_far", "walking_blocked"])("guarda %s en rutas directas y transbordos, solo en votos negativos", (reason) => {
+    for (const routes of [["Ruta 26"], ["Ruta 26", "Ruta 85"]]) {
+      expect(parseJourneyFeedback({ ...payload, routes, reason })?.reason).toBe(reason);
+      expect(parseJourneyFeedback({ ...payload, routes, reason, useful: true })).toBeNull();
+    }
+  });
   it("incluye el último día y usa la fecha de Uruapan cerca de medianoche UTC", () => {
     expect(feedbackPeriod(undefined, undefined, new Date("2026-09-13T02:00:00Z"))).toMatchObject({ from: "2026-08-14", to: "2026-09-12", untilTimestamp: "2026-09-13T00:00:00-06:00" });
     expect(feedbackPeriod("2026-02-30", "2026-02-28", new Date("2026-09-13T02:00:00Z")).from).toBe("2026-01-30");

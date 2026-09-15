@@ -26,6 +26,9 @@ const SelectedTransferResult = dynamic(() => import("@/components/RoutePlannerRe
 const TransferOptionsResult = dynamic(() => import("@/components/RoutePlannerResults").then((module) => module.TransferOptionsResult));
 const JourneyPreferences = dynamic(() => import("@/components/JourneyPreferences"));
 const JourneyAlternatives = dynamic(() => import("@/components/JourneyAlternatives"));
+const JourneyExplanation = dynamic(() => import("@/components/JourneyExplanation"));
+import { useJourneySettings } from "@/hooks/useJourneySettings";
+import { hasStreetWalking } from "@/lib/journey-walking";
 import { useJourneyPreference } from "@/hooks/useJourneyPreference";
 import TripOverlays from "@/components/TripOverlays";
 import { geocodePlace, type PlaceResult } from "@/lib/geocode";
@@ -296,6 +299,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   const isDesktopLayout = useSyncExternalStore(subscribeDesktopLayout, getDesktopLayoutSnapshot, () => false);
   const isOnline = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
   const [journeyPreference, setJourneyPreference] = useJourneyPreference();
+  const [journeySettings, setJourneySettings] = useJourneySettings();
   const {
     alternativeRouteIds: alternativeSuggestedRouteIds,
     calculationKey,
@@ -309,7 +313,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     retry: retryRouteData,
     suggestions,
     transfers,
-  } = useRouteData({ destination: destinationPoint, isOnline, origin: originPoint, preference: journeyPreference, freezeRecommendation: tripSession !== null });
+  } = useRouteData({ destination: destinationPoint, isOnline, origin: originPoint, preference: journeyPreference, settings: journeySettings, freezeRecommendation: tripSession !== null });
   const {
     clearSelection: handleClearSelection,
     hoveredRouteId,
@@ -1173,13 +1177,18 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
             className="ov-panel-soft w-full overflow-hidden rounded-2xl border shadow-lg transition-all duration-300"
             style={{ borderLeftWidth: "3px", borderLeftColor: bestSuggestion?.routeColor ?? selectedRoute?.color ?? "#b8e840" }}
           >
-            <JourneyPreferences value={journeyPreference} disabled={isTripActive} onChange={(preference) => {
+            <JourneyPreferences value={journeyPreference} settings={journeySettings} onSettingsChange={(settings) => {
+              handleClearSelection();
+              clearSharedRoute();
+              setJourneySettings(settings);
+            }} disabled={isTripActive} onChange={(preference) => {
               handleClearSelection();
               clearSharedRoute();
               setJourneyPreference(preference);
             }} />
             {!isCalculatingSuggestions && currentCalculation?.refinement === "pending" && !isTripActive && <p role="status" className="ov-text-muted px-4 py-2 text-xs">Comprobando los accesos a pie por calles…</p>}
             {!!currentCalculation?.unreachableCount && <p className="ov-text-muted px-4 py-2 text-xs">Descartamos {currentCalculation.unreachableCount} {currentCalculation.unreachableCount === 1 ? "opción sin conexión peatonal encontrada" : "opciones sin conexión peatonal encontrada"}.</p>}
+            {!!currentCalculation?.checkedReserveCount && <p className="ov-text-muted px-4 py-2 text-xs">Revisamos {currentCalculation.checkedReserveCount} {currentCalculation.checkedReserveCount === 1 ? "opción adicional" : "opciones adicionales"} para buscar mejores accesos a pie.</p>}
             {isCalculatingSuggestions ? (
               <div className="flex items-center gap-3 px-4 py-3.5">
                 <span className="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-lima/60 border-t-transparent" />
@@ -1247,6 +1256,11 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
               />
             )}
 
+            {!isCalculatingSuggestions && !isTripActive && (bestSuggestion || selectedTransfer) && (
+              <JourneyExplanation active={(bestSuggestion ?? selectedTransfer)?.cost}
+                costs={[...suggestions, ...transfers].flatMap((option) => option.cost ? [option.cost] : [])}
+                settings={journeySettings} approximate={[...suggestions, ...transfers].some((option) => !hasStreetWalking(option.walking))} />
+            )}
             {!isCalculatingSuggestions && !isTripActive && (bestSuggestion || selectedTransfer) && (
               <JourneyAlternatives routes={suggestions} transfers={transfers} activeRoute={bestSuggestion} activeTransfer={selectedTransfer}
                 onRoute={(routeId) => {

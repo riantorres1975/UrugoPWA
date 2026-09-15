@@ -112,6 +112,25 @@ test("una opinión negativa permite enviar un motivo sin escribir detalles", asy
   expect(submitted).toMatchObject({ reportType: "route_inactive", description: "Problema indicado durante el viaje: La ruta ya no circula." });
 });
 
+test("guarda el motivo de acceso peatonal bloqueado", async ({ page }) => {
+  const votes: Record<string, unknown>[] = [];
+  await page.route("**/api/community/journey-feedback", async (route) => {
+    votes.push(route.request().postDataJSON());
+    await route.fulfill({ json: { ok: true } });
+  });
+  await page.goto("/mapa?a=-102.063030,19.421010&b=-102.042340,19.426870");
+  await page.getByRole("button", { name: "Ver resultado de ruta", exact: true }).click();
+  const panel = page.getByRole("dialog");
+  await panel.getByRole("button", { name: "No", exact: true }).click();
+  await expect(panel.getByRole("radio", { name: "La subida queda lejos", exact: true })).toBeVisible();
+  await expect(panel.getByRole("radio", { name: "La bajada queda lejos", exact: true })).toBeVisible();
+  await panel.getByRole("radio", { name: "No se puede caminar por ahí", exact: true }).check();
+  await panel.getByRole("button", { name: "Guardar motivo", exact: true }).click();
+  await expect(panel.getByText("Motivo guardado: No se puede caminar por ahí", { exact: true })).toBeVisible();
+  expect(votes).toHaveLength(2);
+  expect(votes[1]).toMatchObject({ useful: false, reason: "walking_blocked", deviceId: votes[0].deviceId });
+});
+
 test("guarda una valoración y añade el motivo a la misma combinación", async ({ page }) => {
   const votes: Record<string, unknown>[] = [];
   await page.route("**/api/community/journey-feedback", async (route) => {

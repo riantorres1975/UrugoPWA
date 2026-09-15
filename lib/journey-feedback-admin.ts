@@ -7,6 +7,9 @@ export type FeedbackGroup = {
   bus_missing: number;
   route_incorrect: number;
   transfer_far: number;
+  boarding_far?: number;
+  alighting_far?: number;
+  walking_blocked?: number;
   other: number;
   unspecified: number;
 };

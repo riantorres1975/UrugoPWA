@@ -1,4 +1,5 @@
 import type { Coordinates, ProductionRouteLandmark } from "@/lib/types";
+import { DEFAULT_JOURNEY_SETTINGS, type JourneySettings } from "@/lib/journey-settings";
 import { diverseJourneys, rankJourneys, journeyMinutes, journeyScore, expectedWait, type JourneyCost, type JourneyPreference } from "@/lib/journey-ranking";
 
 // ─── Public types ─────────────────────────────────────────────────────────────
@@ -336,6 +337,7 @@ export function findBestRoutes(
   routes: PolylineRoute[],
   preference: JourneyPreference = "nearby",
   limit = 3,
+  settings: JourneySettings = DEFAULT_JOURNEY_SETTINGS,
 ): PolylineRouteMatch[] {
   const byRouteName = new Map<string, PolylineRouteMatch>();
 
@@ -349,7 +351,7 @@ export function findBestRoutes(
         rideMinutes: Math.abs(destSeg.progressM - originSeg.progressM) / BUS_SPEED_M_PER_MIN,
         waitMinutes: expectedWait(route.name), transfers: 0,
       } })));
-    const result = rankJourneys(pairs, preference)[0];
+    const result = rankJourneys(pairs, preference, settings)[0];
     if (!result) continue;
     const { originSeg, destSeg, cost } = result;
     const segment = buildSegmentBetween(route, originSeg, destSeg);
@@ -360,7 +362,7 @@ export function findBestRoutes(
     const routeKey = route.name.trim().toLocaleLowerCase("es-MX");
 
     const existing = byRouteName.get(routeKey);
-    if (existing && existing.score <= score) continue;
+    if (existing?.cost && rankJourneys([{ cost: existing.cost }, { cost }], preference, settings)[0].cost === existing.cost) continue;
 
     byRouteName.set(routeKey, {
       routeId: route.id,
@@ -383,7 +385,7 @@ export function findBestRoutes(
     });
   }
 
-  const ranked = rankJourneys(Array.from(byRouteName.values()) as (PolylineRouteMatch & { cost: JourneyCost })[], preference);
+  const ranked = rankJourneys(Array.from(byRouteName.values()) as (PolylineRouteMatch & { cost: JourneyCost })[], preference, settings);
   return limit === Infinity ? ranked : diverseJourneys(ranked, limit);
 }
 

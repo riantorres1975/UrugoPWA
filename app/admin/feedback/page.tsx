@@ -7,7 +7,7 @@ import { feedbackPeriod, feedbackTotals, type FeedbackSummary } from "@/lib/jour
 import { formatRouteLabel } from "@/lib/route-names";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { loadJourneyQuality } from "@/lib/journey-quality-server";
-import { qualitySignal, QUALITY_MESSAGES } from "@/lib/journey-quality";
+import { qualitySignal, QUALITY_MESSAGES, QUALITY_REVIEW_ACTIONS } from "@/lib/journey-quality";
 
 export const dynamic = "force-dynamic";
 
@@ -60,7 +60,7 @@ export default async function JourneyOpinionsPage({ searchParams }: {
               <p className="font-bold">{group.route_names.map((name) => formatRouteLabel(name)).join(" → ")}</p>
               <p className="mt-1 text-[#a8c888]">{group.devices} dispositivos · {group.negative} opiniones negativas · {group.active_days} días con opiniones.</p>
               <p className="mt-1 text-[#b8e840]">{signal ? `${QUALITY_MESSAGES[signal.concern]} Ajuste: ${signal.penalty.toFixed(1)} puntos.` : "Sin ajuste: todavía no alcanza los umbrales de evidencia."}</p>
-              {signal && <p className="mt-1 text-[#a8c888]">{signal.concern === "transfer_far" ? "Revisa el enlace peatonal y los puntos de cambio." : signal.concern === "bus_missing" ? "Comprueba frecuencia, horario y continuidad del servicio." : "Contrasta el trazado con el recorrido actual antes de editarlo."}</p>}
+              {signal && <p className="mt-1 text-[#a8c888]">{QUALITY_REVIEW_ACTIONS[signal.concern]}</p>}
             </li>;
           })}</ul>}
         </section>
@@ -79,7 +79,7 @@ export default async function JourneyOpinionsPage({ searchParams }: {
                 <p className="text-sm font-semibold">{percent}% de respuestas positivas</p>
                 <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10" aria-hidden="true"><div className="h-full bg-[#b8e840]" style={{ width: `${percent}%` }} /></div>
                 <ul className="mt-4 space-y-1 text-xs leading-5 text-[#a8c888]">{Object.entries(FEEDBACK_REASONS).map(([key, label]) => {
-                  const count = group[key as keyof typeof FEEDBACK_REASONS];
+                  const count = group[key as keyof typeof FEEDBACK_REASONS] ?? 0;
                   return count > 0 ? <li key={key}>{label}: <strong>{count}</strong></li> : null;
                 })}{group.unspecified > 0 && <li>Sin motivo: <strong>{group.unspecified}</strong></li>}</ul>
               </div>

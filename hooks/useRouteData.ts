@@ -17,6 +17,7 @@ import type { PolylineRoute } from "@/lib/routeMatcher";
 import type { Coordinates, ProductionRoute } from "@/lib/types";
 import type { TransferOption } from "@/lib/transfers";
 import type { JourneyPreference } from "@/lib/journey-ranking";
+import { DEFAULT_JOURNEY_SETTINGS, type JourneySettings } from "@/lib/journey-settings";
 
 type RouteCalculation = RouteCalculationResult & { key: string };
 
@@ -33,12 +34,14 @@ export function useRouteData({
   isOnline,
   origin,
   preference = "nearby",
+  settings = DEFAULT_JOURNEY_SETTINGS,
   freezeRecommendation = false,
 }: {
   destination: Coordinates | null;
   isOnline: boolean;
   origin: Coordinates | null;
   preference?: JourneyPreference;
+  settings?: JourneySettings;
   freezeRecommendation?: boolean;
 }) {
   const [polylineRoutes, setPolylineRoutes] = useState<ProductionRoute[]>([]);
@@ -167,7 +170,7 @@ export function useRouteData({
   }, [routeWorkerFailed, routesForMatching]);
 
   const calculationKey = origin && destination
-    ? `${formatCoordinate(origin)}>${formatCoordinate(destination)}@${polylineRoutes.length}:${preference}`
+    ? `${formatCoordinate(origin)}>${formatCoordinate(destination)}@${polylineRoutes.length}:${preference}:${settings.extraMinutes}:${settings.maxWalkM}`
     : null;
   const currentCalculation = routeCalculation?.key === calculationKey ? routeCalculation : null;
   const suggestions = currentCalculation?.suggestions ?? EMPTY_ROUTE_OPTIONS;
@@ -221,6 +224,7 @@ export function useRouteData({
           origin,
           destination,
           preference,
+          settings,
         };
         try {
           worker.postMessage(message);
@@ -232,7 +236,7 @@ export function useRouteData({
 
       void import("@/lib/route-calculation")
         .then(({ calculateRouteOptions }) => {
-          applyResult(calculateRouteOptions(routesForMatching, origin, destination, preference), "fallback");
+          applyResult(calculateRouteOptions(routesForMatching, origin, destination, preference, settings), "fallback");
         })
         .catch(() => {
           applyResult({ suggestions: [], alternativeRouteIds: [], transfers: [] }, "fallback");
@@ -244,7 +248,7 @@ export function useRouteData({
       cancelled = true;
       if (worker) worker.removeEventListener("message", handleMessage);
     };
-  }, [calculationKey, destination, origin, preference, routeWorkerFailed, routesForMatching]);
+  }, [calculationKey, destination, origin, preference, settings, routeWorkerFailed, routesForMatching]);
 
   useEffect(() => {
     if (!origin || !destination || !routeCalculation || routeCalculation.key !== calculationKey
@@ -252,7 +256,7 @@ export function useRouteData({
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
       void import("@/lib/refine-journeys").then(({ refineJourneys }) =>
-        refineJourneys(routeCalculation, origin, destination, preference, controller.signal)
+        refineJourneys(routeCalculation, origin, destination, preference, controller.signal, settings)
       ).then((result) => {
         if (controller.signal.aborted) return;
         setRouteCalculation((current) => {
@@ -269,7 +273,7 @@ export function useRouteData({
       });
     }, 400);
     return () => { controller.abort(); window.clearTimeout(timer); };
-  }, [calculationKey, destination, freezeRecommendation, origin, preference, routeCalculation]);
+  }, [calculationKey, destination, freezeRecommendation, origin, preference, settings, routeCalculation]);
 
   const promoteSuggestion = useCallback((routeId: number) => {
     if (calculationKey) preferredRouteRef.current = { key: calculationKey, id: routeId };

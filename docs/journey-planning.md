@@ -7,7 +7,8 @@ el cálculo de respaldo utiliza los mismos parámetros.
 ## Preferencias
 
 - **Menos caminata**, predeterminada: pondera un minuto caminando como tres en
-  transporte. Prioriza opciones dentro de cinco minutos de la más rápida disponible.
+  transporte. Prioriza opciones dentro de 5, 10 o 15 minutos de la más rápida
+  disponible que cumpla el límite de caminata. El valor inicial es 5 minutos.
 - **Equilibrada**: pondera un minuto caminando como dos en transporte.
 - **Más rápida**: ordena por el tiempo estimado de puerta a puerta.
 
@@ -16,12 +17,25 @@ incomodidad de cambiar de vehículo. Estos puntos **no se suman a la duración**
 Los parámetros están en `lib/journey-ranking.ts`.
 
 En Menos caminata y Equilibrada, si encabeza la lista un transbordo se compara
-con la mejor directa que esté dentro de cinco minutos de la opción más rápida.
+con la mejor directa que esté dentro de la tolerancia elegida respecto a la opción más rápida.
 Se recomienda la directa si el cambio ahorra menos de 300 m a pie y menos de
 cinco minutos de viaje. El transbordo sigue disponible para elección manual.
 La regla se repite después de verificar las caminatas por calles, sin modificar
 la duración ni el modo Más rápida. No se elimina un cambio por la longitud del
 tramo en camión: un tramo corto podría evitar una barrera peatonal.
+
+Los ajustes adicionales se guardan en `urugo:journey-settings:v1`, separados de
+la preferencia existente. La caminata máxima puede ser 300, 500, 800 metros o
+sin límite (predeterminado) e incluye subida, cambio y bajada. Se prioriza cumplir
+este límite en los tres modos. Si ninguna candidata lo cumple, se ordenan por
+menor caminata y se muestra un aviso; el usuario puede elegir otra alternativa.
+El mismo ajuste se aplica al worker, al cálculo de respaldo y a la verificación
+por calles. Valores almacenados inválidos vuelven a los predeterminados.
+
+La ficha explica la diferencia de caminata y tiempo frente a la alternativa más
+rápida dentro del límite. Los mensajes distinguen la falta de opciones que cumplan
+el límite de una selección manual que lo supera. Se señalan las comparaciones
+que aún incluyen accesos aproximados.
 
 La duración incluye caminar desde el origen, caminar al cambiar de ruta, caminar
 hasta el destino, viajar y esperar cada vehículo. Se asumen 75 m/min caminando,
@@ -40,7 +54,7 @@ coincidentes. Se conserva el límite de 200 m en el cambio y los filtros de reco
 del motor anterior. Un índice espacial y cachés por geometría evitan comparar
 todos los segmentos de todas las rutas en cada búsqueda.
 
-Se muestran hasta tres alternativas distintas: recomendada, menor caminata y
+Inicialmente se muestran hasta tres opciones distintas: recomendada, menor caminata y
 menor duración, conservando una directa si existe. La ficha permite comparar
 tiempo, tarifa y caminata desglosada antes de cambiar de opción.
 
@@ -53,7 +67,12 @@ los pequeños enlaces entre puntos ajustados a la red se señalan como aproximad
 Los cálculos pendientes se cancelan al cambiar el viaje y no sustituyen una opción
 elegida manualmente ni una sesión de viaje ya iniciada.
 
-Hay como máximo nueve consultas por cálculo, dos concurrentes y 24 por minuto
+Si una finalista es inalcanzable, la caminata crece al menos 200 metros y un 50%,
+o ninguna cumple el límite elegido, se verifican hasta tres reservas adicionales.
+No hay reintentos recursivos. Se conservan las opciones iniciales alcanzables para
+respetar elecciones manuales, por lo que pueden quedar hasta seis opciones.
+
+Hay como máximo 18 consultas por cálculo (9 sin reservas), dos concurrentes y 24 por minuto
 por sesión del navegador. Los accesos repetidos se deduplican y se reutilizan hasta
 15 minutos en memoria (128 entradas), sin persistir coordenadas ni respuestas.
 Cada consulta tiene tres segundos de espera máxima. Errores de autorización o
@@ -87,3 +106,8 @@ consulta peatonal, caché, cancelación, errores, accesos imposibles y reordenac
 por calles en móvil. Las pruebas generales simulan Directions para evitar consumo
 y resultados variables. Una consulta real del 14 de septiembre de 2026 validó
 275 m para la Ruta 6 y 947 m para la Ruta 176 en el caso antes estimado en 210/522 m.
+
+`tests/journey-settings.test.ts` cubre tolerancia, límites, datos dañados y
+explicaciones. La prueba móvil de preferencias comprueba los nuevos ajustes con
+worker y sin worker, incluyendo persistencia. Las pruebas de refinamiento cubren
+reservas acotadas, deduplicación, accesos imposibles y cancelación entre tandas.

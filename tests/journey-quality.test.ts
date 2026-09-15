@@ -4,6 +4,14 @@ import { journeyMinutes, rankJourneys } from "@/lib/journey-ranking";
 
 const group: JourneyQualityGroup = { route_keys: ["a", "b"], route_names: ["A", "B"], devices: 20, negative: 15, active_days: 3, bus_missing: 0, route_incorrect: 0, transfer_far: 8 };
 describe("community calibration", () => {
+  it.each(["boarding_far", "alighting_far", "walking_blocked"])("agrega %s sin convertir votos aislados en penalizaciones", (reason) => {
+    const votes: QualityVote[] = Array.from({ length: 20 }, (_, index) => ({
+      route_keys: ["a"], route_names: ["A"], device_hash: String(index), useful: false, reason,
+      feedback_day: `2026-09-${10 + index % 3}`, updated_at: `2026-09-${10 + index % 3}T10:00:00Z`,
+    }));
+    expect(qualitySignal(aggregateJourneyQuality(votes)[0])?.concern).toBe(reason);
+    expect(qualitySignal(aggregateJourneyQuality(votes.slice(0, 1))[0])).toBeNull();
+  });
   it("requires enough devices, different days, negatives and a repeated reason", () => {
     expect(qualitySignal(group)?.concern).toBe("transfer_far");
     for (const change of [{ devices: 19 }, { active_days: 2 }, { negative: 11 }, { transfer_far: 4 }]) expect(qualitySignal({ ...group, ...change })).toBeNull();

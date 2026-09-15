@@ -4,6 +4,7 @@ import { getRouteConnections } from "./route-connections";
 import { BUS_SPEED, diverseJourneys, expectedWait, journeyMinutes, journeyScore, rankJourneys, type JourneyCost, type JourneyPreference } from "./journey-ranking";
 import type { Coordinates } from "./types";
 import type { JourneyWalking } from "./journey-walking";
+import { DEFAULT_JOURNEY_SETTINGS, type JourneySettings } from "./journey-settings";
 
 export type TransferOption = {
   routeAId: number; routeBId: number; routeAName: string; routeBName: string;
@@ -16,7 +17,7 @@ export type TransferOption = {
   communityConcern?: string;
 };
 
-export function computeTransferOptionsFromPolylines(routes: PolylineRoute[], origin: Coordinates, destination: Coordinates, preference: JourneyPreference = "nearby", limit = 5): TransferOption[] {
+export function computeTransferOptionsFromPolylines(routes: PolylineRoute[], origin: Coordinates, destination: Coordinates, preference: JourneyPreference = "nearby", limit = 5, settings: JourneySettings = DEFAULT_JOURNEY_SETTINGS): TransferOption[] {
   const straightDistance = haversineMeters(origin, destination);
   if (straightDistance < 400) return [];
   const from = routes.map((route) => ({ route, accesses: getAccessCandidates(origin, route) })).filter((item) => item.accesses.length);
@@ -38,7 +39,8 @@ export function computeTransferOptionsFromPolylines(routes: PolylineRoute[], ori
         };
         const score = journeyScore(cost, preference);
         const key = `${a.route.name}|${b.route.name}`;
-        if (byNames.has(key) && byNames.get(key)!.score <= score) continue;
+        const existing = byNames.get(key);
+        if (existing && (settings.maxWalkM === null ? existing.score <= score : rankJourneys([existing, { cost }], preference, settings)[0] === existing)) continue;
         byNames.set(key, {
           routeAId: a.route.id, routeBId: b.route.id, routeAName: a.route.name, routeBName: b.route.name,
           routeAStartIndex: board.segmentIndex, routeATransferIndex: connection.a.segmentIndex,
@@ -50,6 +52,6 @@ export function computeTransferOptionsFromPolylines(routes: PolylineRoute[], ori
       }
     }
   }
-  const ranked = rankJourneys([...byNames.values()], preference);
+  const ranked = rankJourneys([...byNames.values()], preference, settings);
   return limit === Infinity ? ranked : diverseJourneys(ranked, limit);
 }

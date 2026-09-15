@@ -3,6 +3,7 @@ import { diverseJourneys, rankJourneys, type JourneyCost, type JourneyPreference
 import { computeTransferOptionsFromPolylines, type TransferOption } from "@/lib/transfers";
 import type { Coordinates, RouteDirection } from "@/lib/types";
 import type { JourneyWalking } from "@/lib/journey-walking";
+import { DEFAULT_JOURNEY_SETTINGS, parseJourneySettings, type JourneySettings } from "@/lib/journey-settings";
 
 export type RouteOption = {
   routeId: number;
@@ -30,7 +31,11 @@ export type RouteCalculationResult = {
   recommendedTransfer?: TransferOption;
   refinement?: "pending" | "complete";
   unreachableCount?: number;
+  reserveCandidates?: JourneyCandidate[];
+  checkedReserveCount?: number;
 };
+
+export type JourneyCandidate = { direct?: RouteOption; transfer?: TransferOption; cost: JourneyCost };
 
 export type RouteCalculationWorkerRequest =
   | { type: "initialize"; routes: PolylineRoute[] }
@@ -41,6 +46,7 @@ export type RouteCalculationWorkerRequest =
       origin: Coordinates;
       destination: Coordinates;
       preference?: JourneyPreference;
+      settings?: JourneySettings;
     };
 
 export type RouteCalculationWorkerResponse =
@@ -63,8 +69,10 @@ export function calculateRouteOptions(
   origin: Coordinates,
   destination: Coordinates,
   preference: JourneyPreference = "nearby",
+  requestedSettings: JourneySettings = DEFAULT_JOURNEY_SETTINGS,
 ): RouteCalculationResult {
-  const matches = findBestRoutes(origin, destination, routes, preference, Infinity);
+  const settings = parseJourneySettings(requestedSettings);
+  const matches = findBestRoutes(origin, destination, routes, preference, Infinity, settings);
 
   const suggestions = matches.map<RouteOption>((match) => ({
         routeId: match.routeId,
@@ -82,10 +90,9 @@ export function calculateRouteOptions(
         routeColor: match.routeColor,
         cost: match.cost,
       }));
-  const transfers = computeTransferOptionsFromPolylines(routes, origin, destination, preference, Infinity);
-  type Candidate = { direct?: RouteOption; transfer?: TransferOption; cost: JourneyCost };
-  const candidates: Candidate[] = [...suggestions.map((direct) => ({ direct, cost: direct.cost! })), ...transfers.map((transfer) => ({ transfer, cost: transfer.cost! }))];
-  const ranked = rankJourneys(candidates, preference);
+  const transfers = computeTransferOptionsFromPolylines(routes, origin, destination, preference, Infinity, settings);
+  const candidates: JourneyCandidate[] = [...suggestions.map((direct) => ({ direct, cost: direct.cost! })), ...transfers.map((transfer) => ({ transfer, cost: transfer.cost! }))];
+  const ranked = rankJourneys(candidates, preference, settings);
   const selected = diverseJourneys(ranked, 3);
   const direct = ranked.find((item) => item.direct);
   if (direct && !selected.some((item) => item.direct)) selected[selected.length - 1] = direct;
@@ -97,5 +104,6 @@ export function calculateRouteOptions(
     alternativeRouteIds: selectedDirect.slice(1).map((match) => match.routeId),
     transfers: selectedTransfers,
     recommendedTransfer: selectedDirect.length ? ranked[0]?.transfer : undefined,
+    reserveCandidates: diverseJourneys(ranked.filter((item) => !selected.includes(item)), 3),
   };
 }

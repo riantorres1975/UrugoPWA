@@ -1,9 +1,9 @@
 import { getSchedule } from "@/lib/schedules";
+import { DEFAULT_JOURNEY_SETTINGS, type JourneySettings } from "@/lib/journey-settings";
 
 export type JourneyPreference = "nearby" | "balanced" | "fastest";
 export const WALK_SPEED = 75;
 export const BUS_SPEED = 300;
-const NEARBY_EXTRA_MINUTES = 5;
 const MIN_TRANSFER_WALK_SAVING_M = 300;
 const MIN_TRANSFER_TIME_SAVING_MIN = 5;
 export function expectedWait(routeName: string) {
@@ -33,12 +33,20 @@ export function journeyScore(cost: JourneyCost, preference: JourneyPreference) {
 }
 
 // Preserve distinct trade-offs instead of dropping the closest option at the first cut.
-export function rankJourneys<T extends { cost: JourneyCost }>(items: T[], preference: JourneyPreference): T[] {
-  const fastest = Math.min(...items.map((item) => journeyMinutes(item.cost)));
+export function rankJourneys<T extends { cost: JourneyCost }>(items: T[], preference: JourneyPreference, settings: JourneySettings = DEFAULT_JOURNEY_SETTINGS): T[] {
+  const withinLimit = (item: T) => settings.maxWalkM === null || totalWalk(item.cost) <= settings.maxWalkM;
+  const eligible = items.filter(withinLimit);
+  const fastest = Math.min(...(eligible.length ? eligible : items).map((item) => journeyMinutes(item.cost)));
   const ranked = [...items].sort((a, b) => {
+    if (settings.maxWalkM !== null) {
+      const aFits = withinLimit(a), bFits = withinLimit(b);
+      if (aFits !== bFits) return aFits ? -1 : 1;
+      // No matching trip: show the closest available option with an explicit warning.
+      if (!eligible.length && totalWalk(a.cost) !== totalWalk(b.cost)) return totalWalk(a.cost) - totalWalk(b.cost);
+    }
     if (preference === "nearby") {
-      const aSlow = journeyMinutes(a.cost) > fastest + NEARBY_EXTRA_MINUTES;
-      const bSlow = journeyMinutes(b.cost) > fastest + NEARBY_EXTRA_MINUTES;
+      const aSlow = journeyMinutes(a.cost) > fastest + settings.extraMinutes;
+      const bSlow = journeyMinutes(b.cost) > fastest + settings.extraMinutes;
       if (aSlow !== bSlow) return aSlow ? 1 : -1;
     }
     return journeyScore(a.cost, preference) - journeyScore(b.cost, preference)
@@ -49,9 +57,9 @@ export function rankJourneys<T extends { cost: JourneyCost }>(items: T[], prefer
   // savings available as alternatives without making them the default trip.
   // Compare costs again after street walking is refined; do not infer that a
   // short bus segment can be walked (it could cross a barrier).
-  if (preference === "fastest" || !ranked[0]?.cost.transfers) return ranked;
+  if (preference === "fastest" || !ranked[0]?.cost.transfers || !eligible.length) return ranked;
   const directIndex = ranked.findIndex((item) => item.cost.transfers === 0
-    && journeyMinutes(item.cost) <= fastest + NEARBY_EXTRA_MINUTES);
+    && withinLimit(item) && journeyMinutes(item.cost) <= fastest + settings.extraMinutes);
   if (directIndex < 0) return ranked;
   const direct = ranked[directIndex];
   const transfer = ranked[0];

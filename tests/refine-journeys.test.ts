@@ -18,8 +18,51 @@ const result = () => calculateRouteOptions([
 
 describe("refining the finalists", () => {
   beforeEach(() => {
+    mocks.walk.mockClear();
     mocks.quality.mockResolvedValue([]);
     mocks.walk.mockImplementation(async (from: Coordinates, to: Coordinates) => ({ ...approximateWalk(from, to), status: "street" }));
+  });
+  const withReserves = () => {
+    const initial = result();
+    initial.reserveCandidates = Array.from({ length: 5 }, (_, index) => {
+      const lat = 19.423 + index * 0.001;
+      const direct = { ...initial.suggestions[0], routeId: index + 10, ruta: `Reserva ${index}`, segment: [[-102.06, lat], [-102.04, lat]] as Coordinates[] };
+      return { direct, cost: direct.cost! };
+    });
+    return initial;
+  };
+  it("no consulta las reservas cuando las finalistas tienen accesos adecuados", async () => {
+    const refined = await refineJourneys(withReserves(), origin, destination, "nearby", new AbortController().signal);
+    expect(refined.checkedReserveCount).toBe(0);
+    expect(mocks.walk).toHaveBeenCalledTimes(4);
+  });
+  it("recupera opciones después de un NoRoute, con solo tres reservas y sin repetir accesos", async () => {
+    mocks.walk.mockImplementation(async (from: Coordinates, to: Coordinates) => ({ ...approximateWalk(from, to), status: from[1] <= 19.422 && to[1] <= 19.422 ? "unreachable" : "street" }));
+    const initial = withReserves();
+    initial.reserveCandidates!.unshift({ direct: initial.suggestions[0], cost: initial.suggestions[0].cost! });
+    const refined = await refineJourneys(initial, origin, destination, "nearby", new AbortController().signal);
+    expect(refined.checkedReserveCount).toBe(3);
+    expect(refined.unreachableCount).toBe(2);
+    expect(refined.suggestions).toHaveLength(3);
+    expect(refined.suggestions[0].ruta).toBe("Reserva 0");
+    expect(mocks.walk).toHaveBeenCalledTimes(10);
+  });
+  it("revisa reservas por rodeos grandes y por un límite de caminata sin cumplir", async () => {
+    mocks.walk.mockImplementation(async (from: Coordinates, to: Coordinates) => ({ ...approximateWalk(from, to), status: "street", distanceM: 900, minutes: 12 }));
+    const detour = await refineJourneys(withReserves(), origin, destination, "nearby", new AbortController().signal);
+    expect(detour.checkedReserveCount).toBe(3);
+    mocks.walk.mockImplementation(async (from: Coordinates, to: Coordinates) => ({ ...approximateWalk(from, to), status: "street", distanceM: 180, minutes: 2.4 }));
+    const limited = await refineJourneys(withReserves(), origin, destination, "nearby", new AbortController().signal, { extraMinutes: 5, maxWalkM: 300 });
+    expect(limited.checkedReserveCount).toBe(3);
+  });
+  it("no comienza otra tanda después de cancelar la búsqueda", async () => {
+    const controller = new AbortController();
+    mocks.walk.mockImplementation(async (from: Coordinates, to: Coordinates) => {
+      controller.abort(new Error("Nueva búsqueda"));
+      return { ...approximateWalk(from, to), status: "unreachable" };
+    });
+    await expect(refineJourneys(withReserves(), origin, destination, "nearby", controller.signal)).rejects.toThrow("Nueva búsqueda");
+    expect(mocks.walk.mock.calls.length).toBeLessThanOrEqual(4);
   });
   it("changes the recommendation when the nearest straight-line access requires a longer street walk", async () => {
     const initial = result();
