@@ -15,12 +15,12 @@ export default function JourneyPreferences({ value, onChange, disabled, settings
     <button type="button" aria-expanded={expanded} aria-controls={settingsId} onClick={() => setExpanded(!expanded)} className="ov-text mt-2 min-h-11 w-full rounded-lg text-left text-xs font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-lima">Ajustar caminata y tiempo · {settings.maxWalkM === null ? "Sin límite" : `Hasta ${settings.maxWalkM} m`} {expanded ? "↑" : "↓"}</button>
     <div id={settingsId} hidden={!expanded} className="space-y-3 pb-2">
       <label className="ov-text block text-xs font-medium">Caminata máxima en todo el viaje
-        <select value={settings.maxWalkM ?? "none"} onChange={(event) => onSettingsChange({ ...settings, maxWalkM: event.target.value === "none" ? null : Number(event.target.value) as JourneySettings["maxWalkM"] })} className="ov-pill ov-border ov-text mt-2 min-h-11 w-full rounded-xl border px-3">
+        <select value={settings.maxWalkM ?? "none"} onChange={(event) => onSettingsChange({ ...settings, maxWalkM: event.target.value === "none" ? null : Number(event.target.value) as JourneySettings["maxWalkM"] })} className="ov-select ov-border mt-2 min-h-11 w-full rounded-xl border px-3">
           <option value="none">Sin límite</option><option value="300">Hasta 300 m</option><option value="500">Hasta 500 m</option><option value="800">Hasta 800 m</option>
         </select>
       </label>
       {value === "nearby" && <label className="ov-text block text-xs font-medium">Tiempo extra por caminar menos
-        <select value={settings.extraMinutes} onChange={(event) => onSettingsChange({ ...settings, extraMinutes: Number(event.target.value) as JourneySettings["extraMinutes"] })} className="ov-pill ov-border ov-text mt-2 min-h-11 w-full rounded-xl border px-3">
+        <select value={settings.extraMinutes} onChange={(event) => onSettingsChange({ ...settings, extraMinutes: Number(event.target.value) as JourneySettings["extraMinutes"] })} className="ov-select ov-border mt-2 min-h-11 w-full rounded-xl border px-3">
           <option value="5">Hasta 5 min más</option><option value="10">Hasta 10 min más</option><option value="15">Hasta 15 min más</option>
         </select>
       </label>}
