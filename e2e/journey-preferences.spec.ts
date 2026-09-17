@@ -25,10 +25,10 @@ for (const fallback of [false, true]) {
     await preview.click();
     const panel = page.getByRole("dialog");
     await panel.getByRole("button", { name: /Ajustar caminata y tiempo/ }).click();
-    await panel.getByLabel("Tiempo extra por caminar menos").selectOption("15");
+    await panel.getByRole("radio", { name: "Hasta 15 min más", exact: true }).click();
     await expect(panel.getByRole("button", { name: "Iniciar viaje en Ruta cercana", exact: true })).toBeVisible();
     await expect(panel.getByLabel("Comparación de esta opción")).toContainText("m menos");
-    await panel.getByLabel("Caminata máxima en todo el viaje").selectOption("300");
+    await panel.getByRole("radio", { name: "Hasta 300 m", exact: true }).click();
     await panel.getByRole("button", { name: "Más rápida", exact: true }).click();
     await expect(panel.getByRole("button", { name: "Iniciar viaje en Ruta cercana", exact: true })).toBeVisible();
     expect(await panel.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
@@ -37,9 +37,9 @@ for (const fallback of [false, true]) {
     await expect(preview).toContainText("Ruta cercana");
     await preview.click();
     await panel.getByRole("button", { name: /Ajustar caminata y tiempo/ }).click();
-    await expect(panel.getByLabel("Caminata máxima en todo el viaje")).toHaveValue("300");
+    await expect(panel.getByRole("radio", { name: "Hasta 300 m", exact: true })).toHaveAttribute("aria-checked", "true");
     await panel.getByRole("button", { name: "Menos caminata", exact: true }).click();
-    await expect(panel.getByLabel("Tiempo extra por caminar menos")).toHaveValue("15");
+    await expect(panel.getByRole("radio", { name: "Hasta 15 min más", exact: true })).toHaveAttribute("aria-checked", "true");
   });
 }
 

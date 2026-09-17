@@ -70,6 +70,7 @@ export type TripProgress = {
 
 export type TripTrackingState = {
   progress: TripProgress | null;
+  lastOnRoutePhase: Exclude<TripPhase, "off-route"> | undefined;
   offRouteReadings: number;
   arrivalReadings: number;
 };
@@ -155,7 +156,9 @@ export function calculateTripProgress(
 ): TripProgress {
   if (journey.kind === "direct") {
     const distanceToDestinationM = haversineMeters(location, journey.destination);
-    if (distanceToDestinationM <= ARRIVAL_RADIUS_M) {
+    const position = locateOnPath(location, journey.segment);
+    if (distanceToDestinationM <= ARRIVAL_RADIUS_M &&
+      (previousPhase === "walking-destination" || position.remainingM <= ALIGHTING_RADIUS_M)) {
       return arrivedProgress();
     }
 
@@ -169,12 +172,11 @@ export function calculateTripProgress(
       : Infinity;
     if (
       previousPhase === "walking-destination" ||
-      (previousPhase === "riding-direct" && distanceToDropOffM <= ALIGHTING_RADIUS_M)
+      (previousPhase === "riding-direct" && distanceToDropOffM <= ALIGHTING_RADIUS_M && position.remainingM <= ALIGHTING_RADIUS_M)
     ) {
       return walkingDestinationProgress(distanceToDestinationM, routeTotalM, finalWalkM);
     }
 
-    const position = locateOnPath(location, journey.segment);
     if (position.distanceM > ROUTE_CORRIDOR_M) {
       const boardingDistanceM = journey.segment[0]
         ? haversineMeters(location, journey.segment[0])
@@ -183,8 +185,8 @@ export function calculateTripProgress(
       return {
         phase: wasRiding ? "off-route" : "boarding",
         progressRatio: 0,
-        remainingMinutes: minutesFor(boardingDistanceM, WALK_SPEED_M_PER_MIN),
-        distanceToMilestoneM: boardingDistanceM,
+        remainingMinutes: wasRiding ? null : minutesFor(boardingDistanceM, WALK_SPEED_M_PER_MIN),
+        distanceToMilestoneM: wasRiding ? position.distanceM : boardingDistanceM,
         currentRouteName: journey.routeName,
         nextRouteName: null,
       };
@@ -192,7 +194,8 @@ export function calculateTripProgress(
 
     return {
       phase: "riding-direct",
-      progressRatio: position.totalM > 0 ? clampRatio(position.progressM / position.totalM) : 0,
+      progressRatio: position.totalM + finalWalkM > 0
+        ? clampRatio(position.progressM / (position.totalM + finalWalkM)) : 0,
       remainingMinutes: minutesFor(position.remainingM, BUS_SPEED_M_PER_MIN),
       distanceToMilestoneM: position.remainingM,
       currentRouteName: journey.routeName,
@@ -201,12 +204,13 @@ export function calculateTripProgress(
   }
 
   const distanceToDestinationM = haversineMeters(location, journey.destination);
-  if (distanceToDestinationM <= ARRIVAL_RADIUS_M) {
-    return arrivedProgress();
-  }
-
   const routeA = locateOnPath(location, journey.segmentA);
   const routeB = locateOnPath(location, journey.segmentB);
+  if (distanceToDestinationM <= ARRIVAL_RADIUS_M &&
+    (previousPhase === "walking-destination" ||
+      ((previousPhase === "riding-second" || !previousPhase) && routeB.remainingM <= ALIGHTING_RADIUS_M))) {
+    return arrivedProgress();
+  }
   const routeBStart = journey.segmentB[0] ?? journey.transferPoint;
   const dropOffPoint = journey.segmentB[journey.segmentB.length - 1];
   const distanceToDropOffM = dropOffPoint
@@ -224,14 +228,14 @@ export function calculateTripProgress(
 
   if (
     previousPhase === "walking-destination" ||
-    (wasRidingSecond && distanceToDropOffM <= ALIGHTING_RADIUS_M)
+    (wasRidingSecond && distanceToDropOffM <= ALIGHTING_RADIUS_M && routeB.remainingM <= ALIGHTING_RADIUS_M)
   ) {
     return walkingDestinationProgress(distanceToDestinationM, completedTransitM, finalWalkM);
   }
 
   // Some routes cross again shortly after the official transfer point. Keep
   // the transfer phase until the rider has actually moved away from that point.
-  if (distanceToTransferM <= TRANSFER_RADIUS_M && !wasRidingSecond) {
+  if (distanceToTransferM <= TRANSFER_RADIUS_M && routeA.remainingM <= TRANSFER_RADIUS_M && !wasRidingSecond) {
     const walkedM = Math.max(0, journey.walkMeters - distanceToRouteBStartM);
     return {
       phase: "walking-transfer",
@@ -247,7 +251,9 @@ export function calculateTripProgress(
 
   if (
     routeB.distanceM <= ROUTE_CORRIDOR_M &&
-    (routeB.progressM >= BOARDED_ROUTE_B_PROGRESS_M || wasWalkingTransfer || wasRidingSecond)
+    (wasRidingSecond || (routeB.progressM >= BOARDED_ROUTE_B_PROGRESS_M &&
+      (wasWalkingTransfer || (!previousPhase && routeA.distanceM > ROUTE_CORRIDOR_M) ||
+        (routeA.remainingM <= TRANSFER_RADIUS_M && routeA.distanceM > ROUTE_CORRIDOR_M))))
   ) {
     return {
       phase: "riding-second",
@@ -312,7 +318,7 @@ export function calculateTripProgress(
     };
   }
 
-  if (routeB.distanceM <= ROUTE_CORRIDOR_M) {
+  if (!previousPhase && routeB.distanceM <= ROUTE_CORRIDOR_M) {
     return {
       phase: "riding-second",
       progressRatio: totalJourneyM > 0
@@ -329,7 +335,7 @@ export function calculateTripProgress(
     ? haversineMeters(location, journey.segmentA[0])
     : routeA.distanceM;
   return {
-    phase: previousPhase ? "off-route" : "boarding",
+    phase: previousPhase && previousPhase !== "boarding" ? "off-route" : "boarding",
     progressRatio: 0,
     remainingMinutes: minutesFor(boardingDistanceM, WALK_SPEED_M_PER_MIN),
     distanceToMilestoneM: boardingDistanceM,
@@ -341,6 +347,7 @@ export function calculateTripProgress(
 export function createTripTrackingState(progress: TripProgress | null = null): TripTrackingState {
   return {
     progress,
+    lastOnRoutePhase: progress?.phase === "off-route" ? undefined : progress?.phase,
     offRouteReadings: 0,
     arrivalReadings: progress?.phase === "arrived" ? ARRIVAL_CONFIRMATION_READINGS : 0,
   };
@@ -354,12 +361,14 @@ export function updateTripTrackingState(
   const previous = state.progress;
   if (previous?.phase === "arrived") return state;
 
-  const candidate = calculateTripProgress(journey, location, previous?.phase);
+  const candidate = calculateTripProgress(journey, location,
+    previous?.phase === "off-route" ? state.lastOnRoutePhase : previous?.phase);
 
   if (candidate.phase === "arrived") {
     const arrivalReadings = state.arrivalReadings + 1;
     if (arrivalReadings < ARRIVAL_CONFIRMATION_READINGS) {
       return {
+        ...state,
         progress: previous,
         offRouteReadings: 0,
         arrivalReadings,
@@ -368,6 +377,7 @@ export function updateTripTrackingState(
 
     return {
       progress: candidate,
+      lastOnRoutePhase: "arrived",
       offRouteReadings: 0,
       arrivalReadings: ARRIVAL_CONFIRMATION_READINGS,
     };
@@ -376,7 +386,7 @@ export function updateTripTrackingState(
   if (candidate.phase === "off-route" && previous?.phase !== "off-route") {
     const offRouteReadings = state.offRouteReadings + 1;
     if (offRouteReadings < OFF_ROUTE_CONFIRMATION_READINGS) {
-      return { progress: previous, offRouteReadings, arrivalReadings: 0 };
+      return { ...state, progress: previous, offRouteReadings, arrivalReadings: 0 };
     }
   }
 
@@ -389,6 +399,7 @@ export function updateTripTrackingState(
 
   return {
     progress,
+    lastOnRoutePhase: candidate.phase === "off-route" ? state.lastOnRoutePhase : candidate.phase,
     offRouteReadings: candidate.phase === "off-route"
       ? OFF_ROUTE_CONFIRMATION_READINGS
       : 0,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 
 export default function TripOverlays({
   alert,
@@ -56,9 +57,9 @@ export default function TripOverlays({
 
   return (
     <>
-      {stopDialogOpen ? (
+      {stopDialogOpen ? createPortal(
         <div
-          className="fixed inset-0 z-[90] flex items-end justify-center bg-black/65 px-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-4 sm:items-center sm:pb-4"
+          className="pointer-events-auto fixed inset-0 z-[90] flex items-end justify-center bg-black/65 px-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-4 sm:items-center sm:pb-4"
           onClick={onCancelStop}
         >
           <div
@@ -94,13 +95,13 @@ export default function TripOverlays({
               </button>
             </div>
           </div>
-        </div>
+        </div>, document.body
       ) : null}
 
       {alert ? (
         <div
           role="alert"
-          className="pointer-events-none absolute inset-x-0 bottom-36 z-50 flex justify-center px-4"
+          className="pointer-events-auto max-h-[25dvh] overflow-y-auto rounded-2xl"
         >
           <div className="pointer-events-auto flex w-full min-w-0 max-w-md items-start gap-2.5 rounded-2xl border border-lima/40 bg-slate-900/95 px-4 py-3 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-xl">
             <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-lima/15">

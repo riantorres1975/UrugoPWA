@@ -47,6 +47,67 @@ const transfer: TransferTripJourney = {
 };
 
 describe("trip mode", () => {
+  it("incluye la caminata final en el porcentaje sin llegar al 100% antes del destino", () => {
+    const journey: DirectTripJourney = { ...direct, destination: [-102.06, 19.423] };
+    let state = updateTripTrackingState(journey, [-102.07, 19.42], createTripTrackingState());
+    const before = state.progress!.progressRatio;
+    state = updateTripTrackingState(journey, [-102.06, 19.42], state);
+    expect(state.progress?.phase).toBe("walking-destination");
+    expect(state.progress!.progressRatio).toBeGreaterThan(before);
+    expect(state.progress!.progressRatio).toBeLessThan(0.9);
+    state = updateTripTrackingState(journey, [-102.06, 19.4215], state);
+    expect(state.progress!.progressRatio).toBeLessThan(1);
+  });
+
+  it("conserva el primer tramo cuando las rutas se cruzan antes del transbordo", () => {
+    const journey: TransferTripJourney = {
+      ...transfer,
+      segmentB: [[-102.0595, 19.42], [-102.07, 19.42], [-102.04, 19.44]],
+      destination: [-102.04, 19.44],
+    };
+    expect(calculateTripProgress(journey, [-102.07, 19.42], "riding-first").phase).toBe("riding-first");
+    expect(calculateTripProgress(journey, [-102.07, 19.42]).phase).toBe("riding-first");
+  });
+
+  it("no vuelve al primer camión después de recuperarse de un desvío en el segundo", () => {
+    let state = createTripTrackingState(calculateTripProgress(transfer, [-102.05, 19.42], "riding-second"));
+    for (let i = 0; i < 3; i += 1) state = updateTripTrackingState(transfer, [-102.05, 19.44], state);
+    expect(state.progress?.phase).toBe("off-route");
+    state = updateTripTrackingState(transfer, transfer.transferPoint, state);
+    expect(state.progress?.phase).toBe("riding-second");
+    expect(state.progress?.currentRouteName).toBe(transfer.routeBName);
+  });
+
+  it("sigue indicando caminar mientras aún se acerca al punto de subida del segundo camión", () => {
+    const journey: TransferTripJourney = { ...transfer,
+      segmentB: [[-102.055, 19.42], [-102.04, 19.42]], walkMeters: 525,
+    };
+    const walking = calculateTripProgress(journey, [-102.057, 19.42], "walking-transfer");
+    expect(walking.phase).toBe("walking-transfer");
+    expect(walking.distanceToMilestoneM).toBeGreaterThan(200);
+  });
+
+  it("mantiene la indicación de subida durante varias lecturas antes del primer camión", () => {
+    let state = createTripTrackingState();
+    for (let i = 0; i < 5; i += 1) state = updateTripTrackingState(transfer, [-102.08, 19.425], state);
+    expect(state.progress?.phase).toBe("boarding");
+  });
+
+  it("mide el desvío respecto a la ruta y no respecto al origen", () => {
+    const progress = calculateTripProgress(direct, [-102.065, 19.425], "riding-direct");
+    expect(progress.phase).toBe("off-route");
+    expect(progress.distanceToMilestoneM).toBeLessThan(600);
+    expect(progress.remainingMinutes).toBeNull();
+  });
+
+  it("no indica bajar al pasar cerca de la bajada antes de completar la vuelta", () => {
+    const journey: DirectTripJourney = { ...direct,
+      segment: [[-102.0605, 19.42], [-102.08, 19.42], [-102.08, 19.44], [-102.06, 19.42]],
+      destination: [-102.06, 19.423],
+    };
+    expect(calculateTripProgress(journey, journey.segment[0], "riding-direct").phase).toBe("riding-direct");
+  });
+
   it("calcula el avance y el destino de una ruta directa", () => {
     const progress = calculateTripProgress(direct, [-102.07, 19.42]);
 

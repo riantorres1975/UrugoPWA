@@ -7,6 +7,9 @@ export type LandmarkCue = {
   distanceM: number;
 };
 
+// Treat nearby references as reached, allowing for normal GPS drift.
+export const LANDMARK_REACHED_RADIUS_M = 40;
+
 type LandmarkPosition = {
   landmark: ProductionRouteLandmark;
   distanceFromPathM: number;
@@ -80,10 +83,9 @@ export function findUpcomingLandmark(
     if (position.distanceFromPathM > maxCorridorM) continue;
 
     const distanceM = position.progressM - current.progressM;
-    if (distanceM < -60 || distanceM > maxAheadM) continue;
-    const normalizedDistanceM = Math.max(0, distanceM);
-    if (!upcoming || normalizedDistanceM < upcoming.distanceM) {
-      upcoming = { name: position.landmark.name, distanceM: normalizedDistanceM };
+    if (distanceM <= LANDMARK_REACHED_RADIUS_M || distanceM > maxAheadM) continue;
+    if (!upcoming || distanceM < upcoming.distanceM) {
+      upcoming = { name: position.landmark.name, distanceM };
     }
   }
 

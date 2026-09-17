@@ -82,6 +82,6 @@ test("recupera una reserva cuando ninguna finalista tiene acceso peatonal", asyn
   await expect(panel.getByText(/Revisamos 1 opción adicional/)).toBeVisible();
   expect(requests).toBeLessThanOrEqual(18);
   await panel.getByRole("button", { name: /Ajustar caminata y tiempo/ }).click();
-  await panel.getByLabel("Caminata máxima en todo el viaje").selectOption("300");
+  await panel.getByRole("radio", { name: "Hasta 300 m", exact: true }).click();
   await expect(panel.getByLabel("Comparación de esta opción")).toContainText("Ninguna de las opciones encontradas cumple el límite de 300 m", { timeout: 15000 });
 });

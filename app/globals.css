@@ -469,17 +469,6 @@ body {
 .ov-border { border-color: var(--ov-border); }
 .ov-pill { background: var(--ov-pill-bg); }
 
-/* Map overlays stay dark in both map themes, including native option menus. */
-.ov-select {
-  color-scheme: dark;
-  color: var(--ov-text);
-  background-color: var(--surface-strong);
-}
-.ov-select option {
-  color: var(--ov-text);
-  background-color: var(--surface-strong);
-}
-
 .mapboxgl-ctrl-bottom-left,
 .mapboxgl-ctrl-bottom-right {
   display: none;

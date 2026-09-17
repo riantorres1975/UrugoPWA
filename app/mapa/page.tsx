@@ -777,7 +777,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
       ? "ready"
       : "locating";
   const tripLandmarkCue = useMemo(() => {
-    if (!tripSession || !tripProgress || !liveLocation) return null;
+    if (!tripSession || !tripProgress || !liveLocation || tripLocationStatus !== "ready") return null;
     if (tripProgress.phase === "riding-direct" && tripSession.journey.kind === "direct") {
       return findUpcomingLandmark(
         liveLocation,
@@ -801,7 +801,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
       );
     }
     return null;
-  }, [liveLocation, tripProgress, tripSession]);
+  }, [liveLocation, tripLocationStatus, tripProgress, tripSession]);
 
   useEffect(() => {
     announceLandmark(tripLandmarkCue);
@@ -1551,22 +1551,26 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
         )}
 
         {isTripActive && tripSession ? (
-          <TripModePanel
-            journey={tripSession.journey}
-            progress={tripProgress}
-            locationStatus={tripLocationStatus}
-            landmarkCue={tripLandmarkCue}
-            onStop={handleStopTrip}
-          />
+          <div
+            className="pointer-events-none absolute inset-x-3 z-50 flex flex-col gap-3 lg:inset-x-auto lg:left-1/2 lg:w-[430px] lg:-translate-x-1/2"
+            style={{ bottom: "calc(1rem + env(safe-area-inset-bottom, 0px))" }}
+          >
+            <TripOverlays
+              alert={tripLocationStatus === "ready" ? dropOffAlert : null}
+              stopDialogOpen={isStopTripDialogOpen}
+              onCancelStop={cancelStopTrip}
+              onConfirmStop={completeStopTrip}
+              onDismissAlert={dismissDropOffAlert}
+            />
+            <TripModePanel
+              journey={tripSession.journey}
+              progress={tripProgress}
+              locationStatus={tripLocationStatus}
+              landmarkCue={tripLandmarkCue}
+              onStop={handleStopTrip}
+            />
+          </div>
         ) : null}
-
-        <TripOverlays
-          alert={dropOffAlert}
-          stopDialogOpen={isStopTripDialogOpen && isTripActive}
-          onCancelStop={cancelStopTrip}
-          onConfirmStop={completeStopTrip}
-          onDismissAlert={dismissDropOffAlert}
-        />
 
         {/* ── Share toast (mobile + desktop, posicion ajustada) ── */}
         <div
