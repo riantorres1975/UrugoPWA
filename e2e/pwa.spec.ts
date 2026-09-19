@@ -1,5 +1,8 @@
 import { expect, test } from "./fixtures";
 
+// These tests exercise installation, cache updates and offline navigation.
+test.use({ serviceWorkers: "allow" });
+
 const STATIC_CACHE_PREFIX = "rutas-static-";
 const DATA_CACHE = "rutas-data-v1";
 

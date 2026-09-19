@@ -18,6 +18,9 @@ export default defineConfig({
   reporter: isCI ? "github" : "list",
   use: {
     baseURL: "http://localhost:3100",
+    // Page-level API mocks cannot intercept requests owned by the PWA worker.
+    // Keep fixtures stable across reloads; pwa.spec.ts opts into the real worker.
+    serviceWorkers: "block",
     storageState: {
       cookies: [],
       origins: [
