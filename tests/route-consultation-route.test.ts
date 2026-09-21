@@ -45,7 +45,7 @@ describe("POST /api/analytics/route-consultation", () => {
     });
   });
 
-  it("descarta silenciosamente la medición si Supabase no está disponible", async () => {
+  it("permite reintentar si Supabase no está disponible", async () => {
     mocks.createSupabaseAdminClient.mockReturnValue(null);
 
     const response = await POST(request({
@@ -53,8 +53,19 @@ describe("POST /api/analytics/route-consultation", () => {
       source: "route_page",
     }));
 
-    expect(response.status).toBe(204);
+    expect(response.status).toBe(503);
     expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it("no confirma una consulta que la base rechazó", async () => {
+    mocks.rpc.mockResolvedValue({ error: { message: "Database unavailable" } });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      const response = await POST(request({ routeName: "Ruta 17", source: "map" }));
+      expect(response.status).toBe(503);
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it("rechaza datos desconocidos y solicitudes de otro origen", async () => {

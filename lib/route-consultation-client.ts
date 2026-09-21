@@ -5,6 +5,7 @@ import type { RouteConsultationSource } from "@/lib/route-consultation";
 const STORAGE_KEY = "urugo:route-consultations:v1";
 const MAX_SAVED_KEYS = 160;
 const sentThisSession = new Set<string>();
+const pending = new Set<string>();
 
 type TrackRouteConsultationInput = {
   routeKey?: string;
@@ -26,15 +27,13 @@ function readSavedKeys(): string[] {
   }
 }
 
-function remember(key: string): boolean {
-  if (sentThisSession.has(key)) return false;
+function wasSent(key: string): boolean {
+  if (sentThisSession.has(key)) return true;
+  return readSavedKeys().includes(key);
+}
 
+function remember(key: string): void {
   const savedKeys = readSavedKeys();
-  if (savedKeys.includes(key)) {
-    sentThisSession.add(key);
-    return false;
-  }
-
   sentThisSession.add(key);
   try {
     window.localStorage.setItem(
@@ -44,16 +43,21 @@ function remember(key: string): boolean {
   } catch {
     // The in-memory key still prevents duplicate requests during this session.
   }
-  return true;
 }
 
 export function trackRouteConsultation(input: TrackRouteConsultationInput): void {
-  if ((!input.routeKey && !input.routeName) || !remember(consultationKey(input))) return;
+  if (!input.routeKey && !input.routeName) return;
+  const key = consultationKey(input);
+  if (pending.has(key) || wasSent(key)) return;
+  pending.add(key);
 
   void fetch("/api/analytics/route-consultation", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
     keepalive: true,
-  }).catch(() => undefined);
+  }).then((response) => {
+    // Only deduplicate confirmed writes. Failed requests may retry on the next selection.
+    if (response.ok) remember(key);
+  }).catch(() => undefined).finally(() => pending.delete(key));
 }

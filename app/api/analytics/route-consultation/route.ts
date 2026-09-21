@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
   if (!consultation) return new Response(null, { status: 400 });
 
   const supabase = createSupabaseAdminClient();
-  if (!supabase) return new Response(null, { status: 204 });
+  if (!supabase) return new Response(null, { status: 503 });
 
   const { error } = await supabase.rpc("record_route_consultation", {
     p_route_key: consultation.route.slug,
@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
 
   if (error) {
     console.warn("[route-consultation] No se pudo guardar:", error.message);
+    return new Response(null, { status: 503 });
   }
 
   return new Response(null, { status: 204 });

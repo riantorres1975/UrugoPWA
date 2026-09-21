@@ -4,6 +4,8 @@ UruGo conserva `data/rutas_produccion_final.json` como respaldo. Supabase se usa
 
 También conserva totales diarios anónimos de consultas por ruta para ordenar el bloque de rutas populares de la portada. Abrir una ficha o seleccionar una ruta en el mapa incrementa el total, con deduplicación diaria en el navegador. La tabla no contiene ubicación, IP ni identificadores de visitantes, y solo `service_role` puede leerla o escribirla.
 
+El ranking suma consultas de los últimos 30 días y la portada se revalida cada hora. El orden puede permanecer igual aunque lleguen nuevas consultas; mide interés en las rutas, no viajes realizados. Seleccionar un transbordo cuenta cada ruta urbana involucrada, con la misma deduplicación. El navegador guarda la marca diaria sólo después de que el servidor confirma la escritura; si falla, una selección posterior puede reintentar.
+
 ## 1. Crear el proyecto
 
 1. Crea un proyecto gratuito en Supabase.

@@ -501,9 +501,17 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   const displayedRouteCount = isNearbyMode ? nearbyRouteIds.length : visibleRouteCount;
 
   useEffect(() => {
+    if (selectedTransfer) {
+      for (const routeName of [selectedTransfer.routeAName, selectedTransfer.routeBName]) {
+        if (!isTelefericoRouteName(routeName)) {
+          trackRouteConsultation({ routeName, source: "map" });
+        }
+      }
+      return;
+    }
     if (!selectedRoute || isTelefericoRouteName(selectedRoute.name)) return;
     trackRouteConsultation({ routeName: selectedRoute.name, source: "map" });
-  }, [selectedRoute]);
+  }, [selectedRoute, selectedTransfer]);
 
   const handleNearbyRoutesFound = useCallback((routeIds: number[]) => {
     setNearbyRouteIds(routeIds);
