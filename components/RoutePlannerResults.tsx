@@ -156,6 +156,7 @@ export function SelectedTransferResult({
       <p className="ov-text mt-3 text-[13px] font-semibold">{getJourneyFareSummary([transfer.routeAName, transfer.routeBName]).badge}</p>
       {transfer.estimatedMinutes !== undefined && <p className="ov-text-muted mt-1 text-xs">~{Math.round(transfer.estimatedMinutes)} min puerta a puerta</p>}
       <JourneyWalkingSummary cost={transfer.cost} walking={transfer.walking} concern={transfer.communityConcern} />
+      {transfer.transferReason && <p className="ov-muted mt-2 text-xs">{transfer.transferReason}</p>}
       <TripToggleButton active={isTripActive} className="mt-3" label="Iniciar viaje con transbordo" onClick={onToggleTrip} />
       <button type="button" onClick={onViewTransfer} className="ov-pill ov-border ov-text mt-2 min-h-11 w-full rounded-xl border px-3 text-[13px] font-semibold">Ver dónde cambiar</button>
       <div className="mt-2 grid grid-cols-2 gap-2">

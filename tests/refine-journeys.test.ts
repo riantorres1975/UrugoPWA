@@ -31,6 +31,72 @@ describe("refining the finalists", () => {
     });
     return initial;
   };
+  const crossingOptions = () => {
+    const early: TransferOption = {
+      routeAId: 10, routeBId: 20, routeAName: "A", routeBName: "B",
+      routeAStartIndex: 0, routeATransferIndex: 1, routeBTransferIndex: 0, routeBEndIndex: 4,
+      transferPoint: [-102.055, 19.42], segmentA: [origin, [-102.055, 19.42]],
+      segmentB: [[-102.055, 19.4201], destination], firstRideM: 500,
+      walkMeters: 10, score: 0,
+      cost: { originWalkM: 0, destinationWalkM: 0, transferWalkM: 10, rideMinutes: 10.5, waitMinutes: 10, transfers: 1 },
+    };
+    const late: TransferOption = { ...early, firstRideM: 1500, transferPoint: [-102.045, 19.42],
+      routeATransferIndex: 2, routeBTransferIndex: 3,
+      segmentA: [origin, [-102.045, 19.42]], segmentB: [[-102.045, 19.4201], destination],
+      cost: { ...early.cost!, rideMinutes: 10 }, alternativePoints: [early] };
+    return { suggestions: [], transfers: [late], alternativeRouteIds: [] };
+  };
+  it("validates another crossing of the same pair even when the initial point is reachable", async () => {
+    const refined = await refineJourneys(crossingOptions(), origin, destination, "nearby", new AbortController().signal);
+    expect(refined.transfers).toHaveLength(1);
+    expect(refined.transfers[0].firstRideM).toBe(500);
+    expect(refined.transfers[0].alternativePoints).toBeUndefined();
+    expect(mocks.walk).toHaveBeenCalledTimes(4); // Shared origin and exit plus two crossings.
+  });
+  it("rejects an earlier crossing with no pedestrian connection", async () => {
+    mocks.walk.mockImplementation(async (from: Coordinates, to: Coordinates) => ({ ...approximateWalk(from, to),
+      status: from[0] === -102.055 ? "unreachable" : "street" }));
+    const refined = await refineJourneys(crossingOptions(), origin, destination, "nearby", new AbortController().signal);
+    expect(refined.transfers).toHaveLength(1);
+    expect(refined.transfers[0].firstRideM).toBe(1500);
+    expect(refined.unreachableCount).toBe(1);
+  });
+  it("recovers the same buses at another crossing when the primary connection is blocked", async () => {
+    mocks.walk.mockImplementation(async (from: Coordinates, to: Coordinates) => ({ ...approximateWalk(from, to),
+      status: from[0] === -102.045 ? "unreachable" : "street" }));
+    const refined = await refineJourneys(crossingOptions(), origin, destination, "nearby", new AbortController().signal);
+    expect(refined.transfers).toHaveLength(1);
+    expect(refined.transfers[0].firstRideM).toBe(500);
+  });
+  it("uses street walking rather than straight-line proximity to choose the crossing", async () => {
+    mocks.walk.mockImplementation(async (from: Coordinates, to: Coordinates) => ({ ...approximateWalk(from, to),
+      status: "street", ...(from[0] === -102.055 ? { distanceM: 250, minutes: 250 / 75 } : {}) }));
+    const refined = await refineJourneys(crossingOptions(), origin, destination, "nearby", new AbortController().signal);
+    expect(refined.transfers[0].firstRideM).toBe(1500);
+    expect(refined.transfers[0].transferReason).toContain("caminar menos");
+  });
+  it("caps distinct walking queries at 24 and concurrency at two with multiple crossing alternatives", async () => {
+    let running = 0, peak = 0;
+    mocks.walk.mockImplementation(async (from: Coordinates, to: Coordinates) => {
+      running++;
+      peak = Math.max(peak, running);
+      await new Promise((resolve) => setTimeout(resolve, 1));
+      running--;
+      return { ...approximateWalk(from, to), status: "street" };
+    });
+    const prototype = crossingOptions().transfers[0];
+    const transfer = (id: number): TransferOption => ({ ...prototype, alternativePoints: undefined,
+      routeAId: id, routeBId: id + 100, routeAName: `A ${id}`, routeBName: `B ${id}`,
+      segmentA: [[-102.06, 19.42 + id / 100000], [-102.05, 19.42 + id / 100000]],
+      segmentB: [[-102.05, 19.421 + id / 100000], [-102.04, 19.421 + id / 100000]],
+    });
+    const transfers = [1, 4, 7].map((id) => ({ ...transfer(id), alternativePoints: [transfer(id + 1), transfer(id + 2)] }));
+    const reserves = [10, 11, 12].map((id) => ({ transfer: transfer(id), cost: prototype.cost! }));
+    const refined = await refineJourneys({ suggestions: [], transfers, alternativeRouteIds: [], reserveCandidates: reserves }, origin, destination, "nearby", new AbortController().signal);
+    expect(mocks.walk).toHaveBeenCalledTimes(24);
+    expect(peak).toBe(2);
+    expect(refined.transfers).toHaveLength(3);
+  });
   it("no consulta las reservas cuando las finalistas tienen accesos adecuados", async () => {
     const refined = await refineJourneys(withReserves(), origin, destination, "nearby", new AbortController().signal);
     expect(refined.checkedReserveCount).toBe(0);
