@@ -189,6 +189,7 @@ test("un viaje en Teleférico continúa a pie desde la estación", async ({ page
 
   await resultDialog.locator('button[aria-label^="Iniciar viaje en"]').click();
   const tripPanel = page.getByRole("region", { name: "Modo viaje" });
+  await tripPanel.getByRole("button", { name: "Ya subí", exact: true }).click();
   await expect(tripPanel).toContainText("EN CAMINO");
   await expect(tripPanel).toContainText("Baja en la estación Boulevard Industrial / Plaza Agora");
   await expect(page.locator(".trip-map-marker--teleferico")).toBeVisible();
@@ -295,6 +296,7 @@ test("el modo viaje sigue el GPS sin recuperar la cámara después de un gesto m
   await startTripButton.click();
 
   await expect(page.getByRole("region", { name: "Modo viaje" })).toBeVisible();
+  await page.getByRole("region", { name: "Modo viaje" }).getByRole("button", { name: "Ya subí", exact: true }).click();
   await expect(page.locator(".trip-map-marker--bus")).toBeVisible();
   await expect(page.locator('.trip-map-marker[aria-label^="Tu posición en"]')).toBeVisible();
   await expect(page.getByRole("button", { name: "Centrar en mi ubicación durante el viaje" })).toBeVisible();
@@ -386,6 +388,7 @@ test("el modo viaje conserva la ruta durante una pérdida temporal de GPS", asyn
   await startTripButton.click();
 
   const panel = page.getByRole("region", { name: "Modo viaje" });
+  await panel.getByRole("button", { name: "Ya subí", exact: true }).click();
   await expect(panel).toContainText("EN CAMINO");
   await expect(page.locator(".trip-map-marker--bus")).toBeVisible();
 

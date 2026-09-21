@@ -28,7 +28,7 @@ const SECTIONS = [
   },
   {
     title: "Datos offline",
-    body: "La app puede guardar archivos, datos de rutas, favoritos y viajes recientes en el navegador para mejorar la velocidad y permitir uso parcial sin conexión. Puedes borrar estos datos desde la configuración de tu navegador."
+    body: "La app puede guardar archivos, datos de rutas, favoritos y viajes recientes en el navegador para mejorar la velocidad y permitir uso parcial sin conexión. Al iniciar el modo viaje, guarda también el origen, destino, recorrido y etapa actual en este dispositivo para ofrecerte continuar si cierras la app. No guarda un historial de tus posiciones GPS. El viaje pendiente deja de estar disponible tras 6 horas sin actualizarse y se elimina al finalizarlo o al volver a abrir la app una vez vencido. Las preferencias de voz y vibración se guardan en este dispositivo. Puedes borrar estos datos desde la configuración de tu navegador."
   },
   {
     title: "Reportes comunitarios",

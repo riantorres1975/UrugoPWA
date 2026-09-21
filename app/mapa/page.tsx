@@ -98,6 +98,7 @@ const RouteList = dynamic(loadRouteList, {
 const RoutePreviewSVG = dynamic(() => import("@/components/RoutePreviewSVG"));
 const RouteSchedule = dynamic(() => import("@/components/RouteSchedule"));
 const TripModePanel = dynamic(() => import("@/components/TripModePanel"));
+const TripRecoveryPanel = dynamic(() => import("@/components/TripRecoveryPanel"));
 const PendingJourneyReports = dynamic(() => import("@/components/PendingJourneyReports"), { ssr: false });
 
 type RoutesMapMode = "all-visible" | "all-highlighted";
@@ -241,6 +242,8 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   const [namedOrigin, setNamedOrigin] = useState<{ point: Coordinates; label: string } | null>(null);
   const {
     announceLandmark,
+    recoverableTrip, discardRecovery, resume: resumeTrip, confirmStage,
+    awaitingBoarding, alertSettings, alertSupport, updateAlertSettings, silence,
     cancelStop: cancelStopTrip,
     completeStop: completeStopTrip,
     dismissDropOffAlert,
@@ -254,6 +257,8 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     updateLocation: updateTripLocation,
   } = useTripSession();
   const [transferFocus, setTransferFocus] = useState<{ key: string; request: number; tripKey: string | null } | null>(null);
+  const [tripActionBusy, setTripActionBusy] = useState(false);
+  const [tripActionError, setTripActionError] = useState<string | null>(null);
   const lastSavedTripKeyRef = useRef("");
   const {
     activePoint,
@@ -450,7 +455,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     };
   }, [activateMap, fetchError, isLoadingData, isOnline, shouldLoadMap]);
 
-  const resultSheetOpen = flowStep === 3 && isResultSheetOpen;
+  const resultSheetOpen = flowStep === 3 && isResultSheetOpen && !recoverableTrip && !tripSession;
 
   const {
     arrowSegments,
@@ -714,6 +719,8 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
       const isTeleferico = isTelefericoRouteName(bestSuggestion.ruta);
       return {
         kind: "direct",
+        origin: originPoint ?? undefined,
+        walking: bestSuggestion.walking,
         routeId: bestSuggestion.routeId,
         routeName: bestSuggestion.ruta,
         segment: bestSuggestion.segment,
@@ -732,6 +739,8 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
       const routeBIsTeleferico = isTelefericoRouteName(selectedTransfer.routeBName);
       return {
         kind: "transfer",
+        origin: originPoint ?? undefined,
+        walking: selectedTransfer.walking,
         routeAId: selectedTransfer.routeAId,
         routeBId: selectedTransfer.routeBId,
         routeAName: selectedTransfer.routeAName,
@@ -762,11 +771,24 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
       };
     }
     return null;
-  }, [bestSuggestion, destinationPoint, polylineRoutesById, selectedTransfer]);
+  }, [bestSuggestion, destinationPoint, originPoint, polylineRoutesById, selectedTransfer]);
   const plannedJourneyKey = plannedJourney
     ? getTripJourneyKey(plannedJourney)
     : null;
-  const isTripActive = tripSession !== null && tripSession.key === plannedJourneyKey;
+  const isTripActive = tripSession !== null;
+  const activeTripMap = useMemo(() => {
+    const journey = tripSession?.journey;
+    if (!journey) return null;
+    return journey.kind === "direct" ? {
+      origin: journey.origin ?? journey.segment[0], destination: journey.destination, segment: journey.segment,
+      transfer: null, routeIds: [journey.routeId],
+      arrows: [{ coords: journey.segment, color: polylineRoutesById.get(journey.routeId)?.color ?? "#60a5fa", showLine: true }],
+    } : {
+      origin: journey.origin ?? journey.segmentA[0], destination: journey.destination, segment: null,
+      transfer: { ...journey, score: 0 }, routeIds: [journey.routeAId, journey.routeBId],
+      arrows: [{ coords: journey.segmentA, color: "#60a5fa", showLine: false }, { coords: journey.segmentB, color: "#34d399", showLine: false }],
+    };
+  }, [tripSession, polylineRoutesById]);
   const feedbackKey = plannedJourneyKey ?? (selectedRoute ? `route:${selectedRoute.id}` : showTeleferico ? "teleferico" : null);
   const feedbackRoutes = bestSuggestion ? [bestSuggestion.ruta]
     : selectedTransfer ? [selectedTransfer.routeAName, selectedTransfer.routeBName]
@@ -808,15 +830,14 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   }, [announceLandmark, tripLandmarkCue]);
 
   useEffect(() => {
-    if (!tripSession || tripSession.key === plannedJourneyKey) return;
-    const timer = window.setTimeout(resetTripSession, 0);
-    return () => window.clearTimeout(timer);
-  }, [plannedJourneyKey, resetTripSession, tripSession]);
+    if (tripLocationStatus !== "ready") silence();
+  }, [silence, tripLocationStatus]);
 
   const handleStartTrip = useCallback(() => {
     if (!plannedJourney || !plannedJourneyKey) return;
 
     startTripSession(plannedJourney);
+    setTripActionError(null);
     setShowHint(false);
     setActivePoint(null);
     setIsResultSheetOpen(false);
@@ -1044,7 +1065,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   // La ref evita re-aperturas causadas por refrescados del GPS.
   const resultSheetOpenedForDestRef = useRef<string | null>(null);
   useEffect(() => {
-    if (flowStep !== 3 || isCalculatingSuggestions || !currentCalculation) return;
+    if (isTripActive || recoverableTrip || flowStep !== 3 || isCalculatingSuggestions || !currentCalculation) return;
     const destKey = destinationPoint ? destinationPoint.join(",") : null;
     if (destKey && destKey !== resultSheetOpenedForDestRef.current) {
       if (bestSuggestion) {
@@ -1058,7 +1079,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
       });
       return () => window.cancelAnimationFrame(frame);
     }
-  }, [bestSuggestion, currentCalculation, flowStep, isCalculatingSuggestions, destinationPoint]);
+  }, [bestSuggestion, currentCalculation, flowStep, isCalculatingSuggestions, destinationPoint, isTripActive, recoverableTrip]);
 
   useEffect(() => {
     if (!showHint) {
@@ -1076,9 +1097,37 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
 
   const focusJourneyPoint = (coordinates: Coordinates[], label: string) => {
     activateMap();
-    setJourneyFocus((previous) => ({ request: (previous?.request ?? 0) + 1, coordinates, label, tripKey: isTripActive ? tripSession?.key ?? null : null }));
+    setJourneyFocus((previous) => ({ request: (previous?.request ?? 0) + 1, coordinates, label, tripKey: tripSession?.cameraKey ?? null }));
     setIsResultSheetOpen(false);
     setShowHint(false);
+  };
+  const handleRecoverTrip = async () => {
+    if (!recoverableTrip || tripActionBusy) return;
+    setTripActionBusy(true); setTripActionError(null);
+    const fix = await requestLocation(true);
+    if (fix) {
+      const journey = recoverableTrip.journey;
+      setManualOrigin(journey.origin ?? (journey.kind === "direct" ? journey.segment[0] : journey.segmentA[0]));
+      setManualOriginSource(null); setNamedOrigin(null); setDestinationSource(null); setRequestedDestination(null);
+      setDestinationPoint(journey.destination);
+      setActivePoint(null); setIsResultSheetOpen(false); setIsSheetOpen(false); setShowHint(false);
+      resumeTrip(fix.location); activateMap();
+    } else setTripActionError("No pudimos actualizar tu ubicación. Activa el GPS e intenta de nuevo.");
+    setTripActionBusy(false);
+  };
+  const handleFindAnotherTrip = async () => {
+    if (!tripSession || tripActionBusy) return;
+    setTripActionBusy(true); setTripActionError(null);
+    const destination = tripSession.journey.destination;
+    const fix = await requestLocation(true);
+    if (fix) {
+      resetTripSession(); clearSharedRoute(); setSelectedTransfer(null); setSelectedRouteId(null);
+      setManualOrigin(fix.location); setManualOriginSource(null); setNamedOrigin(null);
+      setDestinationPoint(destination); setActivePoint(null); setShowHint(false);
+      setJourneyFocus(null); setTransferFocus(null); resultSheetOpenedForDestRef.current = null;
+      setIsResultSheetOpen(true);
+    } else setTripActionError("No pudimos actualizar tu ubicación. Tu viaje sigue activo.");
+    setTripActionBusy(false);
   };
   const journeyInstructionActions = selectedTransfer ? [
     { label: "Sube aquí", onClick: () => focusJourneyPoint([selectedTransfer.segmentA[0]], "Subida") },
@@ -1229,7 +1278,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
                 transferLandmark={findNearestRouteLandmark(selectedTransfer.transferPoint, [polylineRoutesById.get(selectedTransfer.routeAId)?.landmarks, polylineRoutesById.get(selectedTransfer.routeBId)?.landmarks], 300)?.name ?? null}
                 onViewTransfer={() => {
                   activateMap();
-                  setTransferFocus((previous) => ({ key: getTransferSelectionKey(selectedTransfer), request: (previous?.request ?? 0) + 1, tripKey: isTripActive ? tripSession?.key ?? null : null }));
+                  setTransferFocus((previous) => ({ key: getTransferSelectionKey(selectedTransfer), request: (previous?.request ?? 0) + 1, tripKey: isTripActive ? tripSession?.cameraKey ?? null : null }));
                   if (isMobile) setIsResultSheetOpen(false);
                 }}
                 isTripActive={isTripActive}
@@ -1445,23 +1494,23 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
             journeyFocus={journeyFocus}
             userLocationPoint={userLocation}
             userLocationAccuracyM={locationAccuracyM}
-            selectedRouteId={selectedRouteId}
-            suggestedRouteIds={mapSuggestedRouteIds}
+            selectedRouteId={isTripActive ? null : selectedRouteId}
+            suggestedRouteIds={activeTripMap?.routeIds ?? mapSuggestedRouteIds}
             allRoutesMode={routesMapMode}
-            bestSuggestedRouteId={mapBestSuggestedRouteId}
-            selectedRouteSegment={selectedMapSegment}
-            arrowSegments={arrowSegments}
-            journeyWalking={selectedTransfer?.walking ?? selectedSuggestion?.walking ?? bestSuggestion?.walking}
-            originPoint={originPoint}
-            destinationPoint={destinationPoint}
+            bestSuggestedRouteId={activeTripMap?.routeIds[0] ?? mapBestSuggestedRouteId}
+            selectedRouteSegment={activeTripMap ? activeTripMap.segment : selectedMapSegment}
+            arrowSegments={activeTripMap?.arrows ?? arrowSegments}
+            journeyWalking={isTripActive ? tripSession?.journey.walking : selectedTransfer?.walking ?? selectedSuggestion?.walking ?? bestSuggestion?.walking}
+            originPoint={activeTripMap?.origin ?? originPoint}
+            destinationPoint={activeTripMap?.destination ?? destinationPoint}
             showTeleferico={showTeleferico}
-            selectedTransfer={selectedTransfer}
+            selectedTransfer={activeTripMap ? activeTripMap.transfer : selectedTransfer}
             tripModeActive={isTripActive}
             tripSessionKey={isTripActive ? tripSession?.cameraKey ?? null : null}
             tripLocation={isTripActive ? liveLocation : null}
             tripJourney={isTripActive ? tripSession?.journey ?? null : null}
             tripProgress={isTripActive ? tripProgress : null}
-            awaitingPick={flowStep === 3 ? null : activePoint}
+            awaitingPick={isTripActive || flowStep === 3 ? null : activePoint}
             hoveredRouteId={hoveredRouteId}
             onMapPick={handleMapPick}
             onSelectRoute={handleSelectRoute}
@@ -1550,6 +1599,10 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
         </MobileMapControls>
         )}
 
+        {recoverableTrip && !isTripActive ? (
+          <TripRecoveryPanel journey={recoverableTrip.journey} busy={tripActionBusy} error={tripActionError}
+            onResume={() => void handleRecoverTrip()} onDiscard={discardRecovery} />
+        ) : null}
         {isTripActive && tripSession ? (
           <div
             className="pointer-events-none absolute inset-x-3 z-50 flex flex-col gap-3 lg:inset-x-auto lg:left-1/2 lg:w-[430px] lg:-translate-x-1/2"
@@ -1563,11 +1616,21 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
               onDismissAlert={dismissDropOffAlert}
             />
             <TripModePanel
+              key={tripSession.cameraKey}
               journey={tripSession.journey}
               progress={tripProgress}
               locationStatus={tripLocationStatus}
               landmarkCue={tripLandmarkCue}
               onStop={handleStopTrip}
+              awaitingBoarding={awaitingBoarding}
+              onConfirmStage={confirmStage}
+              alertSettings={alertSettings}
+              alertSupport={alertSupport}
+              onAlertSettingsChange={updateAlertSettings}
+              onLocate={() => { if (liveLocation) focusJourneyPoint([liveLocation], "Tu ubicación"); }}
+              onFindAnother={() => void handleFindAnotherTrip()}
+              actionBusy={tripActionBusy}
+              actionError={tripActionError}
             />
           </div>
         ) : null}

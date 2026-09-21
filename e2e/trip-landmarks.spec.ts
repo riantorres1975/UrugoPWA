@@ -16,6 +16,7 @@ test("el modo viaje retira el aviso de transbordo al pasar al segundo tramo", as
   await option.click();
   await page.getByRole("button", { name: "Iniciar viaje con transbordo", exact: true }).click();
   const panel = page.getByRole("region", { name: "Modo viaje" });
+  await panel.getByRole("button", { name: "Ya subí", exact: true }).click();
   await expect(panel).toContainText("PRIMER TRAMO");
   await context.setGeolocation({ longitude: -102.073, latitude: 19.42 });
   const alert = page.getByRole("alert").filter({ hasText: "Prepárate para transbordar" });
@@ -24,6 +25,7 @@ test("el modo viaje retira el aviso de transbordo al pasar al segundo tramo", as
   await expect(panel).toContainText("TRANSBORDO");
   await expect(alert).toHaveCount(0);
   await context.setGeolocation({ longitude: -102.0695, latitude: 19.424 });
+  await panel.getByRole("button", { name: "Ya subí", exact: true }).click();
   await expect(panel).toContainText("SEGUNDO TRAMO");
   await expect(panel).toContainText("Ruta Norte");
   await expect(alert).toHaveCount(0);
@@ -67,6 +69,7 @@ test("el modo viaje avanza referencias y avisos hasta terminar la caminata final
 
   const panel = page.getByRole("region", { name: "Modo viaje" });
   const referenceAlert = page.getByRole("alert").filter({ hasText: "Próxima referencia:" });
+  await panel.getByRole("button", { name: "Ya subí", exact: true }).click();
   await expect(panel).toContainText("Próxima referencia: Centro");
   await expect(referenceAlert).toContainText("Centro");
   const initialAlert = await referenceAlert.innerText();

@@ -2,6 +2,7 @@ import { haversineMeters } from "@/lib/geo";
 import { getClosestPointOnPath, getRouteMetrics } from "@/lib/routeMatcher";
 import { getTransferSelectionKey } from "@/lib/transfer-selection";
 import type { Coordinates, ProductionRouteLandmark } from "@/lib/types";
+import type { JourneyWalking } from "@/lib/journey-walking";
 
 const BUS_SPEED_M_PER_MIN = 300;
 const WALK_SPEED_M_PER_MIN = 75;
@@ -24,6 +25,8 @@ export type TripPhase =
   | "arrived";
 
 export type DirectTripJourney = {
+  origin?: Coordinates;
+  walking?: JourneyWalking;
   kind: "direct";
   routeId: number;
   routeName: string;
@@ -35,6 +38,8 @@ export type DirectTripJourney = {
 };
 
 export type TransferTripJourney = {
+  origin?: Coordinates;
+  walking?: JourneyWalking;
   kind: "transfer";
   routeAId: number;
   routeBId: number;
@@ -73,7 +78,57 @@ export type TripTrackingState = {
   lastOnRoutePhase: Exclude<TripPhase, "off-route"> | undefined;
   offRouteReadings: number;
   arrivalReadings: number;
+  requireBoardingConfirmation?: boolean;
+  boardingConfirmation?: "first" | "second";
 };
+
+export type TripConfirmation = "board" | "alight" | "wait";
+
+function waitingProgress(journey: TripJourney, location: Coordinates, second: boolean, ratio: number): TripProgress {
+  const point = journey.kind === "transfer" && second ? journey.segmentB[0]
+    : journey.kind === "direct" ? journey.segment[0] : journey.segmentA[0];
+  const distance = haversineMeters(location, point);
+  return {
+    phase: second ? "walking-transfer" : "boarding", progressRatio: ratio,
+    remainingMinutes: minutesFor(distance, WALK_SPEED_M_PER_MIN), distanceToMilestoneM: distance,
+    currentRouteName: second ? null : journey.kind === "direct" ? journey.routeName : journey.routeAName,
+    nextRouteName: journey.kind === "transfer" ? journey.routeBName : null,
+  };
+}
+
+export function confirmTripStage(journey: TripJourney, location: Coordinates, state: TripTrackingState, action: TripConfirmation): TripTrackingState {
+  const phase = state.progress?.phase === "off-route" ? state.lastOnRoutePhase : state.progress?.phase;
+  if (phase === "arrived") return state;
+  const second = journey.kind === "transfer" && (state.boardingConfirmation === "second" || phase === "riding-second" || phase === "walking-transfer");
+  if (action === "wait") {
+    if (phase === "walking-destination") return state;
+    const progress = waitingProgress(journey, location, second, state.progress?.progressRatio ?? 0);
+    return { ...createTripTrackingState(progress), requireBoardingConfirmation: true, boardingConfirmation: second ? "second" : "first" };
+  }
+  if (action === "board") {
+    if (phase === "walking-destination") return state;
+    const path = journey.kind === "direct" ? journey.segment : second ? journey.segmentB : journey.segmentA;
+    const distance = locateOnPath(location, path).remainingM;
+    const progress: TripProgress = {
+      phase: journey.kind === "direct" ? "riding-direct" : second ? "riding-second" : "riding-first",
+      progressRatio: state.progress?.progressRatio ?? 0,
+      remainingMinutes: minutesFor(distance, BUS_SPEED_M_PER_MIN), distanceToMilestoneM: distance,
+      currentRouteName: journey.kind === "direct" ? journey.routeName : second ? journey.routeBName : journey.routeAName,
+      nextRouteName: journey.kind === "transfer" && !second ? journey.routeBName : null,
+    };
+    return { ...createTripTrackingState(progress), requireBoardingConfirmation: true };
+  }
+  if (phase !== "riding-direct" && phase !== "riding-first" && phase !== "riding-second") return state;
+  if (journey.kind === "transfer" && !second) {
+    const progress = waitingProgress(journey, location, true, state.progress?.progressRatio ?? 0);
+    return { ...createTripTrackingState(progress), requireBoardingConfirmation: true, boardingConfirmation: "second" };
+  }
+  const path = journey.kind === "direct" ? journey.segment : journey.segmentB;
+  const total = journey.kind === "direct" ? getRouteMetrics(path).totalLengthM
+    : getRouteMetrics(journey.segmentA).totalLengthM + journey.walkMeters + getRouteMetrics(path).totalLengthM;
+  const progress = walkingDestinationProgress(haversineMeters(location, journey.destination), total, haversineMeters(path[path.length - 1], journey.destination));
+  return { ...createTripTrackingState(progress), requireBoardingConfirmation: true };
+}
 
 export type TripMilestone = "transfer-near" | "destination-near" | "arrived";
 
@@ -131,7 +186,7 @@ function walkingDestinationProgress(
   return {
     phase: "walking-destination",
     progressRatio: totalJourneyM > 0
-      ? clampRatio((completedTransitM + walkedM) / totalJourneyM)
+      ? Math.min(0.99, clampRatio((completedTransitM + walkedM) / totalJourneyM))
       : 0,
     remainingMinutes: minutesFor(distanceToDestinationM, WALK_SPEED_M_PER_MIN),
     distanceToMilestoneM: distanceToDestinationM,
@@ -361,8 +416,19 @@ export function updateTripTrackingState(
   const previous = state.progress;
   if (previous?.phase === "arrived") return state;
 
-  const candidate = calculateTripProgress(journey, location,
-    previous?.phase === "off-route" ? state.lastOnRoutePhase : previous?.phase);
+  if (state.boardingConfirmation) {
+    const progress = waitingProgress(journey, location, state.boardingConfirmation === "second", previous?.progressRatio ?? 0);
+    return { ...state, progress, lastOnRoutePhase: progress.phase as "boarding" | "walking-transfer", offRouteReadings: 0, arrivalReadings: 0 };
+  }
+
+  const previousPhase = previous?.phase === "off-route" ? state.lastOnRoutePhase : previous?.phase;
+  let candidate = calculateTripProgress(journey, location, previousPhase);
+  // A GPS gap can skip the transfer point entirely. Still ask before boarding
+  // the second vehicle, just as when the walking stage was observed.
+  if (state.requireBoardingConfirmation && journey.kind === "transfer" &&
+    candidate.phase === "riding-second" && previousPhase !== "riding-second") {
+    candidate = waitingProgress(journey, location, true, previous?.progressRatio ?? 0);
+  }
 
   if (candidate.phase === "arrived") {
     const arrivalReadings = state.arrivalReadings + 1;
@@ -376,6 +442,7 @@ export function updateTripTrackingState(
     }
 
     return {
+      ...state,
       progress: candidate,
       lastOnRoutePhase: "arrived",
       offRouteReadings: 0,
@@ -398,7 +465,9 @@ export function updateTripTrackingState(
     : candidate;
 
   return {
+    ...state,
     progress,
+    boardingConfirmation: state.requireBoardingConfirmation && candidate.phase === "walking-transfer" ? "second" : undefined,
     lastOnRoutePhase: candidate.phase === "off-route" ? state.lastOnRoutePhase : candidate.phase,
     offRouteReadings: candidate.phase === "off-route"
       ? OFF_ROUTE_CONFIRMATION_READINGS

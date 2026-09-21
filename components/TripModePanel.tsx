@@ -1,3 +1,6 @@
+"use client";
+
+import { useId, useState } from "react";
 import {
   BusFront,
   CableCar,
@@ -10,7 +13,8 @@ import {
   WifiOff,
   X,
 } from "lucide-react";
-import type { TripJourney, TripProgress } from "@/lib/trip-mode";
+import type { TripConfirmation, TripJourney, TripProgress } from "@/lib/trip-mode";
+import type { TripAlertSettings } from "@/lib/trip-storage";
 import type { LandmarkCue } from "@/lib/landmark-guidance";
 
 type TripLocationStatus = "locating" | "ready" | "unavailable";
@@ -21,6 +25,15 @@ type TripModePanelProps = {
   locationStatus: TripLocationStatus;
   landmarkCue?: LandmarkCue | null;
   onStop: () => void;
+  awaitingBoarding?: "first" | "second";
+  onConfirmStage: (action: TripConfirmation) => void;
+  alertSettings: TripAlertSettings;
+  alertSupport: TripAlertSettings;
+  onAlertSettingsChange: (settings: TripAlertSettings) => void;
+  onLocate: () => void;
+  onFindAnother: () => void;
+  actionBusy: boolean;
+  actionError: string | null;
 };
 
 type TripCopy = {
@@ -227,8 +240,19 @@ export default function TripModePanel({
   locationStatus,
   landmarkCue,
   onStop,
+  awaitingBoarding, onConfirmStage, alertSettings, alertSupport,
+  onAlertSettingsChange, onLocate, onFindAnother, actionBusy, actionError,
 }: TripModePanelProps) {
+  const [expanded, setExpanded] = useState(false);
+  const detailsId = useId();
   const copy = getTripCopy(journey, progress, locationStatus);
+  const canConfirm = locationStatus === "ready" && !!progress;
+  const riding = progress?.phase.startsWith("riding") || progress?.phase === "off-route";
+  const steps = journey.kind === "transfer"
+    ? [journey.routeAName, `Cambia a ${journey.routeBName}`, "Camina a tu destino"]
+    : [journey.routeName, "Camina a tu destino"];
+  const currentStep = progress?.phase === "walking-destination" || progress?.phase === "arrived"
+    ? steps.length - 1 : journey.kind === "transfer" && (awaitingBoarding === "second" || progress?.phase === "riding-second" || progress?.phase === "walking-transfer") ? 1 : 0;
   const percent = Math.round(Math.min(1, Math.max(0, progress?.progressRatio ?? 0)) * 100);
   const iconKind = getPanelIconKind(journey, progress, locationStatus);
   const remainingText = progress ? formatDistance(progress.distanceToMilestoneM) : "Preparando";
@@ -241,7 +265,7 @@ export default function TripModePanel({
   return (
     <section
       aria-label="Modo viaje"
-      className="pointer-events-auto max-h-[50dvh] overflow-y-auto rounded-2xl"
+      className={`pointer-events-auto overflow-y-auto rounded-2xl ${expanded ? "max-h-[60dvh]" : "max-h-[45dvh]"}`}
     >
       <div className="ov-panel ov-border overflow-hidden rounded-2xl border shadow-[0_12px_40px_rgba(0,0,0,0.38)] backdrop-blur-xl">
         <div className="flex items-center gap-3 px-3.5 py-3">
@@ -261,7 +285,7 @@ export default function TripModePanel({
             <p className="ov-text text-[14px] font-bold leading-5">{copy.title}</p>
             <p className="ov-text-muted text-[11px] leading-4">{copy.detail}</p>
             <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1.5">
-              <span className={`inline-flex h-6 items-center rounded-full border px-2 text-[10px] font-bold ${toneClass(copy.tone)}`}>
+              <span className={`inline-flex min-h-6 items-center rounded-full border px-2 py-1 text-[10px] font-bold ${toneClass(copy.tone)}`}>
                 <Navigation className="mr-1 h-3 w-3" aria-hidden="true" />
                 {copy.milestoneLabel}: {remainingText}
               </span>
@@ -279,12 +303,72 @@ export default function TripModePanel({
           <button
             type="button"
             onClick={onStop}
-            className="ov-pill ov-border ov-text-muted inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-[11px] font-semibold transition hover:border-red-400/50 hover:text-red-400 active:scale-[0.97]"
+            className="ov-pill ov-border ov-text-muted inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-xl border px-2 text-[11px] font-semibold transition hover:border-red-400/50 hover:text-red-400 active:scale-[0.97]"
             aria-label={progress?.phase === "arrived" ? "Cerrar viaje completado" : "Finalizar viaje"}
           >
             <X className="h-3.5 w-3.5" aria-hidden="true" strokeWidth={2.2} />
-            {progress?.phase === "arrived" ? "Cerrar" : "Finalizar"}
+            <span className="hidden sm:inline">{progress?.phase === "arrived" ? "Cerrar" : "Finalizar"}</span>
           </button>
+        </div>
+
+        <div className="space-y-2 px-3.5 pb-3">
+          {journey.kind === "transfer" && currentStep === 0 ? (
+            <p className="ov-text-muted text-xs">Después de bajar: toma <strong className="ov-text">{journey.routeBName}</strong>.</p>
+          ) : null}
+          {awaitingBoarding ? (
+            <button type="button" disabled={!canConfirm} onClick={() => onConfirmStage("board")}
+              className="min-h-11 w-full rounded-xl bg-lima px-3 text-sm font-bold text-ink-900 disabled:opacity-50">
+              Ya subí
+            </button>
+          ) : riding ? (
+            <button type="button" disabled={!canConfirm} onClick={() => onConfirmStage("alight")}
+              className="ov-pill ov-border ov-text min-h-11 w-full rounded-xl border px-3 text-sm font-semibold disabled:opacity-50">
+              Ya bajé
+            </button>
+          ) : null}
+          {awaitingBoarding ? <p className="ov-text-muted text-[11px]">Confirma cuando estés dentro del vehículo. Acercarte a la ruta no inicia el recorrido.</p> : null}
+          <button type="button" aria-expanded={expanded} aria-controls={detailsId} onClick={() => setExpanded(!expanded)}
+            className="ov-text-muted min-h-11 w-full rounded-xl text-xs font-semibold hover:ov-text">
+            {expanded ? "Ocultar detalles y avisos ↑" : "Detalles y avisos ↓"}
+          </button>
+          {expanded ? (
+            <div id={detailsId} className="space-y-3 border-t border-white/10 pt-3">
+              <ol aria-label="Pasos de tu viaje" className="space-y-2">
+                {steps.map((step, index) => (
+                  <li key={index} aria-current={index === currentStep ? "step" : undefined}
+                    className={`flex items-center gap-2 text-xs ${index === currentStep ? "text-lima" : "ov-text-muted"}`}>
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-current">{index + 1}</span>
+                    {step}
+                  </li>
+                ))}
+              </ol>
+              {riding && !awaitingBoarding ? <button type="button" disabled={!canConfirm} onClick={() => onConfirmStage("wait")}
+                className="ov-pill ov-border ov-text min-h-11 w-full rounded-xl border px-3 text-xs disabled:opacity-50">Todavía no subo</button> : null}
+              <fieldset className="ov-border rounded-xl border p-3">
+                <legend className="ov-text px-1 text-xs font-semibold">Avisos del viaje</legend>
+                {([ ["voice", "Voz"], ["vibration", "Vibración"] ] as const).map(([key, label]) => (
+                  <label key={key} className={`flex min-h-11 items-center justify-between gap-3 text-sm ${alertSupport[key] ? "ov-text" : "ov-text-muted"}`}>
+                    <span>{label}{!alertSupport[key] ? <span className="block text-[11px]">No disponible en este navegador</span> : null}</span>
+                    <input type="checkbox" checked={alertSettings[key]} disabled={!alertSupport[key]}
+                      onChange={(event) => onAlertSettingsChange({ ...alertSettings, [key]: event.target.checked })}
+                      className="h-5 w-5 accent-lima" />
+                  </label>
+                ))}
+                <p className="ov-text-muted mt-2 text-[11px]">Mantén la app abierta para recibir avisos. Con la pantalla bloqueada dependen del navegador.</p>
+              </fieldset>
+            </div>
+          ) : null}
+          {(expanded || progress?.phase === "off-route") && progress?.phase !== "arrived" ? (
+            <div className="grid gap-2">
+              <button type="button" disabled={locationStatus !== "ready" || actionBusy} onClick={onLocate}
+                className="ov-pill ov-border ov-text min-h-11 rounded-xl border px-3 text-xs font-semibold disabled:opacity-50">Ver dónde estoy</button>
+              <button type="button" disabled={actionBusy} onClick={onFindAnother}
+                className="ov-pill ov-border ov-text min-h-11 rounded-xl border px-3 text-xs font-semibold disabled:opacity-50">
+                {actionBusy ? "Actualizando ubicación…" : "Buscar otra opción desde aquí"}
+              </button>
+            </div>
+          ) : null}
+          {actionError ? <p role="alert" className="text-xs text-amber-200">{actionError}</p> : null}
         </div>
 
         <div className="border-t border-white/5 px-3.5 pb-3 pt-2.5">

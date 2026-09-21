@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   calculateTripProgress,
+  confirmTripStage,
   createTripTrackingState,
   getTripJourneyKey,
   getTripMilestone,
   updateTripTrackingState,
   type DirectTripJourney,
   type TransferTripJourney,
+  type TripTrackingState,
 } from "@/lib/trip-mode";
 
 const direct: DirectTripJourney = {
@@ -47,6 +49,43 @@ const transfer: TransferTripJourney = {
 };
 
 describe("trip mode", () => {
+  it("espera confirmación aunque el GPS avance por la ruta", () => {
+    let state: TripTrackingState = { ...createTripTrackingState(), requireBoardingConfirmation: true, boardingConfirmation: "first" };
+    for (const fix of direct.segment) state = updateTripTrackingState(direct, fix, state);
+    expect(state.progress?.phase).toBe("boarding");
+    state = confirmTripStage(direct, direct.segment[1], state, "board");
+    expect(state.progress?.phase).toBe("riding-direct");
+    state = confirmTripStage(direct, direct.segment[1], state, "wait");
+    state = updateTripTrackingState(direct, direct.segment[2], state);
+    expect(state.progress?.phase).toBe("boarding");
+  });
+
+  it("confirma ambos vehículos y permite bajar antes del punto previsto", () => {
+    let state = confirmTripStage(transfer, transfer.segmentA[0], createTripTrackingState(), "board");
+    expect(state.progress?.phase).toBe("riding-first");
+    state = confirmTripStage(transfer, transfer.segmentA[1], state, "alight");
+    expect(state.progress?.phase).toBe("walking-transfer");
+    state = updateTripTrackingState(transfer, transfer.segmentB[1], state);
+    expect(state.boardingConfirmation).toBe("second");
+    expect(state.progress?.phase).toBe("walking-transfer");
+    state = confirmTripStage(transfer, transfer.segmentB[1], state, "board");
+    expect(state.progress?.currentRouteName).toBe(transfer.routeBName);
+    state = confirmTripStage(transfer, transfer.segmentB[1], state, "alight");
+    expect(state.progress?.phase).toBe("walking-destination");
+    expect(state.progress!.distanceToMilestoneM).toBeGreaterThan(500);
+    state = updateTripTrackingState(transfer, transfer.segmentB[1], state);
+    expect(state.progress?.phase).toBe("walking-destination");
+  });
+
+  it("no da por abordado el segundo camión si el GPS se salta el transbordo", () => {
+    let state = confirmTripStage(transfer, transfer.segmentA[0], createTripTrackingState(), "board");
+    state = updateTripTrackingState(transfer, transfer.segmentB[1], state);
+    expect(state.progress?.phase).toBe("walking-transfer");
+    expect(state.boardingConfirmation).toBe("second");
+    state = updateTripTrackingState(transfer, transfer.segmentB[2], state);
+    expect(state.progress?.phase).toBe("walking-transfer");
+  });
+
   it("incluye la caminata final en el porcentaje sin llegar al 100% antes del destino", () => {
     const journey: DirectTripJourney = { ...direct, destination: [-102.06, 19.423] };
     let state = updateTripTrackingState(journey, [-102.07, 19.42], createTripTrackingState());

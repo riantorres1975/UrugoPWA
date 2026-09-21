@@ -76,7 +76,7 @@ export function useUruapanGeolocation(disabled = false) {
     return { location: coords, accuracyM } satisfies UserLocationFix;
   }, [markOutside, publishLiveLocation]);
 
-  const requestLocation = useCallback(() => {
+  const requestLocation = useCallback((fresh = false) => {
     if (!navigator.geolocation) {
       setStatus("error");
       return Promise.resolve<UserLocationFix | null>(null);
@@ -90,7 +90,7 @@ export function useUruapanGeolocation(disabled = false) {
           setStatus("error");
           resolve(null);
         },
-        { enableHighAccuracy: true, timeout: 12_000, maximumAge: 15_000 },
+        { enableHighAccuracy: true, timeout: 12_000, maximumAge: fresh ? 0 : 15_000 },
       );
     });
   }, [applyPosition]);
