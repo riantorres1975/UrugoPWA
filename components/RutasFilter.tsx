@@ -78,7 +78,7 @@ export default function RutasFilter({ total, gridId = "rutas-grid", emptyId = "r
 
   return (
     <div
-      className="sticky top-[72px] z-30 mb-6 border-b pb-4 pt-1"
+      className="sticky top-[72px] z-30 mb-2 border-b pb-2 pt-2"
       style={{ borderColor: "var(--public-border)", background: "var(--public-bg)" }}
     >
       <label className="block">
@@ -102,7 +102,7 @@ export default function RutasFilter({ total, gridId = "rutas-grid", emptyId = "r
             onChange={(event) => updateQuery(event.target.value)}
             placeholder="Busca por número, colonia o destino…"
             aria-label="Filtrar rutas"
-            className="h-12 w-full rounded-lg border pl-11 pr-11 text-sm font-medium outline-none transition placeholder:text-[var(--public-muted)]"
+            className="h-11 w-full rounded-lg border pl-11 pr-11 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-[var(--public-accent)] transition placeholder:text-[var(--public-muted)]"
             style={{ background: "var(--public-surface)", borderColor: "var(--public-border)", color: "var(--public-ink)" }}
           />
           {query && (
@@ -112,7 +112,7 @@ export default function RutasFilter({ total, gridId = "rutas-grid", emptyId = "r
                 updateQuery("");
                 inputRef.current?.focus();
               }}
-              className="absolute right-2 top-2.5 grid h-7 w-7 place-items-center rounded-full transition hover:opacity-80"
+              className="absolute right-0 top-0 grid h-11 w-11 place-items-center rounded-full transition hover:opacity-80"
               style={{ background: "var(--public-surface)", color: "var(--public-secondary)" }}
               aria-label="Limpiar búsqueda"
             >
@@ -124,7 +124,7 @@ export default function RutasFilter({ total, gridId = "rutas-grid", emptyId = "r
         </div>
       </label>
       {!query && (
-        <div className="mt-2.5 flex flex-wrap gap-1.5 px-1" aria-label="Búsquedas rápidas">
+        <div className="mt-1.5 flex gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Búsquedas rápidas">
           {["Centro", "Central", "Hospital Regional", "Jucutacato", "Pemex", "Balcones"].map((chip) => (
             <button
               key={chip}
@@ -133,7 +133,7 @@ export default function RutasFilter({ total, gridId = "rutas-grid", emptyId = "r
                 updateQuery(chip);
                 inputRef.current?.focus();
               }}
-              className="rounded-md border px-3 py-1.5 text-[11px] font-semibold transition hover:opacity-80 active:scale-[0.97]"
+              className="min-h-11 shrink-0 rounded-md border px-3 text-xs font-semibold transition hover:opacity-80 active:scale-[0.97]"
               style={{ borderColor: "var(--public-border)", background: "var(--public-surface)", color: "var(--public-secondary)" }}
             >
               {chip}

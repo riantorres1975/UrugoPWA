@@ -3,7 +3,6 @@ import Link from "next/link";
 import ForceDark from "@/components/ForceDark";
 import PublicFooter from "@/components/PublicFooter";
 import PublicHeader from "@/components/PublicHeader";
-import RoutePreviewFromData from "@/components/RoutePreviewFromData";
 import RutasFilter from "@/components/RutasFilter";
 import { getRouteSeoItems } from "@/lib/route-seo";
 import { getRouteSearchTerms } from "@/lib/route-names";
@@ -67,155 +66,58 @@ export default function RutasPage() {
 
       <PublicHeader active="rutas" />
 
-      <div className="px-5 pt-28 pb-16 sm:px-8 lg:px-10">
+      <div className="px-5 pt-24 pb-12 sm:px-8 lg:px-10">
         <div className="mx-auto max-w-5xl">
 
-          {/* Header */}
-          <div className="mb-3">
-            <Link
-              href="/"
-              className="text-xs font-semibold uppercase transition hover:opacity-80"
-              style={{ color: "var(--public-muted)" }}
-            >
-              ← Inicio
-            </Link>
-          </div>
-          <p className="text-xs font-bold uppercase" style={{ color: "var(--public-accent)" }}>
-            Uruapan, Michoacán
-          </p>
-          <h1
-            className="mt-2 public-page-title"
-            style={{ color: "var(--public-ink)", letterSpacing: "0" }}
-          >
-            Las <em style={{ fontStyle: "normal", color: "var(--public-accent)" }}>40 rutas</em> de camión en Uruapan
-          </h1>
-          <p className="mt-4 max-w-xl text-sm leading-7" style={{ color: "var(--public-secondary)" }}>
-            Directorio completo de rutas de camión urbano. Toca cualquier ruta para ver destino, tarifa y abrirla en el mapa interactivo.
-            {" "}
-            <Link href="/horarios" className="font-bold transition hover:opacity-80" style={{ color: "var(--public-accent)" }}>
-              Ver horarios de todas las rutas →
-            </Link>
-            {" "}
-            <Link href="/como-llegar" className="font-bold transition hover:opacity-80" style={{ color: "var(--public-accent)" }}>
-              ¿Cómo llegar a un lugar? →
-            </Link>
-          </p>
+          <header>
+            <p className="text-xs font-bold uppercase tracking-widest text-[var(--public-accent)]">Muévete por Uruapan</p>
+            <h1 className="public-page-title mt-2 text-3xl sm:text-4xl">Directorio de rutas</h1>
+            <p className="mt-2 text-sm text-[var(--public-secondary)]">Busca tu camión por número, colonia o destino.</p>
+            <nav aria-label="Más opciones de transporte" className="mt-3 flex flex-wrap gap-x-5 text-sm font-bold text-[var(--public-accent)]">
+              <Link href="/horarios" className="inline-flex min-h-11 items-center hover:underline">Horarios →</Link>
+              <Link href="/como-llegar" className="inline-flex min-h-11 items-center hover:underline">Cómo llegar →</Link>
+            </nav>
+          </header>
 
-          <div className="public-directory -mx-5 mt-8 px-5 py-6 sm:mx-0 sm:px-6">
-          {/* Stats bar */}
-          <div
-            className="flex flex-wrap gap-6 border-b border-[var(--public-border)] pb-5"
-          >
-            <div>
-              <p className="text-xs font-bold uppercase" style={{ color: "var(--public-muted)" }}>Rutas</p>
-              <p className="font-sans text-2xl font-bold" style={{ color: "var(--public-ink)" }}>40</p>
+          <div className="public-directory -mx-5 mt-3 px-5 py-4 sm:mx-0 sm:rounded-xl sm:px-5">
+            <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--public-secondary)]">
+              <span className="font-bold text-[var(--public-ink)]">{busRoutes.length} rutas</span>
+              <span aria-hidden="true">·</span>
+              <span>{FARES_2026.urbanBus.price} por abordaje · Efectivo</span>
             </div>
-            <div style={{ borderLeft: "1px solid rgba(140,200,80,0.12)", paddingLeft: "1rem" }}>
-              <p className="text-xs font-bold uppercase" style={{ color: "var(--public-muted)" }}>Tarifa</p>
-              <p className="font-sans text-2xl font-bold" style={{ color: "var(--public-ink)" }}>
-                <span className="font-sans">$</span>{FARES_2026.urbanBus.price.replace(/^\$/, "")}
-              </p>
-            </div>
-            <div style={{ borderLeft: "1px solid rgba(140,200,80,0.12)", paddingLeft: "1rem" }}>
-              <p className="text-xs font-bold uppercase" style={{ color: "var(--public-muted)" }}>Pago</p>
-              <p className="font-sans text-2xl font-bold" style={{ color: "var(--public-ink)" }}>Efectivo</p>
-            </div>
-            <div className="flex w-full items-center gap-1.5 pt-1 sm:ml-auto sm:w-auto sm:pt-0">
-              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0" style={{ color: "var(--public-accent)" }} aria-hidden="true">
-                <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
-              </svg>
-              <Link href="/acerca-de" className="text-[11px] font-semibold transition hover:text-[var(--public-ink)]" style={{ color: "var(--public-secondary)" }}>
-                Rutas verificadas en campo · actualizado {DATA_LAST_UPDATED}
-              </Link>
-            </div>
-          </div>
-
-          {/* Buscador (filtra las tarjetas sin recargar) */}
-          <div className="mt-8">
             <RutasFilter total={busRoutes.length} />
-          </div>
-
-          {/* Grid de rutas */}
-          <div id="rutas-grid" className="grid gap-2.5 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3">
-            {busRoutes.map((route) => (
-              <div
-                key={route.slug}
-                data-search={buildSearchText(route.name, route.destination, route.landmarks)}
-                className="flex flex-col rounded-lg border transition-colors hover:border-[#6aab48]"
-                style={{
-                  borderColor: "var(--public-border)",
-                  background: "var(--public-surface)",
-                  // No renderizar tarjetas fuera de pantalla hasta que se acerquen al scroll
-                  contentVisibility: "auto",
-                  containIntrinsicSize: "0 140px",
-                }}
-              >
-                {/* prefetch={false}: con 40 tarjetas × 3 enlaces, el prefetch
-                    automático dispara decenas de fetches al abrir y al hacer
-                    scroll; la navegación bajo demanda es imperceptible. */}
-                <Link
-                  href={`/ruta/${route.slug}`}
-                  prefetch={false}
-                  className="group flex flex-1 items-center gap-3 p-3 transition active:scale-[0.99] sm:items-start sm:p-4"
-                >
-                  <div className="min-w-0 flex-1 order-1">
-                    <div className="flex items-center gap-2.5">
-                      <span
-                        className="h-3 w-3 shrink-0 rounded-full"
-                        style={{ backgroundColor: route.color }}
-                      />
-                      <span className="font-sans text-base font-bold" style={{ color: "var(--public-ink)" }}>
-                        {route.name}
-                      </span>
-                    </div>
-                    {route.destination && (
-                      <p className="mt-1.5 text-xs leading-snug" style={{ color: "var(--public-muted)" }}>
-                        → {route.destination}
-                      </p>
-                    )}
-                  </div>
-                  <div
-                    className="order-2 shrink-0 overflow-hidden"
-                  >
-                    <RoutePreviewFromData
-                      routeName={route.name}
-                      color={route.color}
-                      width={84}
-                      height={56}
-                      strokeWidth={2}
-                    />
-                  </div>
-                </Link>
-                <div
-                  className="flex items-center justify-between gap-2 border-t px-3 py-2 sm:px-4"
-                  style={{ borderColor: "var(--public-border)" }}
+            <ul id="rutas-grid" aria-label="Rutas de camión" className="grid gap-1.5 md:grid-cols-2">
+              {busRoutes.map((route) => (
+                <li
+                  key={route.slug}
+                  data-search={buildSearchText(route.name, route.destination, route.landmarks)}
+                  className="flex min-w-0 items-center rounded-lg border border-[var(--public-border)] bg-[var(--public-surface)] transition-colors hover:border-[#6aab48]"
                 >
                   <Link
                     href={`/ruta/${route.slug}`}
                     prefetch={false}
-                    className="inline-flex h-8 items-center gap-1 text-[11px] font-semibold uppercase transition hover:opacity-80"
-                    style={{ color: "var(--public-ink)" }}
+                    className="flex min-h-[76px] min-w-0 flex-1 items-center gap-3 rounded-lg px-3 py-3 hover:bg-[var(--public-hover)]"
                   >
-                    Detalles →
+                    <span className="h-8 w-1 shrink-0 rounded-full" style={{ backgroundColor: route.color }} aria-hidden="true" />
+                    <span className="min-w-0">
+                      <span className="block text-sm font-bold leading-5">{route.name}</span>
+                      {route.destination && <span className="mt-0.5 block text-xs leading-4 text-[var(--public-secondary)]">{route.destination}</span>}
+                    </span>
                   </Link>
                   <Link
                     href={`/mapa?r=${encodeURIComponent(route.name)}`}
                     prefetch={false}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-[11px] font-bold transition hover:opacity-90"
-                    style={{ background: "var(--public-surface)", color: "var(--public-accent)" }}
+                    className="mr-2 inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-md px-2 text-xs font-bold text-[var(--public-accent)] transition-colors hover:bg-[var(--public-hover)]"
                     aria-label={`Ver ${route.name} en el mapa interactivo`}
                   >
-                    <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
-                      <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      <circle cx="12" cy="10" r="2.2" fill="currentColor" />
+                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                      <path d="m9 18-6 3V6l6-3 6 3 6-3v15l-6 3-6-3ZM9 3v15m6-12v15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
-                    Ver en mapa
+                    Mapa
                   </Link>
-                </div>
-              </div>
-            ))}
-          </div>
+                </li>
+              ))}
+            </ul>
 
           {/* Estado vacío (lo controla RutasFilter) */}
           <div
@@ -229,23 +131,27 @@ export default function RutasPage() {
 
           </div>
 
+          <p className="mt-3 text-xs leading-5 text-[var(--public-muted)]">
+            <Link href="/acerca-de" className="hover:underline">Rutas verificadas en campo · Actualizado {DATA_LAST_UPDATED}</Link>
+          </p>
+
           {/* CTA teleférico */}
           <div
-            className="mt-10 rounded-lg border p-6"
+            className="mt-6 rounded-lg border p-4"
             style={{ borderColor: "rgba(0,212,170,0.2)", background: "rgba(0,212,170,0.04)" }}
           >
             <p className="text-xs font-bold uppercase" style={{ color: "#00D4AA" }}>
               También en Uruapan
             </p>
-            <h2 className="mt-2 public-section-title" style={{ color: "var(--public-ink)" }}>
+            <h2 className="mt-1 text-lg font-bold" style={{ color: "var(--public-ink)" }}>
               Teleférico Uruapan
             </h2>
-            <p className="mt-2 text-sm leading-7" style={{ color: "var(--public-secondary)" }}>
+            <p className="mt-2 text-sm leading-5" style={{ color: "var(--public-secondary)" }}>
               6 estaciones de oriente a poniente. Opera de 05:00 a 23:00. Tarifa {FARES_2026.teleferico.price} con tarjeta de movilidad.
             </p>
             <Link
               href="/teleferico-uruapan-horario"
-              className="mt-4 inline-flex h-10 items-center rounded-md px-5 text-sm font-bold transition hover:opacity-90"
+              className="mt-3 inline-flex h-11 items-center rounded-md px-5 text-sm font-bold transition hover:opacity-90"
               style={{ background: "#00D4AA", color: "#0c110a" }}
             >
               Ver guía del Teleférico →

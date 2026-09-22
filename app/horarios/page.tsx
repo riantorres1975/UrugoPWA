@@ -105,49 +105,38 @@ export default function HorariosPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <PublicHeader active="horarios" />
 
-      <div className="px-5 pb-16 pt-28 sm:px-8 lg:px-10">
+      <div className="px-5 pb-12 pt-24 sm:px-8 lg:px-10">
         <div className="mx-auto max-w-5xl">
-          <Link href="/rutas" className="text-xs font-semibold uppercase text-[var(--public-muted)] transition hover:opacity-80">
-            ← Todas las rutas
-          </Link>
-          <p className="mt-5 text-xs font-bold uppercase text-[var(--public-accent)]">Uruapan, Michoacán · 2026</p>
-          <h1 className="mt-2 public-page-title">
-            Horarios de <em className="text-[var(--public-accent)]">camiones</em> en Uruapan
-          </h1>
-          <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--public-secondary)]">
-            Busca una ruta o destino y revisa si está operando según la hora actual de Uruapan. Los rangos son aproximados y pueden variar por tráfico.
-          </p>
-          <p className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--public-secondary)]">
-            <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0 text-[var(--public-accent)]" aria-hidden="true">
-              <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
-            </svg>
-            Datos verificados en campo · actualizado {DATA_LAST_UPDATED}
-          </p>
-          <a href="#salidas-escolares" className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-[#f1bf62] transition hover:text-white">
-            Consultar salidas escolares de solo ida ↓
-          </a>
+          <header>
+            <p className="text-xs font-bold uppercase tracking-widest text-[var(--public-accent)]">Muévete por Uruapan</p>
+            <h1 className="public-page-title mt-2 text-3xl sm:text-4xl">Horarios de transporte</h1>
+            <p className="mt-2 text-sm leading-5 text-[var(--public-secondary)]">Consulta el inicio, cierre y frecuencia de tu ruta.</p>
+            <nav aria-label="Más opciones de transporte" className="mt-3 flex flex-wrap gap-x-5 text-sm font-bold text-[var(--public-accent)]">
+              <Link href="/rutas" className="inline-flex min-h-11 items-center hover:underline">Todas las rutas →</Link>
+              <a href="#salidas-escolares" className="inline-flex min-h-11 items-center hover:underline">Salidas escolares ↓</a>
+            </nav>
+          </header>
 
           <ScheduleDirectory services={services} />
 
           <p className="mt-3 text-[11px] text-[var(--public-muted)]">
-            Tarifa base: {FARES_2026.urbanBus.price} por abordaje. “En servicio” indica que la hora actual está dentro del rango general de operación; no representa seguimiento en tiempo real de las unidades.
+            Actualizado {DATA_LAST_UPDATED}. Tarifa base: {FARES_2026.urbanBus.price} por abordaje. “En servicio” indica que la hora actual está dentro del rango general de operación; no representa seguimiento en tiempo real de las unidades.
           </p>
 
-          <div className="mt-14">
+          <div className="mt-8">
             <SchoolDepartures />
           </div>
 
-          <section className="mt-12">
+          <section className="mt-8">
             <h2 className="public-section-title">Preguntas frecuentes</h2>
             <div className="mt-5 grid gap-3 md:grid-cols-2">
               {faqs.map((faq) => (
                 <details key={faq.question} className="group rounded-lg border border-[var(--public-border)] bg-[var(--public-surface)]">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5 font-sans text-base font-bold [&::-webkit-details-marker]:hidden">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 font-sans text-sm font-bold [&::-webkit-details-marker]:hidden">
                     {faq.question}
                     <span className="shrink-0 text-lg text-[var(--public-accent)] transition group-open:rotate-45" aria-hidden="true">+</span>
                   </summary>
-                  <p className="px-5 pb-5 text-sm leading-7 text-[var(--public-secondary)]">{faq.answer}</p>
+                  <p className="px-4 pb-4 text-sm leading-6 text-[var(--public-secondary)]">{faq.answer}</p>
                 </details>
               ))}
             </div>

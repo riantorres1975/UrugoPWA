@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getScheduleStatus, type RouteSchedule, type ScheduleStatus } from "@/lib/schedules";
 
 export type ScheduleService = {
@@ -72,6 +72,7 @@ function StatusBadge({ status }: { status: ScheduleStatus | null }) {
 
 export default function ScheduleDirectory({ services }: { services: ScheduleService[] }) {
   const [query, setQuery] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [now, setNow] = useState<Date | null>(null);
 
@@ -91,9 +92,9 @@ export default function ScheduleDirectory({ services }: { services: ScheduleServ
   );
 
   const visible = useMemo(() => {
-    const search = normalize(query.trim());
+    const tokens = normalize(query.trim()).split(/\s+/).filter(Boolean);
     return withStatus.filter((service) => {
-      const matchesSearch = !search || normalize(`${service.name} ${service.destination ?? ""}`).includes(search);
+      const matchesSearch = tokens.every((token) => normalize(`${service.name} ${service.destination ?? ""}`).includes(token));
       const matchesFilter = filter === "all"
         || (filter === "operating" && isOperating(service.status))
         || (filter === "closing" && service.status?.kind === "last-service")
@@ -108,34 +109,35 @@ export default function ScheduleDirectory({ services }: { services: ScheduleServ
     : "--:--";
 
   return (
-    <section className="public-directory -mx-5 mt-8 px-5 pb-6 sm:mx-0 sm:px-6" aria-label="Consulta de horarios">
-      <div className="grid gap-3 border-y border-[var(--public-border)] py-5 sm:grid-cols-[1fr_auto] sm:items-center">
-        <div>
-          <p className="text-xs font-bold uppercase text-[var(--public-muted)]">Ahora en Uruapan · {uruapanTime}</p>
-          <p className="mt-1 text-sm font-semibold text-[var(--public-ink)]">
-            {now ? `${operatingCount} de ${services.length} servicios operando` : "Consultando servicios…"}
-          </p>
-        </div>
-        <Link href="/mapa" className="text-sm font-bold text-[var(--public-accent)] transition hover:opacity-80">
-          Planear un viaje →
-        </Link>
+    <section className="public-directory -mx-5 mt-3 px-5 py-4 sm:mx-0 sm:rounded-xl sm:px-5" aria-label="Consulta de horarios">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-[var(--public-secondary)]">
+        <p className="font-semibold">Uruapan <span className="ml-1 font-bold tabular-nums text-[var(--public-ink)]">{uruapanTime}</span></p>
+        <p>{now ? `${operatingCount} de ${services.length} en horario de servicio` : "Consultando servicios…"}</p>
       </div>
+      <p className="mt-1 text-xs leading-5 text-[var(--public-muted)]">Horarios aproximados; el paso puede variar por tráfico.</p>
 
-      <div className="sticky top-[72px] z-20 -mx-1 bg-[var(--public-bg)] px-1 py-4">
-        <label className="relative block">
+      <div className="sticky top-[72px] z-20 -mx-1 bg-[var(--public-bg)] px-1 pb-2 pt-3">
+        <div className="relative">
+        <label className="block">
           <span className="sr-only">Buscar ruta o destino</span>
           <svg viewBox="0 0 24 24" fill="none" className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--public-muted)]" aria-hidden="true">
             <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" />
             <path d="m20 20-3.5-3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
           </svg>
           <input
+            ref={inputRef}
+            inputMode="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Busca una ruta o destino"
-            className="h-12 w-full rounded-lg border border-[var(--public-border)] bg-[var(--public-surface)] pl-12 pr-4 text-sm text-[var(--public-ink)] outline-none placeholder:text-[var(--public-muted)] focus:border-[#b8e840]/50"
+            className="h-11 w-full rounded-lg border border-[var(--public-border)] bg-[var(--public-surface)] pl-12 pr-12 text-sm text-[var(--public-ink)] outline-none placeholder:text-[var(--public-muted)] focus-visible:ring-2 focus-visible:ring-[var(--public-accent)]"
           />
         </label>
-        <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Filtrar horarios">
+        {query && <button type="button" aria-label="Limpiar búsqueda" onClick={() => { setQuery(""); inputRef.current?.focus(); }} className="absolute right-0 top-0 grid h-11 w-11 place-items-center rounded-md text-[var(--public-secondary)] hover:text-[var(--public-ink)]">
+          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+        </button>}
+        </div>
+        <div className="mt-1.5 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Filtrar horarios">
           {filters.map((item) => (
             <button
               key={item.value}
@@ -145,7 +147,7 @@ export default function ScheduleDirectory({ services }: { services: ScheduleServ
                 if (item.value === "teleferico") setQuery("");
               }}
               aria-pressed={filter === item.value}
-              className="shrink-0 rounded-md border px-3 py-1.5 text-xs font-bold transition"
+              className="min-h-11 shrink-0 rounded-md border px-3 text-xs font-bold transition"
               style={{
                 borderColor: filter === item.value ? "#6aab48" : "var(--public-border)",
                 background: filter === item.value ? "var(--public-surface)" : "transparent",
@@ -158,67 +160,47 @@ export default function ScheduleDirectory({ services }: { services: ScheduleServ
         </div>
       </div>
 
-      <p className="mb-4 text-xs font-semibold uppercase text-[var(--public-muted)]">
+      <p aria-live="polite" className="mb-2 text-xs font-semibold text-[var(--public-muted)]">
         {visible.length} {visible.length === 1 ? "servicio" : "servicios"}
       </p>
 
-      <div className="overflow-hidden rounded-lg border border-[var(--public-border)] bg-[var(--public-surface)] md:hidden">
-        <ul className="divide-y divide-[var(--public-border)]">
-          {visible.map((service) => (
-            <li key={service.slug} className="p-4 [contain-intrinsic-size:auto_150px] [content-visibility:auto]">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex min-w-0 items-start gap-2.5">
-                  <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: service.color }} />
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold leading-5 text-[var(--public-ink)]">{service.name}</p>
-                    {service.destination && <p className="mt-0.5 text-[11px] leading-4 text-[var(--public-muted)]">→ {service.destination}</p>}
-                  </div>
+      {visible.length > 0 && <ul aria-label="Horarios de rutas" className="divide-y divide-[var(--public-border)] overflow-hidden rounded-lg border border-[var(--public-border)] bg-[var(--public-surface)]">
+        {visible.map((service) => (
+          <li key={service.slug}>
+            <Link
+              href={service.kind === "teleferico" ? "/teleferico-uruapan-horario" : `/ruta/${service.slug}`}
+              prefetch={false}
+              aria-label={`Ver detalles de ${service.name}`}
+              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 px-3 py-3 transition-colors hover:bg-[var(--public-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--public-accent)] lg:grid-cols-[minmax(0,1fr)_150px_260px_16px] lg:px-4"
+            >
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="h-8 w-1 shrink-0 rounded-full" style={{ backgroundColor: service.color }} aria-hidden="true" />
+                <div>
+                  <p className="text-sm font-bold leading-5">{service.name}</p>
+                  {service.destination && <p className="mt-0.5 text-xs leading-4 text-[var(--public-secondary)]">{service.destination}</p>}
                 </div>
-                <Link
-                  href={service.kind === "teleferico" ? "/teleferico-uruapan-horario" : `/ruta/${service.slug}`}
-                  prefetch={false}
-                  className="shrink-0 text-xs font-bold text-[var(--public-accent)] transition hover:opacity-80"
-                >
-                  Ver →
-                </Link>
               </div>
-              <div className="mt-3"><StatusBadge status={service.status} /></div>
-              <dl className="mt-3 grid grid-cols-3 gap-2 border-t border-[var(--public-border)] pt-3">
-                <div><dt className="text-[9px] font-bold uppercase text-[var(--public-muted)]">Primero</dt><dd className="mt-1 text-sm font-bold text-[var(--public-ink)]">{service.schedule.first}</dd></div>
-                <div><dt className="text-[9px] font-bold uppercase text-[var(--public-muted)]">Último</dt><dd className="mt-1 text-sm font-bold text-[var(--public-ink)]">{service.schedule.last}</dd></div>
-                <div><dt className="text-[9px] font-bold uppercase text-[var(--public-muted)]">Frecuencia</dt><dd className="mt-1 text-xs leading-5 text-[var(--public-secondary)]">{frequencyLabel(service.schedule)}</dd></div>
+              <div className="max-w-[100px] text-right lg:max-w-none lg:text-left"><StatusBadge status={service.status} /></div>
+              <dl className="col-span-2 flex flex-wrap gap-x-5 gap-y-1 pl-3.5 lg:col-span-1 lg:pl-0">
+                <div>
+                  <dt className="text-[11px] text-[var(--public-muted)]">Horario</dt>
+                  <dd className="text-xs font-bold leading-5 tabular-nums"><span className="sr-only">Inicio </span>{service.schedule.first}<span aria-hidden="true"> – </span><span className="sr-only"> a cierre </span>{service.schedule.last}</dd>
+                </div>
+                <div>
+                  <dt className="text-[11px] text-[var(--public-muted)]">Frecuencia</dt>
+                  <dd className="text-xs leading-5 text-[var(--public-secondary)]">{frequencyLabel(service.schedule)}</dd>
+                </div>
               </dl>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div className="hidden overflow-x-auto rounded-lg border border-[var(--public-border)] bg-[var(--public-surface)] md:block">
-        <table className="w-full min-w-[720px] border-collapse text-left text-sm">
-          <caption className="sr-only">Estado, horarios y frecuencia del transporte público en Uruapan</caption>
-          <thead><tr className="border-b border-[var(--public-border)]">
-            {['Servicio', 'Ahora', 'Primero', 'Último', 'Frecuencia', ''].map((label) => <th key={label || 'action'} scope="col" className="px-4 py-3 text-xs font-bold uppercase text-[var(--public-muted)]">{label || <span className="sr-only">Acciones</span>}</th>)}
-          </tr></thead>
-          <tbody>
-            {visible.map((service) => (
-              <tr key={service.slug} className="border-b border-[var(--public-border)] [contain-intrinsic-size:auto_64px] [content-visibility:auto] last:border-b-0">
-                <th scope="row" className="px-4 py-3 font-semibold text-[var(--public-ink)]">
-                  <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: service.color }} /><span>{service.name}{service.destination && <span className="block text-[11px] font-normal text-[var(--public-muted)]">→ {service.destination}</span>}</span></span>
-                </th>
-                <td className="px-4 py-3"><StatusBadge status={service.status} /></td>
-                <td className="px-4 py-3 font-semibold text-[var(--public-ink)]">{service.schedule.first}</td>
-                <td className="px-4 py-3 font-semibold text-[var(--public-ink)]">{service.schedule.last}</td>
-                <td className="px-4 py-3 text-[var(--public-secondary)]">{frequencyLabel(service.schedule)}</td>
-                <td className="px-4 py-3 text-right"><Link href={service.kind === "teleferico" ? "/teleferico-uruapan-horario" : `/ruta/${service.slug}`} prefetch={false} className="whitespace-nowrap text-xs font-bold text-[var(--public-accent)]">Ver →</Link></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+              <span className="hidden text-[var(--public-accent)] lg:block" aria-hidden="true">→</span>
+            </Link>
+          </li>
+        ))}
+      </ul>}
 
       {visible.length === 0 && (
         <div className="rounded-lg border border-[var(--public-border)] px-5 py-12 text-center text-sm text-[var(--public-secondary)]">
-          No hay servicios que coincidan con este filtro.
+          <p>No hay servicios que coincidan con este filtro.</p>
+          <button type="button" onClick={() => { setQuery(""); setFilter("all"); }} className="mt-3 min-h-11 rounded-md border border-[var(--public-border)] px-4 font-bold text-[var(--public-accent)]">Ver todos los horarios</button>
         </div>
       )}
     </section>
