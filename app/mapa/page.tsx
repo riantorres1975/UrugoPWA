@@ -30,7 +30,7 @@ const JourneyExplanation = dynamic(() => import("@/components/JourneyExplanation
 import { useJourneySettings } from "@/hooks/useJourneySettings";
 import { hasStreetWalking } from "@/lib/journey-walking";
 import { useJourneyPreference } from "@/hooks/useJourneyPreference";
-import TripOverlays from "@/components/TripOverlays";
+const TripOverlays = dynamic(() => import("@/components/TripOverlays"), { ssr: false });
 import { geocodePlace, type PlaceResult } from "@/lib/geocode";
 import { useFavoriteRoutes } from "@/hooks/useFavoriteRoutes";
 import { useMapRouteSelection } from "@/hooks/useMapRouteSelection";
@@ -242,7 +242,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   const [namedOrigin, setNamedOrigin] = useState<{ point: Coordinates; label: string } | null>(null);
   const {
     announceLandmark,
-    recoverableTrip, discardRecovery, resume: resumeTrip, confirmStage,
+    recoverableTrip, discardRecovery, resume: resumeTrip, confirmStage, confirmArrival,
     awaitingBoarding, alertSettings, alertSupport, updateAlertSettings, silence,
     cancelStop: cancelStopTrip,
     completeStop: completeStopTrip,
@@ -1621,6 +1621,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
               stopDialogOpen={isStopTripDialogOpen}
               onCancelStop={cancelStopTrip}
               onConfirmStop={completeStopTrip}
+              onConfirmArrival={confirmArrival}
               onDismissAlert={dismissDropOffAlert}
             />
             <TripModePanel
@@ -1632,6 +1633,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
               onStop={handleStopTrip}
               awaitingBoarding={awaitingBoarding}
               onConfirmStage={confirmStage}
+              onConfirmArrival={confirmArrival}
               alertSettings={alertSettings}
               alertSupport={alertSupport}
               onAlertSettingsChange={updateAlertSettings}

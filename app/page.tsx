@@ -29,6 +29,7 @@ import {
 import { getPlaceSeoItems, getRoutesNearPlace, walkMinutesFor } from "@/lib/como-llegar";
 import { PROJECT, PROJECT_SOCIAL_PROFILES } from "@/lib/project";
 import { getPopularRoutes } from "@/lib/route-popularity";
+import { getTripActivity } from "@/lib/trip-activity-server";
 import { SITE_URL } from "@/lib/site-url";
 
 const HOW_IT_WORKS_STEPS = [
@@ -83,7 +84,7 @@ export const metadata: Metadata = {
   },
 };
 
-export const revalidate = 3600;
+export const revalidate = 300;
 
 const faqJsonLd = {
   "@context": "https://schema.org",
@@ -138,7 +139,7 @@ const organizationJsonLd = {
 };
 
 export default async function LandingPage() {
-  const { basedOnUsage, routes: popularRoutes } = await getPopularRoutes(4);
+  const [{ basedOnUsage, routes: popularRoutes }, activity] = await Promise.all([getPopularRoutes(4), getTripActivity()]);
 
   return (
     <main className="landing-home min-h-dvh bg-[#0c110a] text-[#eef2ea]" data-theme="dark">
@@ -193,7 +194,7 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      <section id="destinos" className={`public-directory scroll-mt-24 border-y border-[var(--public-border)] ${DEFERRED_SECTION}`}>
+      <section id="destinos" className="public-directory scroll-mt-24 border-y border-[var(--public-border)]">
         <div className="mx-auto max-w-[1240px] px-5 py-12 sm:px-8 lg:py-16">
           <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
             <div>
@@ -214,7 +215,7 @@ export default async function LandingPage() {
               </Link>
             ))}
           </div>
-          <LandingRanking basedOnUsage={basedOnUsage} routes={popularRoutes.map(({ slug, name, destination }) => ({ slug, name, destination }))} />
+          <LandingRanking activity={activity} basedOnUsage={basedOnUsage} routes={popularRoutes.map(({ slug, name, destination }) => ({ slug, name, destination }))} />
         </div>
       </section>
 

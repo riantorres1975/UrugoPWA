@@ -25,6 +25,7 @@ type TripModePanelProps = {
   locationStatus: TripLocationStatus;
   landmarkCue?: LandmarkCue | null;
   onStop: () => void;
+  onConfirmArrival: () => void;
   awaitingBoarding?: "first" | "second";
   onConfirmStage: (action: TripConfirmation) => void;
   alertSettings: TripAlertSettings;
@@ -240,6 +241,7 @@ export default function TripModePanel({
   locationStatus,
   landmarkCue,
   onStop,
+  onConfirmArrival,
   awaitingBoarding, onConfirmStage, alertSettings, alertSupport,
   onAlertSettingsChange, onLocate, onFindAnother, actionBusy, actionError,
 }: TripModePanelProps) {
@@ -304,7 +306,7 @@ export default function TripModePanel({
             type="button"
             onClick={onStop}
             className="ov-pill ov-border ov-text-muted inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-xl border px-2 text-[11px] font-semibold transition hover:border-red-400/50 hover:text-red-400 active:scale-[0.97]"
-            aria-label={progress?.phase === "arrived" ? "Cerrar viaje completado" : "Finalizar viaje"}
+            aria-label="Finalizar viaje"
           >
             <X className="h-3.5 w-3.5" aria-hidden="true" strokeWidth={2.2} />
             <span className="hidden sm:inline">{progress?.phase === "arrived" ? "Cerrar" : "Finalizar"}</span>
@@ -312,6 +314,12 @@ export default function TripModePanel({
         </div>
 
         <div className="space-y-2 px-3.5 pb-3">
+          {progress?.phase === "arrived" || progress?.phase === "walking-destination" ? (
+            <button type="button" onClick={onConfirmArrival}
+              className="min-h-11 w-full rounded-xl bg-lima px-3 text-sm font-bold text-ink-900">
+              Llegué a mi destino
+            </button>
+          ) : null}
           {journey.kind === "transfer" && currentStep === 0 ? (
             <p className="ov-text-muted text-xs">Después de bajar: toma <strong className="ov-text">{journey.routeBName}</strong>.</p>
           ) : null}

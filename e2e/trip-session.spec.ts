@@ -30,6 +30,11 @@ test.beforeEach(async ({ page, context }) => {
 });
 
 test("confirma la subida, recupera el mismo viaje y permite finalizarlo", async ({ page, context }, testInfo) => {
+  const activity: { id: string; arrived: boolean }[] = [];
+  await page.route("**/api/analytics/trip-activity", (route) => {
+    activity.push(route.request().postDataJSON());
+    return route.fulfill({ status: 204 });
+  });
   await page.goto("/mapa?a=-102.077000,19.420000&b=-102.060000,19.423000");
   const preview = page.getByRole("button", { name: "Ver resultado de ruta", exact: true });
   await expect(preview).toContainText("Ruta de prueba", { timeout: 15_000 });
@@ -80,11 +85,32 @@ test("confirma la subida, recupera el mismo viaje y permite finalizarlo", async 
   await panel.getByRole("button", { name: "Ya bajé", exact: true }).click();
   await expect(panel).toContainText("ÚLTIMO TRAMO");
   await panel.getByRole("button", { name: "Finalizar viaje", exact: true }).click();
-  await page.getByRole("dialog", { name: "¿Finalizar el viaje?" }).getByRole("button", { name: "Finalizar viaje" }).click();
+  await page.getByRole("dialog", { name: "¿Finalizar el viaje?" }).getByRole("button", { name: "Solo finalizar" }).click();
   await expect(panel).toHaveCount(0);
+  expect(activity.length).toBeGreaterThan(0);
+  expect(new Set(activity.map((event) => event.id)).size).toBe(1);
+  expect(activity.some((event) => event.arrived)).toBe(false);
   expect(await page.evaluate(() => localStorage.getItem("urugo-active-trip-v1"))).toBeNull();
   await page.reload();
   await expect(recovery).toHaveCount(0);
+});
+
+test("solo confirma la llegada al pulsar Llegué a mi destino", async ({ page }) => {
+  const activity: { id: string; arrived: boolean }[] = [];
+  await page.route("**/api/analytics/trip-activity", (route) => {
+    activity.push(route.request().postDataJSON());
+    return route.fulfill({ status: 204 });
+  });
+  await page.goto("/mapa?a=-102.077000,19.420000&b=-102.060000,19.423000");
+  await page.getByRole("button", { name: "Ver resultado de ruta", exact: true }).click();
+  await page.getByRole("button", { name: "Iniciar viaje en Ruta de prueba", exact: true }).click();
+  const panel = page.getByRole("region", { name: "Modo viaje" });
+  await expect.poll(() => activity.length).toBe(1);
+  await panel.getByRole("button", { name: "Finalizar viaje", exact: true }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Llegué a mi destino", exact: true }).click();
+  await expect(panel).toHaveCount(0);
+  await expect.poll(() => activity.filter((event) => event.arrived).length).toBe(1);
+  expect(new Set(activity.map((event) => event.id)).size).toBe(1);
 });
 
 test("busca desde el GPS actual conservando el destino y sin interrumpir por un error", async ({ page, context }) => {

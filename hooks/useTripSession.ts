@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { track } from "@vercel/analytics";
+import { enqueueTripActivity, flushTripActivity } from "@/lib/trip-activity-client";
+import type { TripActivityEvent } from "@/lib/trip-activity";
 import {
   createTripTrackingState,
   confirmTripStage,
@@ -13,7 +14,7 @@ import {
   type TripTrackingState,
   type TripConfirmation,
 } from "@/lib/trip-mode";
-import { clearSavedTrip, readSavedTrip, saveTrip, readTripAlerts, DEFAULT_TRIP_ALERTS, TRIP_ALERTS_KEY, type SavedTrip, type TripAlertSettings } from "@/lib/trip-storage";
+import { clearSavedTrip, readSavedTrip, saveTrip, readTripAlerts, DEFAULT_TRIP_ALERTS, TRIP_ALERTS_KEY, type SavedTrip, type TripAlertSettings, type TripActivityIdentity } from "@/lib/trip-storage";
 import type { Coordinates } from "@/lib/types";
 import { LANDMARK_REACHED_RADIUS_M, type LandmarkCue } from "@/lib/landmark-guidance";
 
@@ -34,7 +35,8 @@ export function useTripSession() {
   const [recoverableTrip, setRecoverableTrip] = useState<SavedTrip | null>(null);
   const [alertSettings, setAlertSettings] = useState(DEFAULT_TRIP_ALERTS);
   const [alertSupport, setAlertSupport] = useState({ voice: false, vibration: false });
-  const latestSaveRef = useRef<{ journey: TripJourney; tracking: TripTrackingState } | null>(null);
+  const latestSaveRef = useRef<{ journey: TripJourney; tracking: TripTrackingState; activity?: TripActivityIdentity } | null>(null);
+  const activityRef = useRef<{ key: string; event: TripActivityEvent } | null>(null);
   const lastLocationRef = useRef<Coordinates | null>(null);
   const silence = useCallback(() => {
     try { window.speechSynthesis?.cancel(); navigator.vibrate?.(0); } catch { /* Unsupported device. */ }
@@ -51,13 +53,21 @@ export function useTripSession() {
     }, 0);
     const flush = () => {
       const latest = latestSaveRef.current;
-      if (latest) saveTrip(latest.journey, latest.tracking);
+      if (latest) saveTrip(latest.journey, latest.tracking, latest.activity);
     };
     const interval = window.setInterval(flush, 5000);
+    const retryActivity = () => { if (document.visibilityState !== "hidden") void flushTripActivity(); };
+    retryActivity();
+    const activityInterval = window.setInterval(retryActivity, 60_000);
+    window.addEventListener("online", retryActivity);
+    document.addEventListener("visibilitychange", retryActivity);
     window.addEventListener("pagehide", flush);
     document.addEventListener("visibilitychange", flush);
     return () => {
       cancelled = true;
+      window.clearInterval(activityInterval);
+      window.removeEventListener("online", retryActivity);
+      document.removeEventListener("visibilitychange", retryActivity);
       flush(); silence(); window.clearTimeout(timer); window.clearInterval(interval);
       window.removeEventListener("pagehide", flush);
       document.removeEventListener("visibilitychange", flush);
@@ -66,8 +76,9 @@ export function useTripSession() {
 
   useEffect(() => {
     const previousPhase = latestSaveRef.current?.tracking.progress?.phase;
-    latestSaveRef.current = session ? { journey: session.journey, tracking } : null;
-    if (session && previousPhase !== tracking.progress?.phase) saveTrip(session.journey, tracking);
+    const activity = activityRef.current?.event;
+    latestSaveRef.current = session ? { journey: session.journey, tracking, activity } : null;
+    if (session && previousPhase !== tracking.progress?.phase) saveTrip(session.journey, tracking, activity);
   }, [session, tracking]);
 
   const updateAlertSettings = useCallback((next: TripAlertSettings) => {
@@ -85,6 +96,7 @@ export function useTripSession() {
   const discardRecovery = useCallback(() => { setRecoverableTrip(null); clearSavedTrip(); }, []);
 
   const reset = useCallback(() => {
+    activityRef.current = null;
     latestSaveRef.current = null;
     lastLocationRef.current = null;
     clearSavedTrip(); setRecoverableTrip(null); silence();
@@ -99,31 +111,39 @@ export function useTripSession() {
 
   const start = useCallback((journey: TripJourney) => {
     const key = getTripJourneyKey(journey);
+    if (activityRef.current?.key === key) return;
+    const event: TripActivityEvent = {
+      id: crypto.randomUUID(), startedAt: new Date().toISOString(), arrived: false,
+      routes: journey.kind === "direct" ? [journey.routeName] : [journey.routeAName, journey.routeBName],
+    };
+    activityRef.current = { key, event };
+    enqueueTripActivity(event);
     milestonesRef.current.clear();
     dismissedLandmarksRef.current.clear();
     setSession({ key, cameraKey: `${key}:${Date.now()}`, journey });
     const initial = { ...createTripTrackingState(), requireBoardingConfirmation: true, boardingConfirmation: "first" as const };
     setTracking(initial);
-    saveTrip(journey, initial); setRecoverableTrip(null); silence();
+    saveTrip(journey, initial, event); setRecoverableTrip(null); silence();
     setIsStopDialogOpen(false);
     setDropOffAlert(null);
     setLandmarkAlert(null);
-    try {
-      track("viaje_iniciado", { tipo: journey.kind });
-    } catch {
-      // Analytics is optional during a trip.
-    }
   }, [silence]);
 
   const resume = useCallback((location: Coordinates) => {
     if (!recoverableTrip) return;
     const { journey, tracking: previous } = recoverableTrip;
     const key = getTripJourneyKey(journey);
+    const event = recoverableTrip.activity ? {
+      ...recoverableTrip.activity, arrived: false,
+      routes: journey.kind === "direct" ? [journey.routeName] : [journey.routeAName, journey.routeBName],
+    } : undefined;
+    activityRef.current = event ? { key, event } : null;
+    if (event) enqueueTripActivity(event);
     milestonesRef.current.clear(); dismissedLandmarksRef.current.clear(); silence();
     lastLocationRef.current = location;
     setSession({ key, cameraKey: `${key}:${Date.now()}`, journey });
     const next = updateTripTrackingState(journey, location, previous);
-    setTracking(next); saveTrip(journey, next); setRecoverableTrip(null);
+    setTracking(next); saveTrip(journey, next, event); setRecoverableTrip(null);
     setDropOffAlert(null); setLandmarkAlert(null); setIsStopDialogOpen(false);
   }, [recoverableTrip, silence]);
 
@@ -134,23 +154,17 @@ export function useTripSession() {
     setDropOffAlert(null); setLandmarkAlert(null); silence();
   }, [session, silence]);
 
-  const completeStop = useCallback(() => {
-    const journeyKind = session?.journey.kind;
+  const confirmArrival = useCallback(() => {
+    const activity = activityRef.current;
+    if (activity) enqueueTripActivity({ ...activity.event, arrived: true });
     reset();
-    try {
-      track("viaje_finalizado", { tipo: journeyKind ?? "desconocido" });
-    } catch {
-      // Analytics is optional during a trip.
-    }
-  }, [reset, session]);
+  }, [reset]);
+
+  const completeStop = useCallback(() => { reset(); }, [reset]);
 
   const requestStop = useCallback(() => {
-    if (tracking.progress?.phase === "arrived") {
-      completeStop();
-      return;
-    }
     setIsStopDialogOpen(true);
-  }, [completeStop, tracking.progress?.phase]);
+  }, []);
 
   const cancelStop = useCallback(() => setIsStopDialogOpen(false), []);
   const dismissDropOffAlert = useCallback(() => {
@@ -220,7 +234,7 @@ export function useTripSession() {
   }
 
   return {
-    recoverableTrip, discardRecovery, resume, confirmStage, alertSettings, alertSupport, updateAlertSettings, silence,
+    recoverableTrip, discardRecovery, resume, confirmStage, confirmArrival, alertSettings, alertSupport, updateAlertSettings, silence,
     awaitingBoarding: tracking.boardingConfirmation,
     cancelStop,
     announceLandmark,

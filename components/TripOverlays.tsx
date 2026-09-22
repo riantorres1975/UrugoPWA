@@ -7,12 +7,14 @@ export default function TripOverlays({
   alert,
   onCancelStop,
   onConfirmStop,
+  onConfirmArrival,
   onDismissAlert,
   stopDialogOpen,
 }: {
   alert: string | null;
   onCancelStop: () => void;
   onConfirmStop: () => void;
+  onConfirmArrival: () => void;
   onDismissAlert: () => void;
   stopDialogOpen: boolean;
 }) {
@@ -77,6 +79,10 @@ export default function TripOverlays({
             <p id="stop-trip-description" className="ov-text-muted mt-1 text-sm leading-5">
               El seguimiento y los avisos de bajada se detendrán.
             </p>
+            <button type="button" onClick={onConfirmArrival}
+              className="mt-4 min-h-11 w-full rounded-lg bg-lima px-4 text-sm font-bold text-ink-900">
+              Llegué a mi destino
+            </button>
             <div className="mt-4 grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -91,7 +97,7 @@ export default function TripOverlays({
                 onClick={onConfirmStop}
                 className="h-11 rounded-lg border border-red-400/45 bg-red-500/15 px-4 text-sm font-bold text-red-300 transition hover:bg-red-500/25 active:scale-[0.98]"
               >
-                Finalizar viaje
+                Solo finalizar
               </button>
             </div>
           </div>

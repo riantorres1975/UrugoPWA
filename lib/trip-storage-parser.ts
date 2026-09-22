@@ -43,7 +43,10 @@ export function parseSavedTrip(raw: string | null, now = Date.now()): SavedTrip 
     if (tracking.lastOnRoutePhase !== undefined && (!phases.includes(tracking.lastOnRoutePhase as TripPhase) || tracking.lastOnRoutePhase === "off-route")) return null;
     if (v.journey.kind === "direct" && (tracking.boardingConfirmation === "second" ||
       [record(p) ? p.phase : undefined, tracking.lastOnRoutePhase].some((phase) => ["riding-first", "riding-second", "walking-transfer"].includes(phase as string)))) return null;
-    return { version: 1, savedAt: v.savedAt, journey: { ...v.journey, walking: undefined }, tracking: {
+    const activity = record(v.activity) && typeof v.activity.id === "string" && /^[0-9a-f-]{36}$/i.test(v.activity.id)
+      && typeof v.activity.startedAt === "string" && Number.isFinite(Date.parse(v.activity.startedAt))
+      ? { id: v.activity.id, startedAt: v.activity.startedAt } : undefined;
+    return { version: 1, savedAt: v.savedAt, activity, journey: { ...v.journey, walking: undefined }, tracking: {
       ...createTripTrackingState(p as TripTrackingState["progress"]),
       lastOnRoutePhase: tracking.lastOnRoutePhase as TripTrackingState["lastOnRoutePhase"],
       requireBoardingConfirmation: true,

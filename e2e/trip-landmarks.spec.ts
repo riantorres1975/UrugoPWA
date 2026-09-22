@@ -128,6 +128,6 @@ test("el modo viaje avanza referencias y avisos hasta terminar la caminata final
   await context.setGeolocation({ longitude: -102.05999, latitude: 19.423 });
   await expect(panel).toContainText("Llegaste");
   await expect(panel.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100");
-  await panel.getByRole("button", { name: "Cerrar viaje completado" }).click();
+  await panel.getByRole("button", { name: "Llegué a mi destino" }).click();
   await expect(panel).toHaveCount(0);
 });

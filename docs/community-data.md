@@ -4,7 +4,7 @@ UruGo conserva `data/rutas_produccion_final.json` como respaldo. Supabase se usa
 
 También conserva totales diarios anónimos de consultas por ruta para ordenar el bloque de rutas populares de la portada. Abrir una ficha o seleccionar una ruta en el mapa incrementa el total, con deduplicación diaria en el navegador. La tabla no contiene ubicación, IP ni identificadores de visitantes, y solo `service_role` puede leerla o escribirla.
 
-El ranking suma consultas de los últimos 30 días y la portada se revalida cada hora. El orden puede permanecer igual aunque lleguen nuevas consultas; mide interés en las rutas, no viajes realizados. Seleccionar un transbordo cuenta cada ruta urbana involucrada, con la misma deduplicación. El navegador guarda la marca diaria sólo después de que el servidor confirma la escritura; si falla, una selección posterior puede reintentar.
+El ranking suma consultas de los últimos 30 días y la portada se revalida cada cinco minutos al recibir visitas. El orden puede permanecer igual aunque lleguen nuevas consultas; mide interés en las rutas, no viajes realizados. Seleccionar un transbordo cuenta cada ruta urbana involucrada, con la misma deduplicación. El navegador guarda la marca diaria sólo después de que el servidor confirma la escritura; si falla, una selección posterior puede reintentar.
 
 ## 1. Crear el proyecto
 
@@ -186,6 +186,19 @@ La publicación se ejecuta en una transacción: bloquea la versión actual, crea
 - Las fuentes HTTPS y los recorridos aproximados enviados por la comunidad son privados. El editor sólo los carga como borrador y exige una publicación administrativa versionada.
 - El contacto opcional y la bitácora de moderación son privados.
 - Aprobar un reporte no publica una geometría. La publicación versionada se implementa como una acción separada para permitir revisión y rollback.
+
+## Actividad del modo viaje
+
+- Migración `20260921220643_add_trip_activity`: comprobantes privados de cada viaje y totales diarios, sin coordenadas ni identificador de dispositivo.
+- `POST /api/analytics/trip-activity` acepta un UUID por viaje, rutas del catálogo, hora de inicio y confirmación explícita de llegada. Reanudar conserva el UUID. GPS, cerrar el panel y cancelar no confirman la llegada.
+- La función SQL deduplica dentro de una transacción. Un transbordo suma un viaje global y un inicio a cada ruta. Las llegadas se atribuyen al día de confirmación; los inicios al día de inicio, usando `America/Mexico_City`.
+- La cola local retiene hasta 20 eventos durante 24 horas. Reintenta al abrir el mapa, volver a la pestaña, recuperar conexión y cada minuto visible. La identidad y las rutas de un comprobante no pueden modificarse.
+- Los comprobantes mayores de 30 días se purgan al recibir actividad nueva; los resúmenes diarios se conservan. Solo `service_role` puede acceder a tablas y RPC; la portada recibe agregados desde el servidor.
+- La portada se revalida cada cinco minutos al recibir visitas. El ranking semanal exige al menos 10 viajes y cuatro rutas con al menos tres inicios. Hasta entonces muestra consultas. Compara los últimos siete días de calendario (incluido hoy) con los siete anteriores; muestra aumentos solo si había cinco inicios previos.
+- Transbordos bien valorados: últimos 30 días, al menos 10 respuestas de cinco dispositivos y 70% de votos útiles. Son opiniones agregadas, no confirmaciones de viaje.
+- Las animaciones se ejecutan una vez al entrar en pantalla y respetan movimiento reducido. El movimiento decorativo no representa vehículos en vivo.
+
+Validación SQL realizada en una transacción revertida: reenvíos de inicio/llegada, conteo de un transbordo como un viaje y dos rutas, y permisos anónimos. No se insertaron métricas de prueba permanentes.
 
 ## Integraciones para aportes externos
 

@@ -109,6 +109,22 @@ test("el movimiento reducido mantiene las etapas manuales y las rutas accesibles
   await expect(ranking.locator(".ranking-route")).toHaveCount(4);
   await expect(ranking.locator(".ranking-route").first()).toHaveAttribute("href", /^\/ruta\//);
   await expect(ranking.locator("li").first()).toHaveCSS("animation-name", "none");
+  await expect(ranking.locator(".activity-track b")).toHaveCSS("animation-name", "none");
+});
+
+test("la actividad de Uruapan cabe en móvil y muestra su origen", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.goto("/");
+  const activity = page.getByRole("region", { name: "Así se mueve Uruapan" });
+  await activity.scrollIntoViewIfNeeded();
+  await expect(activity).toHaveAttribute("data-revealed", "true");
+  await expect(activity).toContainText("Los inicios indican que alguien activó el modo viaje");
+  await expect(activity.locator(".activity-track b")).toHaveCSS("animation-name", "activity-drive");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+  await activity.screenshot({ path: testInfo.outputPath("actividad-movil.png"), animations: "disabled" });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await activity.scrollIntoViewIfNeeded();
+  await activity.screenshot({ path: testInfo.outputPath("actividad-escritorio.png"), animations: "disabled" });
 });
 
 test("las imágenes del recorrido coinciden con el destino y la etapa", async ({ page }) => {

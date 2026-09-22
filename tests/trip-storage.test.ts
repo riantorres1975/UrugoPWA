@@ -10,6 +10,10 @@ const now = 1_800_000_000_000;
 const saved = { version: 1, savedAt: now, journey, tracking: confirmTripStage(journey, journey.segment[0], createTripTrackingState(), "board") };
 
 describe("recuperación de viajes", () => {
+  it("conserva la identidad de actividad al reanudar un viaje", () => {
+    const activity = { id: "46ed4c46-a5d7-4988-80d2-b9b5fdc96765", startedAt: new Date(now).toISOString() };
+    expect(parseSavedTrip(JSON.stringify({ ...saved, activity }), now)?.activity).toEqual(activity);
+  });
   it("conserva el recorrido y etapa; reinicia las lecturas GPS", () => {
     const result = parseSavedTrip(JSON.stringify({ ...saved, tracking: { ...saved.tracking, offRouteReadings: 2, arrivalReadings: 1 } }), now);
     expect(result?.journey).toEqual(journey);

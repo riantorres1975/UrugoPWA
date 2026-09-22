@@ -314,7 +314,7 @@ test("el modo viaje sigue el GPS sin recuperar la cámara después de un gesto m
   await tripPanel.getByRole("button", { name: "Finalizar viaje" }).click({ force: true });
   const stopDialog = page.getByRole("dialog", { name: "¿Finalizar el viaje?" });
   await expect(stopDialog).toBeVisible();
-  await expect(stopDialog.getByRole("button", { name: "Finalizar viaje" })).toBeFocused();
+  await expect(stopDialog.getByRole("button", { name: "Solo finalizar" })).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(stopDialog).toHaveCount(0);
   await expect(tripPanel.getByRole("button", { name: "Finalizar viaje" })).toBeFocused();
@@ -328,7 +328,7 @@ test("el modo viaje sigue el GPS sin recuperar la cámara después de un gesto m
 
   await tripPanel.getByRole("button", { name: "Finalizar viaje" }).click({ force: true });
   await stopDialog
-    .getByRole("button", { name: "Finalizar viaje" })
+    .getByRole("button", { name: "Solo finalizar" })
     .evaluate((button) => (button as HTMLButtonElement).click());
   await expect(tripPanel).toHaveCount(0);
 });
@@ -432,7 +432,7 @@ test("el modo viaje conserva la ruta durante una pérdida temporal de GPS", asyn
 
   await sendFix({ longitude: -102.05447, latitude: 19.42623, accuracy: 12 });
   await expect(panel).toContainText("Llegaste");
-  await panel.getByRole("button", { name: "Cerrar viaje completado" }).click({ force: true });
+  await panel.getByRole("button", { name: "Llegué a mi destino" }).click({ force: true });
   await expect(panel).toHaveCount(0);
 });
 
