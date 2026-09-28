@@ -1,3 +1,4 @@
+import { rememberReportReceipt } from "@/lib/report-history";
 import { parseCommunityReport, type CommunityReportInput } from "@/lib/community-report";
 
 export const REPORT_OUTBOX_KEY = "urugo:report-outbox:v1";
@@ -61,8 +62,9 @@ export async function sendPendingReports() {
           method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(item.report),
           signal: AbortSignal.timeout(15000),
         });
-        const result = await response.json().catch(() => null) as { error?: string } | null;
+        const result = await response.json().catch(() => null) as { error?: string; receipt?: string } | null;
         if (!response.ok) throw new Error(result?.error || "No pudimos enviarlos. Puedes volver a intentarlo.");
+        rememberReportReceipt(result?.receipt, item.report.routeName || "Reporte de viaje");
         removePendingReport(item.id);
         sent++;
       }

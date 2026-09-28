@@ -25,6 +25,7 @@ const EmptyRouteResult = dynamic(() => import("@/components/RoutePlannerResults"
 const SelectedTransferResult = dynamic(() => import("@/components/RoutePlannerResults").then((module) => module.SelectedTransferResult));
 const TransferOptionsResult = dynamic(() => import("@/components/RoutePlannerResults").then((module) => module.TransferOptionsResult));
 const JourneyPreferences = dynamic(() => import("@/components/JourneyPreferences"));
+const JourneyTools = dynamic(() => import("@/components/JourneyTools"));
 const JourneyAlternatives = dynamic(() => import("@/components/JourneyAlternatives"));
 const JourneyExplanation = dynamic(() => import("@/components/JourneyExplanation"));
 import { useJourneySettings } from "@/hooks/useJourneySettings";
@@ -872,7 +873,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
 
   // ── Repetir viaje: guardar los nuevos viajes ──────────────────────────────
   useEffect(() => {
-    if (!originPoint || !destinationPoint || !bestSuggestion || isCalculatingSuggestions) return;
+    if (!originPoint || !destinationPoint || (!bestSuggestion && !selectedTransfer) || isCalculatingSuggestions) return;
     const key = `${originPoint.join(",")}>${destinationPoint.join(",")}`;
     if (lastSavedTripKeyRef.current === key) return;
     lastSavedTripKeyRef.current = key;
@@ -880,10 +881,10 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
       origin: originPoint,
       destination: destinationPoint,
       destinationLabel: requestedDestination,
-      routeName: bestSuggestion.ruta,
+      routeName: bestSuggestion?.ruta ?? (selectedTransfer ? `${selectedTransfer.routeAName} → ${selectedTransfer.routeBName}` : null),
       temporaryProviderResult: manualOriginSource === "mapbox" || destinationSource === "mapbox",
     });
-  }, [originPoint, destinationPoint, bestSuggestion, isCalculatingSuggestions, requestedDestination, manualOriginSource, destinationSource]);
+  }, [originPoint, destinationPoint, bestSuggestion, selectedTransfer, isCalculatingSuggestions, requestedDestination, manualOriginSource, destinationSource]);
 
   const repeatTrip = useCallback((trip: RecentTrip) => {
     setShowHint(false);
@@ -1333,6 +1334,15 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
                 }}
               />
             )}
+            {plannedJourney && !isTripActive && !isCalculatingSuggestions && <JourneyTools journey={plannedJourney}
+              temporary={manualOriginSource === "mapbox" || destinationSource === "mapbox"}
+              onReturn={() => {
+                if (!originPoint || !destinationPoint) return;
+                clearSharedRoute(); setSelectedTransfer(null); setSelectedRouteId(null);
+                repeatTrip({ origin: destinationPoint, destination: originPoint, destinationLabel: null, routeName: null, savedAt: Date.now() });
+                setManualOriginSource(destinationSource);
+                setDestinationSource(manualOriginSource);
+              }} />}
             <ActiveRouteSummary
               showActions={!bestSuggestion && !selectedTransfer}
               instructions={routeTextSummary}

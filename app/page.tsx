@@ -13,6 +13,7 @@ import {
   Route,
   ScanSearch,
 } from "lucide-react";
+import LandingJourneyDemo from "@/components/LandingJourneyDemo";
 import LandingHeroPlanner from "@/components/LandingHeroPlanner";
 import LandingReports from "@/components/LandingReports";
 import LandingRanking from "@/components/LandingRanking";
@@ -218,6 +219,8 @@ export default async function LandingPage() {
           <LandingRanking activity={activity} basedOnUsage={basedOnUsage} routes={popularRoutes.map(({ slug, name, destination }) => ({ slug, name, destination }))} />
         </div>
       </section>
+
+      <section className="mx-auto max-w-[1240px] px-5 pb-10 sm:px-8" aria-label="Conoce el modo viaje"><LandingJourneyDemo /></section>
 
       <section id="como-funciona" className={`scroll-mt-24 border-b border-white/15 ${DEFERRED_SECTION}`}>
         <div className="mx-auto max-w-[1240px] px-5 py-12 sm:px-8 lg:py-16">

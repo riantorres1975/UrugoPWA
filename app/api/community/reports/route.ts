@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+import { createReportReceipt } from "@/lib/report-receipt";
 import { NextRequest } from "next/server";
 import { parseCommunityReport } from "@/lib/community-report";
 import { getSafeSourcePath, hashSubmitter } from "@/lib/community-submission";
@@ -50,7 +52,9 @@ export async function POST(request: NextRequest) {
 
   const linkedRoute = report.routeKey ? findRouteSeoItem(report.routeKey) : null;
 
+  const reportId = randomUUID();
   const { error } = await supabase.from("community_reports").insert({
+    id: reportId,
     report_type: report.reportType,
     route_key: linkedRoute?.slug ?? null,
     route_name: linkedRoute?.name ?? report.routeName,
@@ -70,5 +74,5 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "No pudimos guardar el reporte. Intenta nuevamente." }, { status: 502 });
   }
 
-  return Response.json({ ok: true }, { status: 201 });
+  return Response.json({ ok: true, receipt: createReportReceipt(reportId) }, { status: 201, headers: { "Cache-Control": "private, no-store" } });
 }

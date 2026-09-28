@@ -1,5 +1,7 @@
 "use client";
+import Link from "next/link";
 
+import { rememberReportReceipt } from "@/lib/report-history";
 import {
   Ban,
   BusFront,
@@ -178,8 +180,9 @@ export default function ReportBugForm({
           website,
         }),
       });
-      const result = (await response.json().catch(() => null)) as { error?: string } | null;
+      const result = (await response.json().catch(() => null)) as { error?: string; receipt?: string } | null;
       if (!response.ok) throw new Error(result?.error || "No pudimos enviar el reporte.");
+      rememberReportReceipt(result?.receipt, routeName || "Reporte de la app");
       setSubmitState("success");
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "No pudimos enviar el reporte.");
@@ -192,7 +195,7 @@ export default function ReportBugForm({
       <section className="border-y border-[#6aab48]/30 bg-[#10180d] px-5 py-10 text-center sm:px-8" aria-live="polite">
         <CheckCircle2 className="mx-auto h-10 w-10 text-[var(--public-accent)]" aria-hidden="true" />
         <p className="mt-5 text-xs font-bold uppercase text-[var(--public-muted)]">Reporte recibido</p>
-        <h2 className="mt-2 text-[var(--public-ink)] public-section-title">Gracias, ya quedó en revisión.</h2>
+        <h2 className="mt-2 text-[var(--public-ink)] public-section-title">Gracias, recibimos tu reporte.</h2>
         <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-[var(--public-secondary)]">
           Revisaremos la información y el recorrido que marcaste antes de hacer cambios en el mapa.
         </p>
@@ -209,6 +212,7 @@ export default function ReportBugForm({
         >
           Enviar otro reporte
         </button>
+        <Link href="/#tu-dia" className="mt-3 block min-h-11 py-3 text-sm font-bold text-lima underline">Consultar mis reportes</Link>
       </section>
     );
   }

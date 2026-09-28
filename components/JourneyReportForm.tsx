@@ -1,5 +1,6 @@
 "use client";
 
+import { rememberReportReceipt } from "@/lib/report-history";
 import { useId, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 import { CheckCircle2, LoaderCircle, Send } from "lucide-react";
 import type { CommunityReportType } from "@/lib/community-report";
@@ -58,8 +59,9 @@ export default function JourneyReportForm({ routes, quickFeedback = false }: { r
         body: JSON.stringify(report),
         signal: AbortSignal.timeout(15000),
       });
-      const body = await response.json().catch(() => null) as { error?: string } | null;
+      const body = await response.json().catch(() => null) as { error?: string; receipt?: string } | null;
       if (!response.ok) throw new Error(body?.error || "No pudimos enviar el reporte. Intenta de nuevo.");
+      rememberReportReceipt(body?.receipt, routeName);
       setState("success");
     } catch (cause) {
       setState("error");
@@ -77,7 +79,7 @@ export default function JourneyReportForm({ routes, quickFeedback = false }: { r
   if (state === "success") return <div role="status" className="mt-2 rounded-xl border border-lima/25 bg-lima/5 p-4">
     <CheckCircle2 className="mb-2 h-5 w-5 text-lima" aria-hidden="true" />
     <p className="ov-text text-sm font-semibold">Reporte enviado. Gracias por ayudarnos.</p>
-    <p className="ov-text-muted mt-1 text-[13px] leading-5">Revisaremos la información de {routeName}. Puedes continuar tu viaje.</p>
+    <p className="ov-text-muted mt-1 text-[13px] leading-5">Revisaremos la información de {routeName}. Puedes continuar tu viaje. El estado del reporte estará disponible en “Tu día”, en la portada.</p>
   </div>;
 
   return <form onSubmit={submit} className="ov-border mt-2 space-y-3 border-t pt-4" aria-label="Reportar un problema con la ruta">
