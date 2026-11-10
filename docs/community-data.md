@@ -148,21 +148,19 @@ Al eliminar un aporte también desaparecen su contacto opcional, agente de usuar
 
 ## Prueba administrativa aislada
 
-`pnpm test:admin-integration` comprueba el flujo real de acceso, bandeja, moderación, auditoría, verificación de campo y ciclo de credenciales externas. La prueba crea un administrador, una ruta, un reporte y una integración temporales y los elimina al terminar. Debe ejecutarse únicamente contra un segundo proyecto Supabase dedicado a pruebas, con todas las migraciones aplicadas.
+`pnpm test:admin-integration` comprueba el flujo real de acceso, bandeja, moderación, auditoría, verificación de campo y ciclo de credenciales externas. La prueba crea un administrador, una ruta, un reporte y una integración temporales y los elimina al terminar.
 
-Configura estas variables sólo en tu terminal o en un entorno de CI protegido:
+GitHub Actions ejecuta la suite con una instancia temporal de Supabase en el runner y aplica las migraciones del repositorio. Para reproducir la prueba en tu equipo, ejecuta `supabase start` con Docker activo y configura estas variables en tu terminal con los valores de `supabase status -o env`:
 
 ```bash
-ALLOW_TEST_SUPABASE_WRITES=1
-TEST_SUPABASE_PROJECT_REF=referencia-del-proyecto-de-pruebas
-TEST_SUPABASE_URL=https://referencia-del-proyecto-de-pruebas.supabase.co
-TEST_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
-TEST_SUPABASE_SECRET_KEY=sb_secret_...
+export ALLOW_TEST_SUPABASE_WRITES=1
+export TEST_SUPABASE_URL=http://127.0.0.1:54321
+export TEST_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+export TEST_SUPABASE_SECRET_KEY=sb_secret_...
+pnpm test:admin-integration
 ```
 
-El ejecutor rechaza el identificador conocido de producción y también rechaza una URL que no coincida exactamente con `TEST_SUPABASE_PROJECT_REF`. No reutilices las variables ni las claves de producción. La prueba queda fuera del comando E2E normal hasta que sus secretos se configuren en GitHub Actions.
-
-El workflow usa un entorno de GitHub llamado `integration-test`. Agrega allí los cuatro secretos `TEST_SUPABASE_*`; si alguno falta, el trabajo termina correctamente sin ejecutar escrituras. Conviene proteger ese entorno y no habilitar sus secretos para pull requests de forks.
+También puedes usar un proyecto Supabase dedicado a pruebas con las migraciones aplicadas. Para ese caso, configura `TEST_SUPABASE_PROJECT_REF` con su referencia, `TEST_SUPABASE_URL` con `https://<referencia>.supabase.co` y las claves de ese proyecto. El ejecutor rechaza el proyecto de producción y las URL remotas que no coincidan con la referencia.
 
 ## Publicar una corrección
 
