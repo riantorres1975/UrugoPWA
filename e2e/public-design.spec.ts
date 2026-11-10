@@ -9,10 +9,10 @@ const pages = [
   "/pagina-inexistente-diseno",
 ];
 
-test("los directorios mantienen la paleta oscura de la portada", async ({ page }) => {
-  for (const path of ["/", "/rutas", "/horarios", "/como-llegar"]) {
+test("los directorios públicos mantienen la paleta oscura", async ({ page }) => {
+  for (const path of ["/rutas", "/horarios", "/como-llegar"]) {
     await page.goto(path);
-    const directory = page.locator(path === "/" ? "#destinos" : ".public-directory");
+    const directory = page.locator(".public-directory");
     await expect(directory).toHaveCSS("background-color", "rgb(19, 25, 18)");
     await expect(directory).toHaveCSS("color", "rgb(238, 242, 234)");
   }

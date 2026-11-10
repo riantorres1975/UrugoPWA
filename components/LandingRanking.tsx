@@ -18,8 +18,8 @@ export default function LandingRanking({ routes, basedOnUsage, activity }: { rou
     <LandingActivityReveal>
       <div className="activity-intro">
         <div>
-          <p className="ranking-eyebrow">Los viajes de nuestra comunidad</p>
-          <h2 id="activity-title">Así se mueve Uruapan</h2>
+          <p className="micro ranking-eyebrow">03 / Comunidad</p>
+          <h2 id="activity-title">Así se mueve <em>Uruapan</em></h2>
           <p>Un viaje a la vez, conocemos mejor cómo nos movemos.</p>
         </div>
         <div className="activity-track" aria-hidden="true"><span /><i /><i /><i /><b><BusFront size={23} /></b></div>

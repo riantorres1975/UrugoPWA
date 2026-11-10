@@ -1,26 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  ArrowRight,
-  ArrowUpRight,
-  Plus,
-  Users,
-  BusFront,
-  CableCar,
-  Crosshair,
-  MapPin,
-  MapPinned,
-  Route,
-  ScanSearch,
-} from "lucide-react";
-import LandingJourneyDemo from "@/components/LandingJourneyDemo";
+import Image from "next/image";
+import { ArrowRight, BusFront, CableCar, Clock3, Map, Plus } from "lucide-react";
+import LandingAtlas from "@/components/LandingAtlas";
+import LandingDestinations, { type LandingDestination } from "@/components/LandingDestinations";
+import { LandingJourneyDemo, LandingPersonalDay } from "@/components/LandingDeferred";
+import PublicMobileMenu from "@/components/PublicMobileMenu";
 import LandingHeroPlanner from "@/components/LandingHeroPlanner";
 import LandingReports from "@/components/LandingReports";
 import LandingRanking from "@/components/LandingRanking";
 import ForceDark from "@/components/ForceDark";
 import FareUpdateNotice from "@/components/FareUpdateNotice";
 import PublicFooter from "@/components/PublicFooter";
-import PublicHeader from "@/components/PublicHeader";
 import {
   APP_BRAND,
   FARES_2026,
@@ -33,41 +24,58 @@ import { getPopularRoutes } from "@/lib/route-popularity";
 import { getTripActivity } from "@/lib/trip-activity-server";
 import { SITE_URL } from "@/lib/site-url";
 
-const HOW_IT_WORKS_STEPS = [
-  { n: "01", icon: MapPinned, title: "Abre el mapa", desc: "Las 40 rutas ya están listas. No necesitas cuenta." },
-  { n: "02", icon: Crosshair, title: "Marca tu origen", desc: "Usa el GPS o elige cualquier punto de forma manual." },
-  { n: "03", icon: ScanSearch, title: "Busca tu destino", desc: "Escribe un negocio, hospital, colonia o lugar." },
-  { n: "04", icon: Route, title: "Compara y viaja", desc: "Revisa opciones, transbordos, tiempo y costo." },
-] as const;
+import "./landing.css";
 
-const DEFERRED_SECTION = "[content-visibility:auto] [contain-intrinsic-size:auto_560px]";
 const URBAN_FARE_DISPLAY = FARES_2026.urbanBus.price.replace(/\.00$/, "");
 const TELEFERICO_FARE_DISPLAY = FARES_2026.teleferico.price.replace(/\.00$/, "");
 
-const FEATURED_PLACE_LABELS = [
-  "Centro",
-  "Hospital Regional",
-  "Central de Autobuses",
-  "IMSS Hospital General de Zona 8",
-  "Mercado Poniente",
-  "Presidencia Municipal",
-  "Unidad Deportiva",
-  "Parque Lineal Cupatitzio",
+const navigation = [
+  { href: "/rutas", label: "Rutas" },
+  { href: "/horarios", label: "Horarios" },
+  { href: "#destinos", label: "Destinos" },
+  { href: "#tu-dia", label: "Tu día" },
+  { href: "#como-funciona", label: "Guía" },
+] as const;
+
+const featured = [
+  ["Centro Histórico", "paseo"],
+  ["Hospital Regional", "salud"],
+  ["Central de Autobuses", "conexiones"],
+  ["Mercado Poniente", "conexiones"],
+  ["Parque Lineal Cupatitzio", "paseo"],
+  ["Hospital Civil", "salud"],
+  ["IMSS Hospital General de Zona 8", "salud"],
+  ["Presidencia Municipal", "paseo"],
+  ["Unidad Deportiva", "paseo"],
 ] as const;
 
 const allSeoPlaces = getPlaceSeoItems();
-const featuredPlaces = FEATURED_PLACE_LABELS.map((label) => {
+const featuredPlaces: LandingDestination[] = featured.flatMap(([label, category]) => {
   const place = allSeoPlaces.find((item) => item.label === label);
-  if (!place) return null;
+  if (!place) return [];
   const routes = getRoutesNearPlace(place.center);
-  if (routes.length === 0) return null;
-  return {
+  if (!routes.length) return [];
+  return [{
     slug: place.slug,
     label: place.label,
+    category,
     routeCount: routes.length,
     nearestWalkMin: walkMinutesFor(routes[0].distanceM),
-  };
-}).filter((place): place is NonNullable<typeof place> => place !== null);
+  }];
+});
+
+function mapHref(label: string) {
+  const place = allSeoPlaces.find((item) => item.label === label);
+  const params = new URLSearchParams({ destino: label });
+  if (place) params.set("b", place.center.join(","));
+  return `/mapa?${params}`;
+}
+
+const services = [
+  { href: "/rutas", icon: BusFront, title: "Camión urbano", detail: `40 rutas · ${URBAN_FARE_DISPLAY} · Efectivo` },
+  { href: "/teleferico-uruapan-horario", icon: CableCar, title: "Teleférico Uruapan", detail: `${TELEFERICO_URUAPAN.stations.length} estaciones · ${TELEFERICO_FARE_DISPLAY} · Tarjeta` },
+  { href: "/horarios", icon: Clock3, title: "Horarios y tarifas", detail: "Consulta antes de salir" },
+] as const;
 
 export const metadata: Metadata = {
   title: { absolute: "UruGo | Rutas de camiones en Uruapan: mapa y horarios" },
@@ -143,143 +151,95 @@ export default async function LandingPage() {
   const [{ basedOnUsage, routes: popularRoutes }, activity] = await Promise.all([getPopularRoutes(4), getTripActivity()]);
 
   return (
-    <main className="landing-home min-h-dvh bg-[#0c110a] text-[#eef2ea]" data-theme="dark">
+    <div className="premium-home landing-home" data-theme="dark">
       <ForceDark />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webAppJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
-      <PublicHeader />
-      <FareUpdateNotice />
-
-      <section className="mx-auto max-w-[1240px] px-5 pb-12 pt-28 sm:px-8 lg:pb-16 lg:pt-32">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-white/15 pb-4">
-          <p className="flex items-center gap-3 text-sm font-semibold">
-            <span className="text-lg font-black text-[#b8e840]">UruGo</span>
-            <span className="h-4 border-l border-white/25" aria-hidden="true" />
-            Uruapan, Michoacán
-          </p>
-          <span className="text-xs text-[#a8b5a1]">Gratis · Sin cuenta · Sin anuncios</span>
-        </div>
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_260px] lg:items-end lg:gap-12">
-          <h1 className="max-w-[810px] text-[36px] font-extrabold leading-[1.1] sm:text-5xl lg:text-[56px]">
-            Encuentra qué camión tomar en <span className="text-[#b8e840]">Uruapan.</span>
-          </h1>
-          <p className="max-w-lg text-sm leading-6 text-[#b6c1af] lg:pb-1">
-            Busca tu destino y compara recorridos de camión y Teleférico.
-          </p>
-        </div>
-        <LandingHeroPlanner>
-          <LandingReports />
-        </LandingHeroPlanner>
-      </section>
-
-      <section id="transporte" className="scroll-mt-24 border-y border-white/15 bg-[#171e14]">
-        <div className="mx-auto grid max-w-[1240px] divide-y divide-white/15 px-5 sm:px-8 md:grid-cols-2 md:divide-x md:divide-y-0">
-          {[
-            { href: "/rutas", icon: BusFront, title: "Camión urbano", detail: "40 rutas por la ciudad", fare: URBAN_FARE_DISPLAY, payment: "Efectivo", color: "#66d8e7", link: "Explorar rutas" },
-            { href: "/teleferico-uruapan-horario", icon: CableCar, title: "Teleférico Uruapan", detail: `6 estaciones · ${TELEFERICO_URUAPAN.hours}`, fare: TELEFERICO_FARE_DISPLAY, payment: "Tarjeta", color: "#f4d25e", link: "Ver horarios y estaciones" },
-          ].map(({ href, icon: Icon, title, detail, fare, payment, color, link }) => (
-            <Link key={href} href={href} className="group grid grid-cols-[44px_minmax(0,1fr)] gap-4 py-7 transition hover:bg-white/[0.03] md:px-6 md:py-9">
-              <Icon className="h-9 w-9" style={{ color }} strokeWidth={1.5} aria-hidden="true" />
-              <div>
-                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-                  <h2 className="text-lg font-bold">{title}</h2>
-                  <p className="text-sm font-bold" style={{ color }}>{fare} · {payment}</p>
-                </div>
-                <p className="mt-1 text-sm text-[#b6c1af]">{detail}</p>
-                <span className="mt-4 inline-flex items-center gap-2 text-xs font-bold">{link}<ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" aria-hidden="true" /></span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section id="destinos" className="public-directory scroll-mt-24 border-y border-[var(--public-border)]">
-        <div className="mx-auto max-w-[1240px] px-5 py-12 sm:px-8 lg:py-16">
-          <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <p className="text-xs font-bold uppercase text-[var(--public-muted)]">Destinos cotidianos</p>
-              <h2 className="mt-2 text-3xl font-extrabold sm:text-4xl">¿A dónde vas hoy?</h2>
-            </div>
-            <Link href="/como-llegar" className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-[var(--public-accent)] underline decoration-[var(--public-border)] underline-offset-4">Todos los destinos<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
+      <a className="skip" href="#principal">Saltar al contenido</a>
+      <header className="top night">
+        <div className="wrap">
+          <Link className="brand" href="/" aria-label="UruGo, inicio">
+            <Image src="/icons/icon.svg" alt="" width={36} height={36} unoptimized />
+            <span>Uru<span>Go</span></span>
+          </Link>
+          <nav className="desktop-nav" aria-label="Navegación principal">
+            {navigation.map(({ href, label }) => <Link key={href} href={href}>{label}</Link>)}
+          </nav>
+          <div className="nav-right">
+            <Link className="action" href="/mapa"><Map className="icon" aria-hidden="true" /> Abrir mapa</Link>
+            <PublicMobileMenu items={navigation} className="home-menu" />
           </div>
-          <div className="grid border-t border-[var(--public-border)] md:grid-cols-2 md:gap-x-10">
-            {featuredPlaces.map((place) => (
-              <Link key={place.slug} href={`/como-llegar/${place.slug}`} className="group grid min-h-[88px] grid-cols-[36px_minmax(0,1fr)_20px] items-center gap-3 border-b border-[var(--public-border)] py-4 transition hover:bg-[var(--public-hover)]">
-                <MapPin className="h-5 w-5 text-[var(--public-accent)]" aria-hidden="true" />
-                <span>
-                  <span className="block text-sm font-bold">{place.label}</span>
-                  <span className="mt-1 block text-xs text-[var(--public-muted)]">{place.routeCount} {place.routeCount === 1 ? "ruta" : "rutas"} cerca · desde {place.nearestWalkMin} min a pie</span>
-                </span>
-                <ArrowUpRight className="h-4 w-4 text-[var(--public-muted)] transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
+        </div>
+      </header>
+      <FareUpdateNotice />
+      <main id="principal" tabIndex={-1}>
+        <section className="hero night" aria-labelledby="hero-title">
+          <div className="wrap hero-grid">
+            <div className="hero-copy">
+              <p className="city micro"><i aria-hidden="true" /> Uruapan, Michoacán</p>
+              <h1 id="hero-title">Muévete por <em>Uruapan.</em></h1>
+              <p className="lede">Encuentra qué camión tomar, cuándo salir y cómo combinar tu viaje con el Teleférico.</p>
+              <LandingHeroPlanner centerHref={mapHref("Centro Histórico")} hospitalHref={mapHref("Hospital Regional")} />
+              <p className="privacy">Gratis y sin cuenta. Hecho en Uruapan.</p>
+            </div>
+            <LandingAtlas />
+          </div>
+        </section>
+
+        <section id="transporte" className="service night" aria-label="Opciones de transporte">
+          <div className="wrap service-grid">
+            {services.map(({ href, icon: Icon, title, detail }) => (
+              <Link key={href} href={href}>
+                <span className="home-row"><Icon className="icon" aria-hidden="true" /><span><strong>{title}</strong><small>{detail}</small></span></span>
+                <ArrowRight className="icon" aria-hidden="true" />
               </Link>
             ))}
           </div>
-          <LandingRanking activity={activity} basedOnUsage={basedOnUsage} routes={popularRoutes.map(({ slug, name, destination }) => ({ slug, name, destination }))} />
+        </section>
+
+        <div className="wrap section everyday">
+          <LandingDestinations places={featuredPlaces} />
+          <LandingPersonalDay />
         </div>
-      </section>
 
-      <section className="mx-auto max-w-[1240px] px-5 pb-10 sm:px-8" aria-label="Conoce el modo viaje"><LandingJourneyDemo /></section>
-
-      <section id="como-funciona" className={`scroll-mt-24 border-b border-white/15 ${DEFERRED_SECTION}`}>
-        <div className="mx-auto max-w-[1240px] px-5 py-12 sm:px-8 lg:py-16">
-          <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <section id="como-funciona" className="section trip night home-anchor" aria-labelledby="trip-title">
+          <div className="wrap trip-grid">
             <div>
-              <p className="text-xs font-bold uppercase text-[#b8e840]">Tu primer viaje</p>
-              <h2 className="mt-2 text-3xl font-extrabold">Del origen a tu destino.</h2>
+              <p className="micro label">02 / Modo viaje</p>
+              <h2 id="trip-title">De aquí a allá, <em>paso a paso.</em></h2>
+              <p className="intro">Ubica dónde subir, dónde bajar y cómo hacer un transbordo si tu ruta lo necesita.</p>
+              <Link className="action home-outline" href="/guia">Ver guía de viaje <ArrowRight className="icon" aria-hidden="true" /></Link>
             </div>
-            <Link href="/guia" className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-[#b8e840]">Ver la guía<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
+            <LandingJourneyDemo />
           </div>
-          <ol className="grid gap-x-6 gap-y-5 sm:grid-cols-2 lg:grid-cols-4">
-            {HOW_IT_WORKS_STEPS.map((step) => {
-              const Icon = step.icon;
-              return (
-                <li key={step.n} className="border-t border-white/25 pt-5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-[#a8b5a1]">{step.n}</span>
-                    <Icon className="h-5 w-5 text-[#b8e840]" aria-hidden="true" />
-                  </div>
-                  <h3 className="mt-4 text-base font-bold">{step.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-[#a8b5a1]">{step.desc}</p>
-                </li>
-              );
-            })}
-          </ol>
-        </div>
-      </section>
+        </section>
 
-      <section className={DEFERRED_SECTION}>
-        <div className="mx-auto grid max-w-[1240px] gap-8 px-5 py-12 sm:px-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] lg:gap-20 lg:py-16">
-          <div>
-            <p className="text-xs font-bold uppercase text-[#a8b5a1]">Antes de salir</p>
-            <h2 className="mt-2 text-3xl font-extrabold">¿Alguna duda?</h2>
-            <p className="mt-4 max-w-sm text-sm leading-6 text-[#a8b5a1]">Tarifas, horarios y lo que necesitas saber para moverte por Uruapan.</p>
+        <section className="community" aria-label="Comunidad de UruGo">
+          <div className="wrap community-grid">
+            <LandingRanking activity={activity} basedOnUsage={basedOnUsage} routes={popularRoutes.map(({ slug, name, destination }) => ({ slug, name, destination }))} />
+            <LandingReports />
           </div>
-          <div className="border-t border-white/20">
-            {LANDING_FAQS.slice(0, 4).map((item) => (
-              <details key={item.question} className="group border-b border-white/20">
-                <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 py-4 text-sm font-bold [&::-webkit-details-marker]:hidden">
-                  {item.question}
-                  <Plus className="h-5 w-5 shrink-0 text-[#b8e840] transition group-open:rotate-45" aria-hidden="true" />
-                </summary>
-                <p className="pb-5 text-sm leading-6 text-[#b6c1af]">{item.answer}</p>
+        </section>
+
+        <section className="wrap section faq" aria-labelledby="faq-title">
+          <div>
+            <p className="micro label">04 / Antes de salir</p>
+            <h2 id="faq-title">Preguntas <em>frecuentes.</em></h2>
+            <p className="intro">Respuestas rápidas para planear tu siguiente viaje.</p>
+          </div>
+          <div className="faq-list">
+            {[LANDING_FAQS[2], LANDING_FAQS[0], LANDING_FAQS[3], LANDING_FAQS[5]].map(({ question, answer }) => (
+              <details key={question}>
+                <summary>{question}<Plus className="icon" aria-hidden="true" /></summary>
+                <p>{answer}</p>
               </details>
             ))}
           </div>
-        </div>
-      </section>
-
-      <section className="border-t border-white/15 bg-[#172012]">
-        <div className="mx-auto flex max-w-[1240px] flex-col gap-6 px-5 py-9 sm:px-8 md:flex-row md:items-center md:justify-between">
-          <div className="max-w-2xl">
-            <p className="flex items-center gap-2 text-sm font-bold text-[#b8e840]"><Users className="h-4 w-4" aria-hidden="true" />Hecho aquí, mejorado entre todos.</p>
-            <p className="mt-2 text-sm leading-6 text-[#b6c1af]">Las rutas cambian. Tus reportes nos ayudan a revisar recorridos y mantener la información al día.</p>
-          </div>
-          <Link href="/acerca-de" className="inline-flex min-h-11 shrink-0 items-center gap-2 text-sm font-bold">Conoce el proyecto<ArrowUpRight className="h-4 w-4" aria-hidden="true" /></Link>
-        </div>
-      </section>
+        </section>
+      </main>
       <PublicFooter />
-    </main>
+    </div>
   );
 }

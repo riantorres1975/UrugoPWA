@@ -38,6 +38,8 @@ export default function LandingSearch() {
   // Con el input casi vacío mostramos los destinos recientes.
   const showingRecents = query.trim().length < 2;
   const displayResults = showingRecents ? recents : results;
+  const showOptions = isOpen && displayResults.length > 0;
+  const showSuggestions = isOpen && (showingRecents || showOptions);
 
   const updateQuery = (value: string) => {
     const trimmed = value.trim();
@@ -124,6 +126,11 @@ export default function LandingSearch() {
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Escape") {
+      setIsOpen(false);
+      setActiveIndex(-1);
+      return;
+    }
     if (displayResults.length === 0) return;
     if (event.key === "ArrowDown") {
       event.preventDefault();
@@ -132,25 +139,28 @@ export default function LandingSearch() {
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
       setActiveIndex((i) => (i <= 0 ? displayResults.length - 1 : i - 1));
-    } else if (event.key === "Escape") {
-      setIsOpen(false);
     }
   };
 
   return (
-    <div ref={containerRef} className="relative w-full">
+    <div ref={containerRef} className="search-wrap" onBlur={(event) => {
+      if (!event.currentTarget.contains(event.relatedTarget)) {
+        setIsOpen(false);
+        setActiveIndex(-1);
+      }
+    }}>
       {/* action/method reales → la búsqueda funciona incluso sin JavaScript */}
       <form
         action="/mapa"
         method="get"
         onSubmit={handleSubmit}
-        className="public-directory rounded-lg border border-[var(--public-border)] bg-[var(--public-surface)] p-1.5 focus-within:ring-2 focus-within:ring-[#b8e840]"
+        className="search-form" role="search"
       >
         <label className="sr-only" htmlFor="destino">¿A dónde vas?</label>
-        <div className="flex gap-1 sm:gap-2">
+        <div className="search-row">
           <div className="relative min-w-0 flex-1">
             <Search
-              className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--public-muted)]"
+              className="search-icon"
               strokeWidth={1.8}
               aria-hidden="true"
             />
@@ -168,14 +178,14 @@ export default function LandingSearch() {
                 }
               }}
               onKeyDown={handleKeyDown}
-              placeholder="Negocio, hotel, colonia o lugar…"
+              placeholder="¿A dónde vas?"
               aria-label="Buscar destino"
               role="combobox"
-              aria-expanded={isOpen}
-              aria-controls={listboxId}
+              aria-expanded={showOptions}
+              aria-controls={showOptions ? listboxId : undefined}
               aria-autocomplete="list"
-              aria-activedescendant={activeIndex >= 0 ? `${listboxId}-opt-${activeIndex}` : undefined}
-              className="h-12 w-full rounded-md border-0 bg-transparent pl-10 pr-9 text-sm font-medium text-[var(--public-ink)] outline-none placeholder:text-[var(--public-muted)]"
+              aria-activedescendant={showOptions && displayResults[activeIndex] ? `${listboxId}-opt-${activeIndex}` : undefined}
+              className="search-input"
             />
             {isSearching && (
               <span
@@ -186,137 +196,138 @@ export default function LandingSearch() {
             )}
           </div>
           <button
-            className="inline-flex h-12 w-12 shrink-0 items-center justify-center gap-2 rounded-md bg-[#b8e840] text-sm font-bold text-[#14200c] transition hover:bg-[#c8f25b] sm:w-auto sm:px-5"
+            className="action"
             type="submit"
             aria-label="Buscar ruta"
             title="Buscar ruta"
           >
-            <span className="hidden sm:inline">Buscar ruta</span>
+            <span>Buscar ruta</span>
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
       </form>
 
-      {isOpen && (showingRecents || displayResults.length > 0) && (
-        <ul
-          id={listboxId}
-          role="listbox"
-          className="absolute left-0 top-full z-50 mt-2 max-h-72 w-full overflow-y-auto overscroll-contain rounded-lg border p-1.5 shadow-[0_20px_60px_rgba(0,0,0,0.5)]"
-          style={{ background: "var(--surface)", borderColor: "var(--ov-border)" }}
-        >
-          {savingSlot && (
-            <li
-              role="presentation"
-              className="mb-1 flex items-center gap-2 rounded-xl border px-3 py-2"
-              style={{ borderColor: "rgba(184,232,64,0.3)", background: "rgba(184,232,64,0.08)" }}
-            >
-              <span className="flex-1 text-[12px] font-medium" style={{ color: "var(--ink)" }}>
-                Busca un lugar y selecciónalo para guardarlo como{" "}
-                <span className="font-bold" style={{ color: "var(--lima)" }}>{SAVED_SLOT_LABELS[savingSlot]}</span>
-              </span>
-              <button
-                type="button"
-                onClick={() => setSavingSlot(null)}
-                className="shrink-0 text-[11px] font-semibold underline-offset-2 hover:underline"
-                style={{ color: "var(--muted)" }}
-              >
-                Cancelar
-              </button>
-            </li>
-          )}
-          {showingRecents && !savingSlot &&
-            (["casa", "trabajo"] as const).map((slot) => {
-              const saved = savedPlaces[slot];
-              return (
-                <li key={slot} role="presentation">
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => (saved ? goTo(saved) : setSavingSlot(slot))}
-                      className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition hover:opacity-90"
-                    >
-                      {slot === "casa" ? (
-                        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" style={{ color: "var(--lima)" }} aria-hidden="true">
-                          <path d="M3 11.5 12 4l9 7.5M5.5 9.8V20h13V9.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                          <path d="M10 20v-5h4v5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      ) : (
-                        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" style={{ color: "var(--lima)" }} aria-hidden="true">
-                          <rect x="3" y="7" width="18" height="13" rx="2" stroke="currentColor" strokeWidth="1.8" />
-                          <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                        </svg>
-                      )}
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[13px] font-semibold" style={{ color: "var(--ink)" }}>
-                          {SAVED_SLOT_LABELS[slot]}
-                        </span>
-                        <span className="block truncate text-[11px]" style={{ color: "var(--muted)" }}>
-                          {saved ? saved.label : "Toca para configurar"}
-                        </span>
-                      </span>
-                    </button>
-                    {saved && (
-                      <button
-                        type="button"
-                        onClick={() => setSavingSlot(slot)}
-                        aria-label={`Cambiar ${SAVED_SLOT_LABELS[slot]}`}
-                        className="grid h-8 w-8 shrink-0 place-items-center rounded-full transition hover:opacity-80"
-                        style={{ background: "rgba(106,171,72,0.12)", color: "var(--muted)" }}
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
-                          <path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17v3ZM14 6.5l3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </button>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          {showingRecents && displayResults.length > 0 && (
-            <li
-              role="presentation"
-              className="px-3 pb-1 pt-1.5 text-[10px] font-bold uppercase tracking-widest"
-              style={{ color: "var(--muted)" }}
-            >
-              Recientes
-            </li>
-          )}
-          {displayResults.map((result, index) => (
-            <li key={`${result.label}-${result.center.join(",")}`} role="presentation">
-              <button
-                id={`${listboxId}-opt-${index}`}
-                type="button"
-                role="option"
-                aria-selected={index === activeIndex}
-                onClick={() => goTo(result)}
-                onMouseEnter={() => setActiveIndex(index)}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition"
-                style={index === activeIndex ? { background: "var(--verde-l)" } : undefined}
-              >
-                {showingRecents ? (
-                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" style={{ color: "var(--muted)" }} aria-hidden="true">
-                    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
-                    <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                  </svg>
-                ) : result.kind === "business" ? (
-                  <Building2 className="h-4 w-4 shrink-0" style={{ color: "var(--lima)" }} strokeWidth={1.8} aria-hidden="true" />
-                ) : (
-                  <MapPin className="h-4 w-4 shrink-0" style={{ color: "var(--lima)" }} strokeWidth={1.8} aria-hidden="true" />
-                )}
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[13px] font-semibold" style={{ color: "var(--ink)" }}>{result.label}</span>
-                  <span className="block truncate text-[11px]" style={{ color: "var(--muted)" }}>
-                    {showingRecents
-                      ? "Búsqueda reciente"
-                      : result.source === "local"
-                        ? "Lugar conocido"
-                        : result.description ?? (result.kind === "business" ? "Comercio o servicio" : "Uruapan, Mich.")}
+      {showSuggestions && (
+        <div className="search-suggestions" role="region" aria-label="Sugerencias de destino">
+          {(showingRecents || savingSlot) && (
+            <ul aria-label="Atajos de búsqueda">
+              {savingSlot && (
+                <li
+                  className="mb-1 flex items-center gap-2 rounded-xl border px-3 py-2"
+                  style={{ borderColor: "rgba(184,232,64,0.3)", background: "rgba(184,232,64,0.08)" }}
+                >
+                  <span className="flex-1 text-[12px] font-medium" style={{ color: "var(--ink)" }}>
+                    Busca un lugar y selecciónalo para guardarlo como{" "}
+                    <span className="font-bold" style={{ color: "#41673d" }}>{SAVED_SLOT_LABELS[savingSlot]}</span>
                   </span>
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
+                  <button
+                    type="button"
+                    onClick={() => setSavingSlot(null)}
+                    className="shrink-0 text-[11px] font-semibold underline-offset-2 hover:underline"
+                    style={{ color: "var(--muted)" }}
+                  >
+                    Cancelar
+                  </button>
+                </li>
+              )}
+              {showingRecents && !savingSlot &&
+                (["casa", "trabajo"] as const).map((slot) => {
+                  const saved = savedPlaces[slot];
+                  return (
+                    <li key={slot}>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => (saved ? goTo(saved) : setSavingSlot(slot))}
+                          className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition hover:opacity-90"
+                        >
+                          {slot === "casa" ? (
+                            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" style={{ color: "#41673d" }} aria-hidden="true">
+                              <path d="M3 11.5 12 4l9 7.5M5.5 9.8V20h13V9.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                              <path d="M10 20v-5h4v5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          ) : (
+                            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" style={{ color: "#41673d" }} aria-hidden="true">
+                              <rect x="3" y="7" width="18" height="13" rx="2" stroke="currentColor" strokeWidth="1.8" />
+                              <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                            </svg>
+                          )}
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-[13px] font-semibold" style={{ color: "var(--ink)" }}>
+                              {SAVED_SLOT_LABELS[slot]}
+                            </span>
+                            <span className="block truncate text-[11px]" style={{ color: "var(--muted)" }}>
+                              {saved ? saved.label : "Toca para configurar"}
+                            </span>
+                          </span>
+                        </button>
+                        {saved && (
+                          <button
+                            type="button"
+                            onClick={() => setSavingSlot(slot)}
+                            aria-label={`Cambiar ${SAVED_SLOT_LABELS[slot]}`}
+                            className="grid h-8 w-8 shrink-0 place-items-center rounded-full transition hover:opacity-80"
+                            style={{ background: "rgba(106,171,72,0.12)", color: "var(--muted)" }}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
+                              <path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17v3ZM14 6.5l3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              {showingRecents && displayResults.length > 0 && (
+                <li
+                  className="px-3 pb-1 pt-1.5 text-[10px] font-bold uppercase tracking-widest"
+                  style={{ color: "var(--muted)" }}
+                >
+                  Recientes
+                </li>
+              )}
+            </ul>
+          )}
+          {showOptions && (
+            <ul id={listboxId} role="listbox" aria-label="Lugares encontrados">
+              {displayResults.map((result, index) => (
+                <li key={`${result.label}-${result.center.join(",")}`} role="presentation">
+                  <button
+                    id={`${listboxId}-opt-${index}`}
+                    type="button"
+                    role="option"
+                    aria-selected={index === activeIndex}
+                    onClick={() => goTo(result)}
+                    onMouseEnter={() => setActiveIndex(index)}
+                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition"
+                    style={index === activeIndex ? { background: "#e3edd2" } : undefined}
+                  >
+                    {showingRecents ? (
+                      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" style={{ color: "var(--muted)" }} aria-hidden="true">
+                        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+                        <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                      </svg>
+                    ) : result.kind === "business" ? (
+                      <Building2 className="h-4 w-4 shrink-0" style={{ color: "#41673d" }} strokeWidth={1.8} aria-hidden="true" />
+                    ) : (
+                      <MapPin className="h-4 w-4 shrink-0" style={{ color: "#41673d" }} strokeWidth={1.8} aria-hidden="true" />
+                    )}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[13px] font-semibold" style={{ color: "var(--ink)" }}>{result.label}</span>
+                      <span className="block truncate text-[11px]" style={{ color: "var(--muted)" }}>
+                        {showingRecents
+                          ? "Búsqueda reciente"
+                          : result.source === "local"
+                            ? "Lugar conocido"
+                            : result.description ?? (result.kind === "business" ? "Comercio o servicio" : "Uruapan, Mich.")}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
     </div>
   );

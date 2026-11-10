@@ -18,7 +18,8 @@ test("Tu día reúne favoritas, destinos, regreso y reportes sin exponer su cont
   const params = new URL((await back.getAttribute("href"))!, "https://urugo.app").searchParams;
   expect(params.get("a")).toBe("-102.06,19.43"); expect(params.get("b")).toBe("-102.08,19.42"); expect(params.has("r")).toBe(false);
   await expect(day).toContainText("Avisos de tus favoritas");
-  await day.locator("summary").click(); await day.getByRole("button", { name: "Actualizar estados" }).click();
+  await day.getByText("Mis reportes (1)", { exact: true }).click();
+  await day.getByRole("button", { name: "Actualizar estados" }).click();
   await expect(day).toContainText("Aprobado");
   await expect(day).toContainText("no confirma que el mapa ya se actualizó");
   const accessibility = await new AxeBuilder({ page }).include("#tu-dia").withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
@@ -26,7 +27,8 @@ test("Tu día reúne favoritas, destinos, regreso y reportes sin exponer su cont
   await page.screenshot({ path: testInfo.outputPath("tu-dia-360.png"), animations: "disabled" });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await day.getByRole("button", { name: /Quitar del historial/ }).click();
-  await expect(day.locator("summary")).toHaveCount(0);
+  await expect(day.getByText("Mis reportes", { exact: true })).toBeVisible();
+  await expect(day.getByRole("button", { name: /Quitar del historial/ })).toHaveCount(0);
 });
 
 test("no muestra avisos vencidos y permite retomar un viaje pendiente", async ({ page }) => {

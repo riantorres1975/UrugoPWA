@@ -15,16 +15,26 @@ const links = [
   { href: "/apoyar", label: "Apoyar UruGo" },
 ] as const;
 
-export default function PublicMobileMenu() {
+export default function PublicMobileMenu({
+  items = links,
+  className = "relative lg:hidden",
+}: {
+  items?: readonly { href: string; label: string }[];
+  className?: string;
+}) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) return;
 
     const closeMenu = (event: KeyboardEvent | PointerEvent) => {
       if (event instanceof KeyboardEvent) {
-        if (event.key === "Escape") setOpen(false);
+        if (event.key === "Escape") {
+          setOpen(false);
+          buttonRef.current?.focus();
+        }
         return;
       }
 
@@ -40,8 +50,9 @@ export default function PublicMobileMenu() {
   }, [open]);
 
   return (
-    <div ref={menuRef} className="relative lg:hidden">
+    <div ref={menuRef} className={className}>
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => setOpen((value) => !value)}
         className="grid h-10 w-10 place-items-center rounded-md border border-white/10 text-[#e8f2d8]"
@@ -59,7 +70,7 @@ export default function PublicMobileMenu() {
           aria-label="Navegación móvil"
           className="absolute right-0 top-12 w-52 overflow-hidden rounded-lg border border-white/10 bg-[#111a0d] p-1.5 shadow-2xl"
         >
-          {links.map((link) => (
+          {items.map((link) => (
             <Link
               key={link.href}
               href={link.href}

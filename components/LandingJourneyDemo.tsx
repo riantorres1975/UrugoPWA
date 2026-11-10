@@ -96,6 +96,7 @@ export default function LandingJourneyDemo() {
   const simulatorRef = useRef<HTMLDivElement | null>(null);
   const [activeTripIndex, setActiveTripIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
+  const [showMap, setShowMap] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [reduceMotion, setReduceMotion] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
@@ -143,108 +144,84 @@ export default function LandingJourneyDemo() {
   const trip = PREVIEW_TRIPS[activeTripIndex];
   const mapHref = `/mapa?destino=${encodeURIComponent(trip.destination)}`;
   const journeyImage = `/landing/journeys/${trip.id}-${activeStep}.webp`;
-  const journeyModeLabel = trip.steps[activeStep].label;
+  const step = trip.steps[activeStep];
 
   const handleTripSelection = (index: number) => {
     setActiveTripIndex(index);
     setActiveStep(0);
+    setIsPlaying(false);
   };
 
   return (
-    <div className="mt-6 sm:mt-7">
-      <div className="mt-3 grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 sm:mt-4 lg:grid-cols-[auto_1fr_auto]" aria-label="Destinos populares">
-        <span className="text-xs font-bold text-[#a8b5a1]">Populares</span>
-        <div className="order-3 col-span-2 flex flex-wrap gap-x-4 gap-y-1 lg:order-none lg:col-span-1">
+    <div ref={simulatorRef} className="trip-demo journey-preview" data-testid="landing-trip-simulator" data-playing={isPlaying && isVisible && tabVisible && !reduceMotion}>
+      <header>
+        <div>
+          <p className="micro">Recorrido de ejemplo</p>
+          <h3>Central de Autobuses → {trip.destination}</h3>
+        </div>
+        {!reduceMotion && (
+          <button
+            type="button"
+            className="action home-outline play-button"
+            aria-label={isPlaying ? "Pausar ejemplos de viaje" : "Reproducir ejemplos de viaje"}
+            onClick={() => setIsPlaying((playing) => !playing)}
+          >
+            {isPlaying ? <Pause size={16} aria-hidden="true" /> : <Play size={16} aria-hidden="true" />}
+          </button>
+        )}
+      </header>
+      <div className="trip-destinations">
+        <span className="micro">Populares</span>
+        <div className="quick" role="group" aria-label="Destinos de ejemplo">
           {PREVIEW_TRIPS.map((item, index) => (
-            <button key={item.id} type="button" onClick={() => handleTripSelection(index)}
-              className="min-h-10 border-b-2 text-xs font-semibold transition hover:text-[#e8f2d8]"
-              style={index === activeTripIndex
-                ? { borderColor: "#b8e840", color: "#d4ef8e" }
-                : { borderColor: "transparent", color: "#b6c1af" }}
-              aria-pressed={index === activeTripIndex}>
+            <button
+              key={item.id}
+              type="button"
+              className="pill"
+              onClick={() => handleTripSelection(index)}
+              aria-pressed={index === activeTripIndex}
+            >
               {item.destination}
             </button>
           ))}
         </div>
-        <a href="#como-funciona" className="inline-flex min-h-10 items-center gap-1 text-xs font-semibold text-[#b6c1af] hover:text-white">Cómo funciona<ArrowRight className="h-3 w-3" aria-hidden="true" /></a>
       </div>
-
-
-      <div ref={simulatorRef} className="journey-preview mt-9 sm:mt-12" data-testid="landing-trip-simulator" data-playing={isPlaying && isVisible && tabVisible && !reduceMotion}>
-        <div className="mb-5 flex items-end justify-between gap-4">
-          <div>
-            <p className="text-xs font-bold uppercase text-[#a8b5a1]">Modo viaje</p>
-            <h2 className="mt-2 text-2xl font-extrabold sm:text-3xl">Tu recorrido, paso a paso.</h2>
-          </div>
-          {!reduceMotion ? (
-            <button type="button" onClick={() => setIsPlaying((playing) => !playing)}
-              className="grid h-11 w-11 shrink-0 place-items-center rounded-md border border-white/25 text-[#dceaca] transition hover:border-[#b8e840]"
-              aria-label={isPlaying ? "Pausar ejemplos de viaje" : "Reproducir ejemplos de viaje"}
-              title={isPlaying ? "Pausar" : "Reproducir"}>
-              {isPlaying ? <Pause className="h-4 w-4" aria-hidden="true" /> : <Play className="h-4 w-4" aria-hidden="true" />}
-            </button>
-          ) : null}
-        </div>
-
-        <div id={`trip-panel-${trip.id}`} className="grid border-y border-white/20 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]" role="region" aria-label={`Ejemplo de viaje a ${trip.destination}`}>
-          <div className="landing-map-stage">
-            <div className="journey-stage-caption" aria-hidden="true">
-              <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full" style={{ background: trip.color }} />{journeyModeLabel}</span>
-              <span>{String(activeTripIndex + 1).padStart(2, "0")} / 03</span>
-            </div>
-            <div className="journey-screen">
-            <Image key={`${trip.id}-${journeyImage}`} src={journeyImage}
-              alt={`${trip.steps[activeStep].label}: vista del recorrido desde la Central de Autobuses a ${trip.destination}`}
-              className="landing-journey-image object-contain" fill sizes="280px" />
-            </div>
-            <div className="journey-stage-status" key={`${trip.id}-${activeStep}`}>
-              <span className="journey-status-icon"><StepIcon kind={trip.steps[activeStep].kind} /></span>
-              <span><strong>{trip.steps[activeStep].label}</strong><span>{trip.steps[activeStep].detail}</span></span>
-            </div>
-          </div>
-
-          <div className="journey-trip-detail flex flex-col py-6 lg:px-8 lg:py-7" key={trip.id}>
-            <div className="flex items-center gap-2 text-xs font-bold" style={{color:trip.color}}>
-              <BusFront className="h-4 w-4" aria-hidden="true" /> {trip.routeLabel}
-            </div>
-            <div className="mt-5 border-l-2 border-[#b8e840] pl-4">
-              <p className="text-xs text-[#a8b5a1]">Desde</p>
-              <p className="mt-1 text-sm font-semibold">Central de Autobuses</p>
-              <p className="mt-4 text-xs text-[#a8b5a1]">Hasta</p>
-              <h3 className="mt-1 min-h-[58px] text-2xl font-bold leading-tight">{trip.destination}</h3>
-            </div>
-            <dl className="mt-5 grid grid-cols-2 border-y border-white/20 py-4">
-              <div>
-                <dt className="text-xs text-[#a8b5a1]">Tiempo estimado</dt>
-                <dd className="mt-1 text-lg font-bold">{trip.duration}</dd>
-              </div>
-              <div className="border-l border-white/20 pl-5">
-                <dt className="text-xs text-[#a8b5a1]">Tarifa estimada</dt>
-                <dd className="mt-1 text-lg font-bold">{trip.fare}</dd>
-              </div>
-            </dl>
-            <Link href={mapHref} className="mt-5 inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#b8e840] px-4 text-sm font-bold text-[#14200c] transition hover:bg-[#c8f25b]">
-              Ver recorrido completo<ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
-            <p className="mt-3 text-xs leading-5 text-[#a8b5a1]">Viaje de ejemplo. En el mapa, el cálculo comienza desde tu origen.</p>
-          </div>
-        </div>
-
-        <div className="journey-stops">
-          <ol aria-label={`Pasos para llegar a ${trip.destination}`}>
-            {trip.steps.map((step, index) => (
-              <li key={`${trip.id}-${index}`} data-active={index === activeStep} data-complete={index < activeStep}>
-                {index === activeStep && <span className="journey-step-progress" aria-hidden="true" />}
-                <button type="button" aria-current={index === activeStep ? "step" : undefined}
-                  onClick={() => { setActiveStep(index); setIsPlaying(false); }}>
-                  <span className="journey-stop-node"><StepIcon kind={step.kind} /></span>
-                  <span className="min-w-0"><strong>{step.label}</strong><small>{step.detail}</small></span>
-                </button>
-              </li>
-            ))}
-          </ol>
-        </div>
+      <p className="trip-facts">{trip.routeLabel} · {trip.duration} · {trip.fare}</p>
+      <div className="journey-stops">
+        <ol className="steps" aria-label={`Pasos para llegar a ${trip.destination}`}>
+          {trip.steps.map((item, index) => (
+            <li key={`${trip.id}-${index}`}>
+              <button
+                type="button"
+                aria-current={index === activeStep ? "step" : undefined}
+                onClick={() => { setActiveStep(index); setIsPlaying(false); }}
+              >
+                <span className="step-n"><StepIcon kind={item.kind} /></span>
+                <span className="min-w-0"><strong>{item.label}</strong><small>{item.detail}</small></span>
+              </button>
+            </li>
+          ))}
+        </ol>
       </div>
+      <p className="step-caption journey-stage-status"><strong>{step.label}</strong> · {step.detail}</p>
+      <details className="trip-image" onToggle={(event) => {
+        const open = event.currentTarget.open;
+        setShowMap(open);
+        if (open) setIsPlaying(false);
+      }}>
+        <summary>Ver mapa de este paso</summary>
+        {showMap && (
+          <Image
+            src={journeyImage}
+            alt={`${step.label}: vista del recorrido desde la Central de Autobuses a ${trip.destination}`}
+            className="landing-journey-image"
+            width={390}
+            height={844}
+            sizes="(max-width: 760px) 85vw, 225px"
+          />
+        )}
+      </details>
+      <Link href={mapHref} className="text-link">Ver recorrido completo <ArrowRight size={16} aria-hidden="true" /></Link>
     </div>
   );
 }

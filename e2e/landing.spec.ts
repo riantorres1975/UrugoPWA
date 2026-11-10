@@ -14,11 +14,11 @@ test("el buscador de la portada abre sugerencias sin desplazar el contenido", as
   await page.goto("/");
   await waitForLandingIntro(page);
 
-  const popularLabel = page.getByText("Populares", { exact: true }).first();
+  const popularLabel = page.getByRole("link", { name: "Rutas cerca de mí", exact: true });
   const popularBefore = await popularLabel.boundingBox();
   await page.getByRole("combobox", { name: "Buscar destino" }).focus();
 
-  const suggestions = page.getByRole("listbox");
+  const suggestions = page.getByRole("region", { name: "Sugerencias de destino" });
 
   await expect(suggestions).toBeVisible();
   await expect(suggestions).toContainText("Casa");
@@ -34,7 +34,7 @@ test("el buscador de la portada abre sugerencias sin desplazar el contenido", as
   await page.setViewportSize({ width: 360, height: 800 });
   await page.reload();
   await waitForLandingIntro(page);
-  const mobilePopular = page.getByText("Populares", { exact: true }).first();
+  const mobilePopular = page.getByRole("link", { name: "Rutas cerca de mí", exact: true });
   const mobileBefore = await mobilePopular.boundingBox();
   await page.getByRole("combobox", { name: "Buscar destino" }).focus();
   const mobileAfter = await mobilePopular.boundingBox();
@@ -135,6 +135,7 @@ test("las imágenes del recorrido coinciden con el destino y la etapa", async ({
 
   const simulator = page.getByTestId("landing-trip-simulator");
   const journeyImage = simulator.locator(".landing-journey-image");
+  await simulator.getByText("Ver mapa de este paso").click();
   await expect(simulator.locator(".landing-map-stage > svg")).toHaveCount(0);
   await expect(journeyImage).toHaveAttribute("src", /mercado-poniente-0/);
   await simulator.locator(".journey-stops").getByRole("button", { name: /Teleférico/ }).click();
@@ -156,6 +157,24 @@ test("las tarifas del transporte se muestran junto al medio de pago", async ({ p
 
   await expect(page.locator("#transporte").getByRole("link", { name: /Camión urbano/ })).toContainText("$12 · Efectivo");
   await expect(page.locator("#transporte").getByRole("link", { name: /Teleférico Uruapan/ })).toContainText("$12 · Tarjeta");
+});
+
+test("el esquema alterna el transporte y el filtro conserva el acceso al destino", async ({ page }) => {
+  await page.goto("/");
+  const atlas = page.getByRole("figure", { name: "Vista de la red de transporte de Uruapan" });
+  const bus = atlas.getByRole("button", { name: "Camión", exact: true });
+  await bus.click();
+  await expect(bus).toHaveAttribute("aria-pressed", "true");
+  await expect(atlas.locator("img")).toHaveAttribute("src", /#camion$/);
+  await expect(atlas.getByRole("link", { name: "Ver la Ruta 11 en el mapa" })).toHaveAttribute("href", "/mapa?r=Ruta%2011");
+  await atlas.getByRole("button", { name: "Teleférico", exact: true }).click();
+  await expect(atlas.getByRole("link", { name: "Ver información del Teleférico" })).toHaveAttribute("href", "/teleferico-uruapan-horario");
+
+  const destinations = page.locator("#destinos");
+  await destinations.getByRole("button", { name: "Salud", exact: true }).click();
+  await expect(destinations.getByRole("link", { name: /Centro Histórico/ })).toHaveCount(0);
+  await destinations.getByRole("link", { name: /Hospital Regional/ }).click();
+  await expect(page).toHaveURL(/\/como-llegar\/hospital-regional$/);
 });
 
 test("el menú móvil se cierra con Escape y al tocar fuera", async ({ page }) => {

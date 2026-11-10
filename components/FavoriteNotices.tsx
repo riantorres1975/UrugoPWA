@@ -29,9 +29,9 @@ export default function FavoriteNotices({ names }: { names: string[] }) {
     return () => { controller.abort(); clearInterval(timer); };
   }, [key]);
   if (!notices.length) return null;
-  return <div className="mt-4 border-t border-white/15 pt-3"><h3 className="text-sm font-bold text-amber-200">Avisos de tus favoritas</h3>
-    {notices.map((notice) => <p key={notice.name} className="mt-2 text-xs leading-5 text-[#c0cbb9]">
-      <Link className="font-bold text-amber-200 underline" href={`/ruta/${getRouteKey(notice.name)}`}>{notice.name}</Link>: hay señales comunitarias revisadas de posibles cambios. Confirma el recorrido antes de salir.
+  return <div className="mt-4 border-t border-[#bdc9b4] pt-3"><h3 className="text-sm font-bold text-[#70470f]">Avisos de tus favoritas</h3>
+    {notices.map((notice) => <p key={notice.name} className="mt-2 text-xs leading-5 text-[#526052]">
+      <Link className="font-bold text-[#70470f] underline" href={`/ruta/${getRouteKey(notice.name)}`}>{notice.name}</Link>: hay señales comunitarias revisadas de posibles cambios. Confirma el recorrido antes de salir.
       <span className="block">Reporte del {new Date(notice.date).toLocaleDateString("es-MX")} · Visible hasta {new Date(notice.expires).toLocaleDateString("es-MX")}</span>
     </p>)}
   </div>;
