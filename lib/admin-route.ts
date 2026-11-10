@@ -73,6 +73,16 @@ export function parseRoutePath(value: string): Coordinates[] | null {
   }
 }
 
+export function insertRoutePoint(
+  path: Coordinates[],
+  anchor: number,
+  side: "before" | "after",
+  point: Coordinates,
+): { path: Coordinates[]; index: number } {
+  const index = side === "before" ? anchor : anchor + 1;
+  return { path: [...path.slice(0, index), point, ...path.slice(index)], index };
+}
+
 export function getReportRouteEditorHref(report: {
   id: string;
   route_id: number | null;

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { getReportRouteEditorHref, parseRoutePath, parseRoutePublicationForm } from "@/lib/admin-route";
+import { getReportRouteEditorHref, insertRoutePoint, parseRoutePath, parseRoutePublicationForm } from "@/lib/admin-route";
+import type { Coordinates } from "@/lib/types";
 
 describe("admin route publication validation", () => {
   it("acepta matrices y GeoJSON LineString dentro de la región", () => {
@@ -65,5 +66,30 @@ describe("acceso al editor desde un reporte", () => {
     expect(getReportRouteEditorHref(report)).toBe("/admin/routes/26?reporte=reporte");
     expect(getReportRouteEditorHref({ ...report, route_id: null })).toBe("/admin/routes?reporte=reporte&buscar=Ruta+26");
     expect(getReportRouteEditorHref({ ...report, route_id: null, route_name: null })).toBe("/admin/routes?reporte=reporte&buscar=ruta-26");
+  });
+});
+
+describe("orden de puntos en el editor", () => {
+  const path: Coordinates[] = [
+    [-102.075, 19.41],
+    [-102.07, 19.41],
+    [-102.07, 19.412],
+    [-102.075, 19.412],
+  ];
+
+  it("inserta en el tramo seleccionado incluso al tocar más cerca de otro tramo", () => {
+    const point: Coordinates = [-102.073, 19.4119];
+    const first = insertRoutePoint(path, 0, "after", point);
+    expect(first).toEqual({ index: 1, path: [path[0], point, ...path.slice(1)] });
+    const nextPoint: Coordinates = [-102.072, 19.4118];
+    const next = insertRoutePoint(first.path, first.index, "after", nextPoint);
+    expect(next.path).toEqual([path[0], point, nextPoint, ...path.slice(1)]);
+  });
+
+  it("puede extender ambos extremos sin alterar los puntos existentes", () => {
+    const first: Coordinates = [-102.076, 19.4099];
+    const last: Coordinates = [-102.076, 19.4121];
+    expect(insertRoutePoint(path, 0, "before", first)).toEqual({ index: 0, path: [first, ...path] });
+    expect(insertRoutePoint(path, path.length - 1, "after", last)).toEqual({ index: path.length, path: [...path, last] });
   });
 });

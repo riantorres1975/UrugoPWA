@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPinned, PencilLine, Plus, RotateCcw, Save, Trash2, Undo2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPinned, PencilLine, Plus, RotateCcw, Save, Trash2, Undo2 } from "lucide-react";
 import { useActionState, useMemo, useState } from "react";
 import { publishRouteRevision } from "@/app/admin/actions";
 import AdminRouteMap from "@/components/admin/AdminRouteMap";
@@ -8,11 +8,11 @@ import RoutePreviewSVG from "@/components/RoutePreviewSVG";
 import {
   INITIAL_ROUTE_ACTION_STATE,
   MAX_ROUTE_POINTS,
+  insertRoutePoint,
   parseRouteCoordinate,
   parseRoutePath,
   type RouteOperationalStatus,
 } from "@/lib/admin-route";
-import { getClosestPointOnPath } from "@/lib/routeMatcher";
 import type { Coordinates } from "@/lib/types";
 
 type RouteSnapshot = {
@@ -32,7 +32,7 @@ type Props = {
   linkedReport: { id: string; proposedPath: unknown } | null;
 };
 
-type MapMode = "select" | "move" | "insert";
+type MapMode = "select" | "move" | "insert-before" | "insert-after";
 
 const fieldClass = "admin-field mt-1 w-full";
 const buttonClass = "admin-button inline-flex min-h-11 items-center justify-center gap-2 px-3 text-xs font-bold";
@@ -56,7 +56,11 @@ export default function RoutePathEditor({ route, linkedReport }: Props) {
   const published = useMemo(() => parseRoutePath(original), [original]);
   const draft = useMemo(() => parseRoutePath(path), [path]);
   const proposedPath = useMemo(() => parseRoutePath(JSON.stringify(linkedReport?.proposedPath ?? null)), [linkedReport?.proposedPath]);
-  const validSelection = selected !== null && !!draft?.[selected];
+  const canAdd = !!draft && draft.length < MAX_ROUTE_POINTS;
+  const inserting = mode === "insert-before" || mode === "insert-after";
+  const insertionSegment = inserting && selected !== null
+    ? selected - (mode === "insert-before" ? 1 : 0)
+    : null;
   const pathChanged = !!draft && JSON.stringify(draft) !== JSON.stringify(published);
 
   function clearSelection() {
@@ -65,12 +69,13 @@ export default function RoutePathEditor({ route, linkedReport }: Props) {
     setPointError("");
   }
 
-  function setDraft(next: Coordinates[], nextSelection: number | null = null) {
+  function setDraft(next: Coordinates[], nextSelection: number | null = null, nextMode: MapMode = "select") {
     const serialized = JSON.stringify(next);
     if (serialized !== path) setUndo((history) => [...history.slice(-7), path]);
     setPath(serialized);
-    clearSelection();
+    setMode(nextMode);
     setSelected(nextSelection);
+    setPointError("");
     setConfirming(false);
   }
 
@@ -78,26 +83,40 @@ export default function RoutePathEditor({ route, linkedReport }: Props) {
     if (pending || !draft) return;
     if (mode === "select") {
       setSelected(index);
+      setPointError("");
       return;
     }
+    if (selected === null || !draft[selected]) return;
     if (!parseRouteCoordinate(point)) {
       setPointError("El punto debe quedar dentro de la zona de Uruapan.");
       return;
     }
-    if (mode === "move" && validSelection && selected !== null) {
+    if (mode === "move") {
       const next = [...draft];
       next[selected] = point;
       setDraft(next, selected);
-    } else if (mode === "insert" && draft.length < MAX_ROUTE_POINTS) {
-      const index = getClosestPointOnPath(point, draft).segmentIndex + 1;
-      setDraft([...draft.slice(0, index), point, ...draft.slice(index)], index);
+    } else if (canAdd) {
+      const inserted = insertRoutePoint(draft, selected, mode === "insert-before" ? "before" : "after", point);
+      setDraft(inserted.path, inserted.index, inserted.path.length < MAX_ROUTE_POINTS ? "insert-after" : "select");
     }
   }
 
-  const mapHint = mode === "move" ? "Toca la nueva posición del punto."
-    : mode === "insert" ? "Toca cerca del tramo donde quieres insertar un punto."
-      : selected !== null && draft ? `Punto ${selected + 1} de ${draft.length} seleccionado.`
-        : "Toca un punto del recorrido para seleccionarlo.";
+  function toggleMode(next: MapMode) {
+    setMode(mode === next ? "select" : next);
+    setPointError("");
+  }
+
+  function selectPoint(index: number) {
+    setMode("select");
+    setSelected(index);
+    setPointError("");
+  }
+
+  const mapHint = selected === null ? "Toca un punto del borrador o usa la flecha para empezar por el primero."
+    : mode === "move" ? `Toca la nueva ubicación del punto ${selected + 1}. Mantendrá su lugar en el recorrido.`
+      : mode === "insert-before" ? `Toca dónde agregar un punto antes del ${selected + 1}.`
+        : mode === "insert-after" ? `Toca dónde agregar un punto después del ${selected + 1}. Puedes seguir agregando en orden.`
+          : "Elige qué hacer con el punto seleccionado.";
 
   return (
     <form action={action} className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_370px]"
@@ -125,21 +144,42 @@ export default function RoutePathEditor({ route, linkedReport }: Props) {
 
         {mapOpen ? (
           <>
-            <AdminRouteMap published={published ?? []} draft={draft ?? []} selected={selected} placing={mode !== "select"} onPick={pickPoint} />
+            <AdminRouteMap published={published ?? []} draft={draft ?? []} selected={selected} insertionSegment={insertionSegment} placing={mode !== "select"} onPick={pickPoint} />
             <div className="space-y-3 border-t border-[var(--admin-line)] p-4">
               <div className="flex flex-wrap gap-3 text-xs font-semibold">
                 <span className="text-blue-300">Azul · publicado</span>
                 <span className="text-amber-200">Dorado · borrador</span>
+                {insertionSegment !== null && draft?.[insertionSegment] && draft[insertionSegment + 1] && <span className="text-violet-300">Morado · tramo de inserción</span>}
               </div>
+              {draft && (
+                <div role="group" aria-label="Orden de los puntos" className="flex flex-wrap items-center gap-2">
+                  <button type="button" disabled={pending || selected === null || selected === 0}
+                    onClick={() => { if (selected !== null) selectPoint(selected - 1); }}
+                    className={`${buttonClass} w-11 px-0`} aria-label="Seleccionar punto anterior"><ChevronLeft className="h-4 w-4" aria-hidden="true" /></button>
+                  <span aria-live="polite" aria-atomic="true" className="text-sm font-bold text-[var(--brand-lime)]">
+                    {selected === null ? "Sin punto seleccionado" : `Punto ${selected + 1} de ${draft.length}`}
+                  </span>
+                  <button type="button" disabled={pending || selected === draft.length - 1} onClick={() => selectPoint((selected ?? -1) + 1)}
+                    className={`${buttonClass} w-11 px-0`} aria-label={selected === null ? "Seleccionar primer punto" : "Seleccionar punto siguiente"}><ChevronRight className="h-4 w-4" aria-hidden="true" /></button>
+                </div>
+              )}
               <p className="text-sm text-[var(--admin-muted)]" role="status">{draft ? mapHint : "Corrige las coordenadas para seguir editando en el mapa."}</p>
-              <div className="flex flex-wrap gap-2">
-                <button type="button" disabled={pending || !validSelection} aria-pressed={mode === "move"}
-                  onClick={() => setMode(mode === "move" ? "select" : "move")} className={buttonClass}><PencilLine className="h-4 w-4" aria-hidden="true" /> Mover punto</button>
-                <button type="button" disabled={pending || !draft || draft.length >= MAX_ROUTE_POINTS} aria-pressed={mode === "insert"}
-                  onClick={() => setMode(mode === "insert" ? "select" : "insert")} className={buttonClass}><Plus className="h-4 w-4" aria-hidden="true" /> Agregar punto</button>
-                <button type="button" disabled={pending || !validSelection || (draft?.length ?? 0) <= 2}
-                  onClick={() => { if (draft) setDraft(draft.filter((_, index) => index !== selected)); }} className={buttonClass}><Trash2 className="h-4 w-4" aria-hidden="true" /> Quitar punto</button>
-              </div>
+              {selected !== null && draft && (
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" disabled={pending || !canAdd} aria-pressed={mode === "insert-after"} onClick={() => toggleMode("insert-after")}
+                    className={buttonClass}><Plus className="h-4 w-4" aria-hidden="true" /> Agregar después</button>
+                  <button type="button" disabled={pending || !canAdd} aria-pressed={mode === "insert-before"} onClick={() => toggleMode("insert-before")}
+                    className={buttonClass}>Agregar antes</button>
+                  <button type="button" disabled={pending} aria-pressed={mode === "move"} onClick={() => toggleMode("move")}
+                    className={buttonClass}><PencilLine className="h-4 w-4" aria-hidden="true" /> Mover punto</button>
+                  <button type="button" disabled={pending || draft.length <= 2}
+                    onClick={() => setDraft(draft.filter((_, index) => index !== selected), Math.min(selected, draft.length - 2))}
+                    className={buttonClass}><Trash2 className="h-4 w-4" aria-hidden="true" /> Quitar punto</button>
+                  {mode !== "select" && (
+                    <button type="button" onClick={() => toggleMode("select")} className={buttonClass}>Terminar edición de puntos</button>
+                  )}
+                </div>
+              )}
               {pointError && <p role="alert" className="text-xs text-amber-200">{pointError}</p>}
             </div>
           </>

@@ -10,18 +10,26 @@ type Props = {
   published: Coordinates[];
   draft: Coordinates[];
   selected: number | null;
+  insertionSegment: number | null;
   placing: boolean;
   onPick: (point: Coordinates, index: number | null) => void;
 };
 
-function geometry(points: Coordinates[], vertices = false, selected: number | null = null): FeatureCollection<LineString | Point> {
+function geometry(points: Coordinates[], vertices = false, selected: number | null = null, insertionSegment: number | null = null): FeatureCollection<LineString | Point> {
   const features: Feature<LineString | Point>[] = points.length >= 2
-    ? [{ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: points } }]
+    ? [{ type: "Feature", properties: { kind: "route" }, geometry: { type: "LineString", coordinates: points } }]
     : [];
+  if (insertionSegment !== null && points[insertionSegment] && points[insertionSegment + 1]) {
+    features.push({
+      type: "Feature",
+      properties: { kind: "insertion" },
+      geometry: { type: "LineString", coordinates: [points[insertionSegment], points[insertionSegment + 1]] },
+    });
+  }
   if (vertices) {
     points.forEach((point, index) => features.push({
       type: "Feature",
-      properties: { index, selected: index === selected },
+      properties: { selected: index === selected },
       geometry: { type: "Point", coordinates: point },
     }));
   }
@@ -38,7 +46,7 @@ export default function AdminRouteMap(props: Props) {
     latest.current = props;
     const map = mapRef.current;
     const draft = map?.getSource<GeoJSONSource>("draft");
-    draft?.setData(geometry(props.draft, true, props.selected));
+    draft?.setData(geometry(props.draft, true, props.selected, props.insertionSegment));
     if (map) map.getCanvas().style.cursor = props.placing ? "crosshair" : "grab";
   }, [props]);
 
@@ -60,17 +68,22 @@ export default function AdminRouteMap(props: Props) {
         mapRef.current = map;
         map.addControl(new mapbox.NavigationControl({ showCompass: false }));
         map.on("load", () => {
-          const { published, draft, selected } = latest.current;
+          const { published, draft, selected, insertionSegment } = latest.current;
           map.addSource("published", { type: "geojson", data: geometry(published) });
-          map.addSource("draft", { type: "geojson", data: geometry(draft, true, selected) });
+          map.addSource("draft", { type: "geojson", data: geometry(draft, true, selected, insertionSegment) });
           map.addLayer({
             id: "published", type: "line", source: "published",
             paint: { "line-color": "#2563eb", "line-width": 8, "line-opacity": 0.75 },
             layout: { "line-join": "round", "line-cap": "round" },
           });
           map.addLayer({
-            id: "draft", type: "line", source: "draft", filter: ["==", ["geometry-type"], "LineString"],
+            id: "draft", type: "line", source: "draft", filter: ["==", ["get", "kind"], "route"],
             paint: { "line-color": "#795400", "line-width": 4 },
+            layout: { "line-join": "round", "line-cap": "round" },
+          });
+          map.addLayer({
+            id: "insertion", type: "line", source: "draft", filter: ["==", ["get", "kind"], "insertion"],
+            paint: { "line-color": "#6d28d9", "line-width": 6 },
             layout: { "line-join": "round", "line-cap": "round" },
           });
           map.addLayer({
@@ -89,12 +102,25 @@ export default function AdminRouteMap(props: Props) {
         });
         map.on("click", (event) => {
           if (!map.getLayer("vertices")) return;
-          const { onPick, placing } = latest.current;
-          const { x, y } = event.point;
-          const point = map.queryRenderedFeatures([[x - 10, y - 10], [x + 10, y + 10]], { layers: ["vertices"] })[0];
-          const index: unknown = point?.properties?.index;
-          if (!placing && typeof index !== "number") return;
-          onPick([Number(event.lngLat.lng.toFixed(6)), Number(event.lngLat.lat.toFixed(6))], typeof index === "number" ? index : null);
+          const { onPick, placing, draft } = latest.current;
+          const coordinate: Coordinates = [Number(event.lngLat.lng.toFixed(6)), Number(event.lngLat.lat.toFixed(6))];
+          if (placing) {
+            onPick(coordinate, null);
+            return;
+          }
+
+          // Read from the current draft while the GeoJSON source finishes redrawing.
+          let index: number | null = null;
+          let nearest = 14;
+          draft.forEach((point, candidate) => {
+            const screen = map.project(point);
+            const distance = Math.hypot(screen.x - event.point.x, screen.y - event.point.y);
+            if (distance < nearest) {
+              nearest = distance;
+              index = candidate;
+            }
+          });
+          if (index !== null) onPick(coordinate, index);
         });
       } catch {
         window.clearTimeout(timeout);
