@@ -30,7 +30,7 @@ export default function NotGovernmentNotice({ variant = "compact" }: Props) {
       aria-label="Aviso sobre la naturaleza independiente del proyecto"
       className="rounded-lg border p-5"
       style={{
-        borderColor: "rgba(184,232,64,0.2)",
+        borderColor: "var(--public-border)",
         background: "rgba(184,232,64,0.04)",
       }}
     >

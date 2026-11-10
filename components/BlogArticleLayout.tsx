@@ -34,7 +34,7 @@ export default function BlogArticleLayout({
     : null;
 
   return (
-    <main className="public-page min-h-dvh bg-[#0c110a] text-[var(--public-ink)]">
+    <main className="public-page min-h-dvh bg-[var(--public-bg)] text-[var(--public-ink)]">
       <ForceDark />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <PublicHeader />
@@ -50,7 +50,7 @@ export default function BlogArticleLayout({
             </p>
           </div>
 
-          <nav aria-label="Contenido del artículo" className="sticky top-[72px] z-20 -mx-5 mt-5 flex gap-2 overflow-x-auto border-y border-[var(--public-border)] bg-[#0c110a]/95 px-5 py-3 backdrop-blur-xl [scrollbar-width:none] lg:hidden [&::-webkit-scrollbar]:hidden">
+          <nav aria-label="Contenido del artículo" className="sticky top-[72px] z-20 -mx-5 mt-5 flex gap-2 overflow-x-auto border-y border-[var(--public-border)] bg-[var(--public-bg)] px-5 py-3 backdrop-blur-xl [scrollbar-width:none] lg:hidden [&::-webkit-scrollbar]:hidden">
             {toc.map((item) => (
               <a key={item.id} href={`#${item.id}`} className="shrink-0 rounded-md border border-[var(--public-border)] px-3 py-1.5 text-xs font-bold text-[var(--public-secondary)]">
                 {item.label}
@@ -81,7 +81,7 @@ export default function BlogArticleLayout({
                 <p className="text-xs font-bold uppercase text-[var(--public-muted)]">Llévalo a la práctica</p>
                 <h2 className="mt-2 public-section-title">Planea tu siguiente trayecto.</h2>
               </div>
-              <Link href={actionHref} className="inline-flex h-11 items-center justify-center rounded-md bg-[#b8e840] px-6 text-sm font-bold text-[#0c110a] transition hover:bg-[#c6f052]">
+              <Link href={actionHref} className="inline-flex h-11 items-center justify-center rounded-md bg-[var(--brand-lime)] px-6 text-sm font-bold text-[var(--brand-deep)] transition hover:bg-[#e7ffa7]">
                 {actionLabel}
               </Link>
             </div>

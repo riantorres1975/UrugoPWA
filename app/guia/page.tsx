@@ -26,25 +26,25 @@ const QUICK_STEPS = [
     number: "01",
     title: "Define tu origen",
     body: "Permite la ubicación o busca una colonia, calle o lugar. También puedes marcar el punto directamente en el mapa.",
-    color: "#b8e840",
+    color: "var(--public-accent)",
   },
   {
     number: "02",
     title: "Marca tu destino",
     body: "Escribe un lugar conocido o toca el mapa. UruGo solo calcula viajes dentro del área de Uruapan.",
-    color: "#51c8e8",
+    color: "var(--public-teal)",
   },
   {
     number: "03",
     title: "Compara las opciones",
     body: "Revisa tiempo, caminata, costo, alternativas y, cuando sea necesario, opciones con transbordo.",
-    color: "#ff8a65",
+    color: "var(--public-rust)",
   },
   {
     number: "04",
     title: "Inicia el viaje",
     body: "Activa el seguimiento para recibir referencias, aviso de bajada y orientación durante un transbordo.",
-    color: "#a78bfa",
+    color: "var(--public-violet)",
   },
 ] as const;
 
@@ -164,13 +164,13 @@ export default function GuidePage() {
   };
 
   return (
-    <main className="public-page min-h-dvh bg-[#0c110a] text-[var(--public-ink)]" data-theme="dark">
+    <main className="public-page min-h-dvh bg-[var(--public-bg)] text-[var(--public-ink)]" data-theme="dark">
       <ForceDark />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToJsonLd) }} />
 
       <PublicHeader active="guia" />
 
-      <header className="relative flex min-h-[480px] items-end overflow-hidden border-b border-[var(--public-border)] pt-[72px] md:min-h-[560px]">
+      <header className="public-night relative flex min-h-[480px] items-end overflow-hidden border-b border-[var(--public-border)] pt-[72px] md:min-h-[560px]">
         <Image
           src="/screenshots/mapa-wide.png"
           alt="Mapa de UruGo mostrando las rutas de transporte de Uruapan"
@@ -180,20 +180,20 @@ export default function GuidePage() {
           className="object-cover object-center"
         />
         <div className="absolute inset-0 bg-black/55" aria-hidden="true" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_top,#0c110a_0%,rgba(12,17,10,0.78)_36%,rgba(12,17,10,0.12)_78%)]" aria-hidden="true" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_top,#111a13_0%,rgba(12,17,10,0.78)_36%,rgba(12,17,10,0.12)_78%)]" aria-hidden="true" />
         <div className="relative mx-auto w-full max-w-6xl px-5 pb-16 sm:px-8 md:pb-20">
           <p className="mb-4 text-sm font-bold uppercase text-[var(--public-accent)]">Guía completa de UruGo</p>
           <h1 className="max-w-4xl public-page-title">
-            Muévete con la app,<br />sin adivinar.
+            Muévete con la app,<br /><em>sin adivinar.</em>
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-7 text-[var(--public-ink)] md:text-lg md:leading-8">
             Aprende a buscar un destino, comparar rutas, hacer transbordos y seguir tu viaje. Las pantallas de esta guía son capturas reales de UruGo.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
-            <a href="#inicio-rapido" className="inline-flex h-12 items-center rounded-md bg-[#b8e840] px-6 text-sm font-bold text-[#0c110a] transition hover:bg-white">
+            <a href="#inicio-rapido" className="inline-flex h-12 items-center rounded-md bg-[var(--brand-lime)] px-6 text-sm font-bold text-[var(--brand-deep)] transition hover:bg-white">
               Empezar la guía
             </a>
-            <Link href="/mapa?cerca=1" className="inline-flex h-12 items-center rounded-md border border-white/25 bg-black/30 px-6 text-sm font-bold text-white backdrop-blur transition hover:border-white/50">
+            <Link href="/mapa?cerca=1" className="inline-flex h-12 items-center rounded-md border border-[var(--public-border)] bg-black/30 px-6 text-sm font-bold text-[var(--public-ink)] backdrop-blur transition hover:border-[var(--public-border)]">
               Ver rutas cercanas
             </Link>
           </div>
@@ -202,7 +202,7 @@ export default function GuidePage() {
 
       <nav
         aria-label="Secciones de la guía"
-        className="sticky top-[72px] z-40 touch-pan-x overflow-x-auto overscroll-x-contain border-b border-[var(--public-border)] bg-[#0c110a]/95 backdrop-blur-xl [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="sticky top-[72px] z-40 touch-pan-x overflow-x-auto overscroll-x-contain border-b border-[var(--public-border)] bg-[var(--public-bg)] backdrop-blur-xl [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         <div className="mx-auto flex min-w-max max-w-6xl gap-1 px-4 py-2 sm:px-8">
           {[
@@ -213,7 +213,7 @@ export default function GuidePage() {
             ["#consultar", "Horarios"],
             ["#herramientas", "Más funciones"],
           ].map(([href, label]) => (
-            <a key={href} href={href} className="rounded-md px-3 py-2 text-xs font-bold text-[var(--public-secondary)] transition hover:bg-white/5 hover:text-white">
+            <a key={href} href={href} className="rounded-md px-3 py-2 text-xs font-bold text-[var(--public-secondary)] transition hover:bg-[var(--public-hover)] hover:text-[var(--public-ink)]">
               {label}
             </a>
           ))}
@@ -242,7 +242,7 @@ export default function GuidePage() {
       <section id="planear" className="scroll-mt-36 border-b border-[var(--public-border)] bg-[var(--public-surface)] px-5 py-16 sm:px-8 md:py-16">
         <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[minmax(0,1fr)_360px]">
           <div>
-            <p className="text-sm font-bold uppercase text-[#ff8a65]">Planear un viaje</p>
+            <p className="text-sm font-bold uppercase text-[var(--public-rust)]">Planear un viaje</p>
             <h2 className="mt-2 public-section-title">Origen, destino y una ruta que sí te sirve.</h2>
             <div className="mt-8 space-y-7">
               <div><h3 className="text-lg font-bold">1. Elige el origen</h3><p className="mt-2 text-sm leading-7 text-[var(--public-secondary)]">Usa tu GPS, busca un lugar o toca el mapa. Si estás fuera de Uruapan, la app te pedirá marcar un origen dentro de la ciudad.</p></div>
@@ -250,7 +250,7 @@ export default function GuidePage() {
               <div><h3 className="text-lg font-bold">3. Revisa el resultado</h3><p className="mt-2 text-sm leading-7 text-[var(--public-secondary)]">La tarjeta muestra ruta recomendada, tiempo aproximado, caminata, tarifa y alternativas. Toca otra alternativa para comparar su recorrido.</p></div>
               <div><h3 className="text-lg font-bold">Cuando necesitas transbordo</h3><p className="mt-2 text-sm leading-7 text-[var(--public-secondary)]">UruGo propone combinaciones de dos rutas, indica cuánto caminar entre ellas y usa referencias cercanas para ubicar el cambio.</p></div>
             </div>
-            <Link href="/mapa" className="mt-8 inline-flex h-11 items-center rounded-md bg-[#ff8a65] px-5 text-sm font-bold text-[#0c110a] transition hover:bg-white">Planear un viaje</Link>
+            <Link href="/mapa" className="mt-8 inline-flex h-11 items-center rounded-md bg-[#ff8a65] px-5 text-sm font-bold text-[var(--brand-deep)] transition hover:bg-white">Planear un viaje</Link>
           </div>
           <PhoneScreenshot src="/guide/resultado.png" alt="Resultado de una ruta recomendada con tiempo, tarifa, alternativas e indicaciones" />
         </div>
@@ -260,19 +260,19 @@ export default function GuidePage() {
         <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[360px_minmax(0,1fr)]">
           <PhoneScreenshot src="/screenshots/rutas-narrow.png" alt="Selector de rutas de UruGo con búsqueda, favoritos y acceso al Teleférico" />
           <div>
-            <p className="text-sm font-bold uppercase text-[#51c8e8]">Explorar rutas</p>
+            <p className="text-sm font-bold uppercase text-[var(--public-teal)]">Explorar rutas</p>
             <h2 className="mt-2 public-section-title">Encuentra una ruta por número, colonia o referencia.</h2>
             <ul className="mt-8 space-y-5 text-sm leading-7 text-[var(--public-secondary)]">
-              <li><strong className="text-white">Botón Rutas:</strong> abre el directorio de los 40 recorridos urbanos y el acceso al Teleférico.</li>
-              <li><strong className="text-white">Buscador:</strong> acepta nombres de ruta, destinos y lugares cercanos al recorrido, como “Tec Uruapan”.</li>
-              <li><strong className="text-white">Estrella:</strong> guarda una ruta como favorita para encontrarla primero.</li>
-              <li><strong className="text-white">Ida y vuelta:</strong> al seleccionar una ruta puedes cambiar el sentido y ver sus indicaciones sobre el trazo.</li>
-              <li><strong className="text-white">Botón del ojo:</strong> alterna entre líneas tenues y rutas destacadas para leer mejor el mapa completo.</li>
-              <li><strong className="text-white">Teleférico:</strong> abre su línea, estaciones, horario, costo y guía especial.</li>
+              <li><strong className="text-[var(--public-ink)]">Botón Rutas:</strong> abre el directorio de los 40 recorridos urbanos y el acceso al Teleférico.</li>
+              <li><strong className="text-[var(--public-ink)]">Buscador:</strong> acepta nombres de ruta, destinos y lugares cercanos al recorrido, como “Tec Uruapan”.</li>
+              <li><strong className="text-[var(--public-ink)]">Estrella:</strong> guarda una ruta como favorita para encontrarla primero.</li>
+              <li><strong className="text-[var(--public-ink)]">Ida y vuelta:</strong> al seleccionar una ruta puedes cambiar el sentido y ver sus indicaciones sobre el trazo.</li>
+              <li><strong className="text-[var(--public-ink)]">Botón del ojo:</strong> alterna entre líneas tenues y rutas destacadas para leer mejor el mapa completo.</li>
+              <li><strong className="text-[var(--public-ink)]">Teleférico:</strong> abre su línea, estaciones, horario, costo y guía especial.</li>
             </ul>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/rutas" className="inline-flex h-11 items-center rounded-md bg-[#51c8e8] px-5 text-sm font-bold text-[#0c110a] transition hover:bg-white">Directorio de rutas</Link>
-              <Link href="/mapa?r=Ruta%2027" className="inline-flex h-11 items-center rounded-md border border-[var(--public-border)] px-5 text-sm font-bold text-white transition hover:border-white/40">Ver una ruta</Link>
+              <Link href="/rutas" className="inline-flex h-11 items-center rounded-md bg-[#51c8e8] px-5 text-sm font-bold text-[var(--brand-deep)] transition hover:bg-white">Directorio de rutas</Link>
+              <Link href="/mapa?r=Ruta%2027" className="inline-flex h-11 items-center rounded-md border border-[var(--public-border)] px-5 text-sm font-bold text-[var(--public-ink)] transition hover:border-[var(--public-border)]">Ver una ruta</Link>
             </div>
           </div>
         </div>
@@ -281,9 +281,9 @@ export default function GuidePage() {
       <section id="modo-viaje" className="scroll-mt-36 border-b border-[var(--public-border)] bg-[var(--public-surface)] px-5 py-16 sm:px-8 md:py-16">
         <div className="mx-auto max-w-6xl">
           <div className="max-w-4xl">
-            <p className="text-sm font-bold uppercase text-[#a78bfa]">Modo viaje</p>
+            <p className="text-sm font-bold uppercase text-[var(--public-violet)]">Modo viaje</p>
             <h2 className="mt-2 public-section-title">Acompañamiento desde que subes hasta que bajas.</h2>
-            <p className="mt-5 max-w-2xl text-base leading-8 text-[var(--public-secondary)]">Después de elegir una opción, toca <strong className="text-white">Iniciar viaje</strong>. La app sigue tu avance con el GPS sin obligarte a mantener el mapa centrado.</p>
+            <p className="mt-5 max-w-2xl text-base leading-8 text-[var(--public-secondary)]">Después de elegir una opción, toca <strong className="text-[var(--public-ink)]">Iniciar viaje</strong>. La app sigue tu avance con el GPS sin obligarte a mantener el mapa centrado.</p>
             <div className="mt-8 grid gap-3 sm:grid-cols-2">
               {[
                 ["Marcador del viaje", "Cambia entre caminar, camión y cabina del Teleférico, y avanza suavemente sobre el recorrido."],
@@ -292,8 +292,8 @@ export default function GuidePage() {
                 ["Cambio de ruta", "Distingue el primer tramo, la caminata y la segunda ruta."],
                 ["Fuera del recorrido", "Te avisa después de varias lecturas alejadas, evitando falsas alarmas por el GPS."],
               ].map(([title, body]) => (
-                <div key={title} className="rounded-lg border border-[var(--public-border)] bg-[#0c110a] p-4">
-                  <h3 className="font-bold text-white">{title}</h3>
+                <div key={title} className="rounded-lg border border-[var(--public-border)] bg-[var(--public-bg)] p-4">
+                  <h3 className="font-bold text-[var(--public-ink)]">{title}</h3>
                   <p className="mt-2 text-sm leading-6 text-[var(--public-secondary)]">{body}</p>
                 </div>
               ))}
@@ -329,16 +329,16 @@ export default function GuidePage() {
             <p className="text-sm font-bold uppercase text-[var(--public-accent)]">Consultar antes de salir</p>
             <h2 className="mt-2 public-section-title">Horarios, tarifas y lugares en páginas fáciles de compartir.</h2>
             <div className="mt-8 space-y-6 text-sm leading-7 text-[var(--public-secondary)]">
-              <p><strong className="text-white">Horarios:</strong> consulta primer y último camión, además del rango aproximado de frecuencia.</p>
-              <p><strong className="text-white">Tarifas:</strong> el camión urbano cuesta {FARES_2026.urbanBus.price} por abordaje y normalmente se paga en efectivo. El Teleférico cuesta {FARES_2026.teleferico.price} y requiere tarjeta de movilidad.</p>
-              <p><strong className="text-white">Cómo llegar:</strong> las guías de hospitales, escuelas, mercados y otros lugares muestran qué rutas pasan cerca y cuánto caminar.</p>
-              <p><strong className="text-white">Página de cada ruta:</strong> reúne destino, horario, referencias e indicaciones para abrirla directamente en el mapa.</p>
-              <p><strong className="text-white">Guía del Teleférico:</strong> explica estaciones, horario, pago y conexiones con camiones urbanos.</p>
+              <p><strong className="text-[var(--public-ink)]">Horarios:</strong> consulta primer y último camión, además del rango aproximado de frecuencia.</p>
+              <p><strong className="text-[var(--public-ink)]">Tarifas:</strong> el camión urbano cuesta {FARES_2026.urbanBus.price} por abordaje y normalmente se paga en efectivo. El Teleférico cuesta {FARES_2026.teleferico.price} y requiere tarjeta de movilidad.</p>
+              <p><strong className="text-[var(--public-ink)]">Cómo llegar:</strong> las guías de hospitales, escuelas, mercados y otros lugares muestran qué rutas pasan cerca y cuánto caminar.</p>
+              <p><strong className="text-[var(--public-ink)]">Página de cada ruta:</strong> reúne destino, horario, referencias e indicaciones para abrirla directamente en el mapa.</p>
+              <p><strong className="text-[var(--public-ink)]">Guía del Teleférico:</strong> explica estaciones, horario, pago y conexiones con camiones urbanos.</p>
             </div>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/horarios" className="inline-flex h-11 items-center rounded-md bg-[#b8e840] px-5 text-sm font-bold text-[#0c110a] transition hover:bg-white">Ver horarios</Link>
-              <Link href="/como-llegar" className="inline-flex h-11 items-center rounded-md border border-[var(--public-border)] px-5 text-sm font-bold text-white transition hover:border-white/40">Guías de lugares</Link>
-              <Link href="/teleferico-uruapan-horario" className="inline-flex h-11 items-center rounded-md border border-[var(--public-border)] px-5 text-sm font-bold text-white transition hover:border-white/40">Teleférico</Link>
+              <Link href="/horarios" className="inline-flex h-11 items-center rounded-md bg-[var(--brand-lime)] px-5 text-sm font-bold text-[var(--brand-deep)] transition hover:bg-white">Ver horarios</Link>
+              <Link href="/como-llegar" className="inline-flex h-11 items-center rounded-md border border-[var(--public-border)] px-5 text-sm font-bold text-[var(--public-ink)] transition hover:border-[var(--public-border)]">Guías de lugares</Link>
+              <Link href="/teleferico-uruapan-horario" className="inline-flex h-11 items-center rounded-md border border-[var(--public-border)] px-5 text-sm font-bold text-[var(--public-ink)] transition hover:border-[var(--public-border)]">Teleférico</Link>
             </div>
           </div>
         </div>
@@ -348,9 +348,9 @@ export default function GuidePage() {
         <div className="mx-auto max-w-6xl">
           <p className="text-sm font-bold uppercase text-[var(--public-muted)]">Más funciones</p>
           <h2 className="mt-2 max-w-3xl public-section-title">Pequeñas herramientas que ahorran tiempo.</h2>
-          <div className="mt-10 grid gap-px overflow-hidden rounded-lg border border-[var(--public-border)] bg-white/10 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-10 grid gap-px overflow-hidden rounded-lg border border-[var(--public-border)] bg-[var(--public-hover)] sm:grid-cols-2 lg:grid-cols-4">
             {TOOL_FEATURES.map((feature) => (
-              <article key={feature.title} className="min-h-[220px] bg-[#0c110a] p-5">
+              <article key={feature.title} className="min-h-[220px] bg-[var(--public-bg)] p-5">
                 <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[#6aab48]/15 text-[var(--public-accent)]"><GuideIcon name={feature.icon} /></span>
                 <h3 className="mt-7 text-lg font-bold">{feature.title}</h3>
                 <p className="mt-3 text-sm leading-6 text-[var(--public-secondary)]">{feature.body}</p>
@@ -363,7 +363,7 @@ export default function GuidePage() {
       <section className="border-b border-[var(--public-border)] px-5 py-16 sm:px-8 md:py-16">
         <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-2">
           <div>
-            <p className="text-sm font-bold uppercase text-[#ff8a65]">Antes de viajar</p>
+            <p className="text-sm font-bold uppercase text-[var(--public-rust)]">Antes de viajar</p>
             <h2 className="mt-2 public-section-title">Cómo leer el mapa.</h2>
             <dl className="mt-8 divide-y divide-[var(--public-border)] border-y border-[var(--public-border)]">
               {[
@@ -375,19 +375,19 @@ export default function GuidePage() {
                 ["Línea punteada", "Tramo que debes caminar."],
               ].map(([term, definition]) => (
                 <div key={term} className="grid grid-cols-[120px_1fr] gap-4 py-4 text-sm sm:grid-cols-[160px_1fr]">
-                  <dt className="font-bold text-white">{term}</dt>
+                  <dt className="font-bold text-[var(--public-ink)]">{term}</dt>
                   <dd className="leading-6 text-[var(--public-secondary)]">{definition}</dd>
                 </div>
               ))}
             </dl>
           </div>
           <div>
-            <p className="text-sm font-bold uppercase text-[#51c8e8]">Preguntas frecuentes</p>
+            <p className="text-sm font-bold uppercase text-[var(--public-teal)]">Preguntas frecuentes</p>
             <h2 className="mt-2 public-section-title">Lo que conviene saber.</h2>
             <div className="mt-8 divide-y divide-[var(--public-border)] border-y border-[var(--public-border)]">
               {FAQS.map((faq) => (
                 <details key={faq.question} className="group py-4">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-bold text-white">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-bold text-[var(--public-ink)]">
                     {faq.question}
                     <span className="text-xl text-[var(--public-accent)] transition group-open:rotate-45" aria-hidden="true">+</span>
                   </summary>
@@ -408,8 +408,8 @@ export default function GuidePage() {
               <p className="mt-2 text-sm text-[var(--public-secondary)]">Marca a dónde vas y deja que el mapa haga las cuentas.</p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <Link href="/mapa" className="inline-flex h-12 items-center rounded-md bg-[#6aab48] px-6 text-sm font-bold text-[#0c110a] transition hover:bg-[#b8e840]">Abrir el mapa</Link>
-              <Link href="/reportar-error?from=guia" className="inline-flex h-12 items-center rounded-md border border-[var(--public-border)] px-6 text-sm font-bold text-white transition hover:border-white/40">Reportar un error</Link>
+              <Link href="/mapa" className="inline-flex h-12 items-center rounded-md bg-[var(--brand-lime)] px-6 text-sm font-bold text-[var(--brand-deep)] transition hover:bg-[#b8e840]">Abrir el mapa</Link>
+              <Link href="/reportar-error?from=guia" className="inline-flex h-12 items-center rounded-md border border-[var(--public-border)] px-6 text-sm font-bold text-[var(--public-ink)] transition hover:border-[var(--public-border)]">Reportar un error</Link>
             </div>
           </div>
         </div>

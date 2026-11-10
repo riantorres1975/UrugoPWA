@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
+import SiteBrand from "@/components/SiteBrand";
 import { ArrowRight, BusFront, CableCar, Clock3, Map, Plus } from "lucide-react";
 import LandingAtlas from "@/components/LandingAtlas";
 import LandingDestinations, { type LandingDestination } from "@/components/LandingDestinations";
@@ -160,10 +160,7 @@ export default async function LandingPage() {
       <a className="skip" href="#principal">Saltar al contenido</a>
       <header className="top night">
         <div className="wrap">
-          <Link className="brand" href="/" aria-label="UruGo, inicio">
-            <Image src="/icons/icon.svg" alt="" width={36} height={36} unoptimized />
-            <span>Uru<span>Go</span></span>
-          </Link>
+          <SiteBrand />
           <nav className="desktop-nav" aria-label="Navegación principal">
             {navigation.map(({ href, label }) => <Link key={href} href={href}>{label}</Link>)}
           </nav>

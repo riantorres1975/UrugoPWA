@@ -1,16 +1,16 @@
 /* Portada de UruGo. Los estilos se mantienen dentro de .premium-home. */
 .premium-home {
-  --forest: #111a13;
-  --deep: #0c140f;
-  --lime: #d4f977;
-  --white: #f5f6ed;
-  --paper: #f3f2e8;
-  --ink: #1e271d;
-  --muted: #526052;
-  --line: #d6dacc;
+  --forest: var(--brand-forest);
+  --deep: var(--brand-deep);
+  --lime: var(--brand-lime);
+  --white: var(--brand-white);
+  --paper: var(--brand-paper);
+  --ink: var(--brand-ink);
+  --muted: var(--brand-muted);
+  --line: var(--brand-line);
   --edge: #334435;
   --display: var(--font-playfair), Georgia, serif;
-  --pad: clamp(20px,5.25vw,76px);
+  --pad: var(--brand-gutter);
   color: var(--ink);
   background: var(--paper);
 }
@@ -148,7 +148,7 @@
 .premium-home .activity-track > span,
 .premium-home .activity-bar i { background: #6e955e; }
 .premium-home .activity-bar { background: #d3dfcc; }
-.premium-home > footer { background: #0e1710; border-color: #334435; }
+.premium-home > footer { background: var(--brand-header); border-color: #334435; }
 
 @media (max-width: 760px) {
   .premium-home .home-menu { display: block; }
@@ -312,7 +312,7 @@
 
 .premium-home .top {
   border-bottom: 1px solid #2c3b2c;
-  background: #0e1710;
+  background: var(--brand-header);
 }
 
 .premium-home .top .wrap {
@@ -322,27 +322,6 @@
   align-items: center;
   gap: 20px;
   position: relative;
-}
-
-.premium-home .brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 26px;
-  letter-spacing: -.07em;
-  font-weight: 700;
-  min-height: 44px;
-  white-space: nowrap;
-}
-
-.premium-home .brand img {
-  width: 36px;
-  height: 36px;
-  border-radius: 9px;
-}
-
-.premium-home .brand span span {
-  color: var(--lime);
 }
 
 .premium-home .desktop-nav {
@@ -378,7 +357,7 @@
 
 .premium-home .hero {
   padding: 66px 0 54px;
-  background: radial-gradient(ellipse at 74% 55%,#213224,transparent 59%),#111a13;
+  background: radial-gradient(ellipse at 74% 55%,#213224,transparent 59%),var(--brand-forest);
 }
 
 .premium-home .hero-grid {
@@ -717,7 +696,7 @@
 
 .premium-home .dest small {
   font-size: 11px;
-  color: #526052;
+  color: var(--brand-muted);
 }
 
 .premium-home .dest .icon {
@@ -963,15 +942,6 @@
   .premium-home .nav-right .action {
     font-size: 13px;
     padding: 0 10px;
-  }
-
-  .premium-home .brand {
-    font-size: 24px;
-  }
-
-  .premium-home .brand img {
-    width: 30px;
-    height: 30px;
   }
 
   .premium-home .hero {

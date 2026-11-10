@@ -46,7 +46,7 @@ function StatusBadge({ status }: { status: ScheduleStatus | null }) {
 
   if (status.kind === "last-service") {
     return (
-      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#f1bf62]">
+      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--public-amber)]">
         <span className="h-2 w-2 rounded-full bg-[#f1bf62]" />
         Por cerrar · {status.minutesLeft} min
       </span>
@@ -55,7 +55,7 @@ function StatusBadge({ status }: { status: ScheduleStatus | null }) {
 
   if (status.kind === "operating" || status.kind === "continuous") {
     return (
-      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#72d489]">
+      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--public-accent)]">
         <span className="h-2 w-2 rounded-full bg-[#72d489]" />
         En servicio
       </span>
@@ -116,7 +116,7 @@ export default function ScheduleDirectory({ services }: { services: ScheduleServ
       </div>
       <p className="mt-1 text-xs leading-5 text-[var(--public-muted)]">Horarios aproximados; el paso puede variar por tráfico.</p>
 
-      <div className="sticky top-[72px] z-20 -mx-1 bg-[var(--public-bg)] px-1 pb-2 pt-3">
+      <div className="sticky top-[72px] z-20 -mx-1 bg-[var(--public-tint)] px-1 pb-2 pt-3">
         <div className="relative">
         <label className="block">
           <span className="sr-only">Buscar ruta o destino</span>

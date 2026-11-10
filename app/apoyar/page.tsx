@@ -64,7 +64,7 @@ export default function SupportPage() {
   const hasLocalPaymentMethod = Boolean(support.mercadoPagoUrl || support.spei);
 
   return (
-    <main className="public-page min-h-dvh bg-[#0c110a] text-[var(--public-ink)]" data-theme="dark">
+    <main className="public-page min-h-dvh bg-[var(--public-bg)] text-[var(--public-ink)]" data-theme="dark">
       <ForceDark />
       <PublicHeader />
 
@@ -84,14 +84,14 @@ export default function SupportPage() {
             <div className="mt-8 flex flex-wrap gap-3">
               <a
                 href="#formas-de-apoyar"
-                className="inline-flex min-h-12 items-center gap-2 rounded-md bg-[#b8e840] px-5 text-sm font-bold text-[#0c110a] transition hover:bg-[#c8f25b]"
+                className="inline-flex min-h-12 items-center gap-2 rounded-md bg-[var(--brand-lime)] px-5 text-sm font-bold text-[var(--brand-deep)] transition hover:bg-[#e7ffa7]"
               >
                 Ver formas de apoyo
                 <ArrowDown className="h-4 w-4" aria-hidden="true" />
               </a>
               <Link
                 href="/acerca-de"
-                className="inline-flex min-h-12 items-center gap-2 rounded-md border border-[var(--public-border)] px-5 text-sm font-bold transition hover:border-[#b8e840]/50 hover:bg-white/[0.04]"
+                className="inline-flex min-h-12 items-center gap-2 rounded-md border border-[var(--public-border)] px-5 text-sm font-bold transition hover:border-[#b8e840]/50 hover:bg-[var(--public-hover)]"
               >
                 Cómo se hace UruGo
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -136,7 +136,7 @@ export default function SupportPage() {
           <div className="border-t border-[var(--public-border)]">
             {support.mercadoPagoUrl ? (
               <div className="grid gap-5 border-b border-[var(--public-border)] py-7 sm:grid-cols-[48px_1fr_auto] sm:items-center">
-                <span className="grid h-12 w-12 place-items-center rounded-md bg-[#58d2e3] text-[#0c110a]">
+                <span className="grid h-12 w-12 place-items-center rounded-md bg-[#58d2e3] text-[var(--brand-deep)]">
                   <WalletCards className="h-5 w-5" aria-hidden="true" />
                 </span>
                 <div>
@@ -147,7 +147,7 @@ export default function SupportPage() {
                   href={support.mercadoPagoUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[#b8e840] px-5 text-sm font-bold text-[#0c110a] transition hover:bg-[#c8f25b]"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[var(--brand-lime)] px-5 text-sm font-bold text-[var(--brand-deep)] transition hover:bg-[#e7ffa7]"
                 >
                   Abrir Mercado Pago
                   <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
@@ -157,7 +157,7 @@ export default function SupportPage() {
 
             {support.spei ? (
               <div className="grid gap-5 border-b border-[var(--public-border)] py-7 sm:grid-cols-[48px_1fr]">
-                <span className="grid h-12 w-12 place-items-center rounded-md bg-[#f2cf55] text-[#0c110a]">
+                <span className="grid h-12 w-12 place-items-center rounded-md bg-[#f2cf55] text-[var(--brand-deep)]">
                   <Landmark className="h-5 w-5" aria-hidden="true" />
                 </span>
                 <div>
@@ -167,7 +167,7 @@ export default function SupportPage() {
                     {support.spei.bank ? ` · ${support.spei.bank}` : ""}
                   </p>
                   <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-                    <code className="min-w-0 flex-1 break-all rounded-md border border-[var(--public-border)] bg-[#0c110a] px-4 py-3 font-mono text-sm text-[var(--public-ink)]">
+                    <code className="min-w-0 flex-1 break-all rounded-md border border-[var(--public-border)] bg-[var(--public-bg)] px-4 py-3 font-mono text-sm text-[var(--public-ink)]">
                       {support.spei.clabe}
                     </code>
                     <CopySupportValue value={support.spei.clabe} />
@@ -178,7 +178,7 @@ export default function SupportPage() {
             ) : null}
 
             <div className="grid gap-5 border-b border-[var(--public-border)] py-7 sm:grid-cols-[48px_1fr_auto] sm:items-center">
-              <span className="grid h-12 w-12 place-items-center rounded-md bg-[#6aab48] text-[#0c110a]">
+              <span className="grid h-12 w-12 place-items-center rounded-md bg-[var(--brand-lime)] text-[var(--brand-deep)]">
                 <CircleDollarSign className="h-5 w-5" aria-hidden="true" />
               </span>
               <div>
@@ -189,7 +189,7 @@ export default function SupportPage() {
                 href={support.paypalUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-[var(--public-border)] px-5 text-sm font-bold transition hover:border-[#b8e840]/60 hover:bg-white/[0.04]"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-[var(--public-border)] px-5 text-sm font-bold transition hover:border-[#b8e840]/60 hover:bg-[var(--public-hover)]"
               >
                 Abrir PayPal
                 <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
@@ -236,7 +236,7 @@ export default function SupportPage() {
         </div>
       </section>
 
-      <section className="border-y border-[var(--public-border)] bg-[#090d08] px-5 py-14 sm:px-8" aria-labelledby="otras-formas-title">
+      <section className="border-y border-[var(--public-border)] bg-[var(--public-surface)] px-5 py-14 sm:px-8" aria-labelledby="otras-formas-title">
         <div className="mx-auto grid max-w-[1240px] gap-10 md:grid-cols-[1fr_1.2fr] md:items-center">
           <div>
             <BusFront className="h-8 w-8 text-[var(--public-accent)]" strokeWidth={1.6} aria-hidden="true" />
@@ -250,7 +250,7 @@ export default function SupportPage() {
               <span className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-[var(--public-accent)]">Ir al formulario <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" aria-hidden="true" /></span>
             </Link>
             <a href={PROJECT.repositoryUrl} target="_blank" rel="noreferrer" className="group border-l border-[var(--public-border)] py-2 pl-5 transition hover:border-[#b8e840]">
-              <Code2 className="h-5 w-5 text-[#58d2e3]" aria-hidden="true" />
+              <Code2 className="h-5 w-5 text-[var(--public-teal)]" aria-hidden="true" />
               <span className="mt-4 block font-sans text-lg font-bold">Revisa el proyecto</span>
               <span className="mt-2 block text-sm leading-6 text-[var(--public-secondary)]">El código y la organización de los datos son públicos.</span>
               <span className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-[var(--public-accent)]">Ver repositorio <ArrowUpRight className="h-4 w-4" aria-hidden="true" /></span>

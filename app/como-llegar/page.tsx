@@ -84,9 +84,9 @@ export default function ComoLlegarIndexPage() {
           </p>
           <h1
             className="mt-2 public-page-title"
-            style={{ color: "var(--public-ink)", letterSpacing: "0" }}
+            style={{ color: "var(--public-ink)" }}
           >
-            ¿Cómo <em style={{ fontStyle: "normal", color: "var(--public-accent)" }}>llegar</em> en camión?
+            ¿Cómo <em style={{ color: "var(--public-accent)" }}>llegar</em> en camión?
           </h1>
           <p className="mt-4 max-w-2xl text-sm leading-7" style={{ color: "var(--public-secondary)" }}>
             Elige a dónde vas y te decimos qué rutas de camión te dejan ahí, a cuántos minutos
@@ -98,7 +98,7 @@ export default function ComoLlegarIndexPage() {
           <div className="mt-10 flex flex-col gap-3 sm:flex-row">
             <Link
               href="/mapa"
-              className="inline-flex h-12 items-center justify-center rounded-md bg-[#b8e840] px-6 text-sm font-bold text-[#0c110a] transition hover:bg-[#c6f052]"
+              className="inline-flex h-12 items-center justify-center rounded-md bg-[var(--brand-lime)] px-6 text-sm font-bold text-[var(--brand-deep)] transition hover:bg-[#e7ffa7]"
             >
               Abrir el mapa interactivo
             </Link>

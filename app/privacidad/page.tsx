@@ -98,7 +98,7 @@ export default function PrivacyPage() {
           <Link
             href="/mapa"
             className="inline-flex h-11 items-center rounded-md px-5 text-sm font-bold transition hover:opacity-90"
-            style={{ background: "#6aab48", color: "var(--public-ink)" }}
+            style={{ background: "var(--brand-lime)", color: "var(--brand-deep)" }}
           >
             Volver al mapa →
           </Link>

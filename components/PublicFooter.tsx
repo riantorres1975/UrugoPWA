@@ -4,7 +4,7 @@ import {
   FileCode2,
   Heart,
 } from "lucide-react";
-import Logo from "@/components/Logo";
+import SiteBrand from "@/components/SiteBrand";
 import { PROJECT } from "@/lib/project";
 
 function GithubIcon({ className }: { className?: string }) {
@@ -71,11 +71,11 @@ const socialLinks = [
 
 export default function PublicFooter() {
   return (
-    <footer className="public-page border-t border-[var(--public-border)] bg-[#090d08] px-5 sm:px-8 lg:px-10">
+    <footer className="public-night border-t border-[var(--public-border)] bg-[var(--brand-header)] px-5 sm:px-8 lg:px-10">
       <div className="mx-auto max-w-7xl">
         <div className="grid gap-10 py-10 sm:py-12 lg:grid-cols-[1.35fr_0.8fr_1fr] lg:gap-14">
           <div>
-            <Logo size={26} showName href="/" />
+            <SiteBrand />
             <p className="mt-4 max-w-md text-sm leading-6 text-[var(--public-secondary)]">
               Transporte público de Uruapan con datos locales, mapas claros y herramientas gratuitas.
             </p>

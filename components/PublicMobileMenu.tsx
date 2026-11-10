@@ -55,7 +55,7 @@ export default function PublicMobileMenu({
         ref={buttonRef}
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="grid h-10 w-10 place-items-center rounded-md border border-white/10 text-[#e8f2d8]"
+        className="grid h-11 w-11 place-items-center rounded-[9px] border border-[#405340] text-[var(--brand-white)]"
         aria-label={open ? "Cerrar navegación" : "Abrir navegación"}
         aria-expanded={open}
         aria-controls="public-mobile-navigation"
@@ -68,7 +68,7 @@ export default function PublicMobileMenu({
         <nav
           id="public-mobile-navigation"
           aria-label="Navegación móvil"
-          className="absolute right-0 top-12 w-52 overflow-hidden rounded-lg border border-white/10 bg-[#111a0d] p-1.5 shadow-2xl"
+          className="absolute right-0 top-12 w-52 overflow-hidden rounded-lg border border-white/10 bg-[var(--brand-forest)] p-1.5 shadow-2xl"
         >
           {items.map((link) => (
             <Link

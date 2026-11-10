@@ -100,16 +100,16 @@ export default function HorariosPage() {
   };
 
   return (
-    <main className="public-page min-h-dvh bg-[#0c110a] text-[var(--public-ink)]">
+    <main className="public-page min-h-dvh bg-[var(--public-bg)] text-[var(--public-ink)]">
       <ForceDark />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <PublicHeader active="horarios" />
 
       <div className="px-5 pb-12 pt-24 sm:px-8 lg:px-10">
         <div className="mx-auto max-w-5xl">
-          <header>
+          <header className="public-intro">
             <p className="text-xs font-bold uppercase tracking-widest text-[var(--public-accent)]">Muévete por Uruapan</p>
-            <h1 className="public-page-title mt-2 text-3xl sm:text-4xl">Horarios de transporte</h1>
+            <h1 className="public-page-title mt-2 text-3xl sm:text-4xl">Horarios de <em>transporte</em></h1>
             <p className="mt-2 text-sm leading-5 text-[var(--public-secondary)]">Consulta el inicio, cierre y frecuencia de tu ruta.</p>
             <nav aria-label="Más opciones de transporte" className="mt-3 flex flex-wrap gap-x-5 text-sm font-bold text-[var(--public-accent)]">
               <Link href="/rutas" className="inline-flex min-h-11 items-center hover:underline">Todas las rutas →</Link>
@@ -143,10 +143,10 @@ export default function HorariosPage() {
           </section>
 
           <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-            <Link href="/mapa" className="inline-flex h-12 items-center justify-center rounded-md bg-[#6aab48] px-6 text-sm font-bold text-[#0c110a] transition hover:bg-[#77bc52]">
+            <Link href="/mapa" className="inline-flex h-12 items-center justify-center rounded-md bg-[var(--brand-lime)] px-6 text-sm font-bold text-[var(--brand-deep)] transition hover:bg-[#e7ffa7]">
               Planear mi viaje en el mapa
             </Link>
-            <Link href="/rutas" className="inline-flex h-12 items-center justify-center rounded-md border border-[var(--public-border)] px-6 text-sm font-bold text-[var(--public-ink)] transition hover:bg-white/[0.04]">
+            <Link href="/rutas" className="inline-flex h-12 items-center justify-center rounded-md border border-[var(--public-border)] px-6 text-sm font-bold text-[var(--public-ink)] transition hover:bg-[var(--public-hover)]">
               Ver directorio de rutas
             </Link>
           </div>

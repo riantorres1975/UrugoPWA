@@ -7,6 +7,10 @@ import ChatBotLauncher from "@/components/ChatBotLauncher";
 
 type RoutesMapMode = "all-visible" | "all-highlighted";
 
+function MapBrandMark() {
+  return <span className="map-brand-mark">Uru<span>Go</span></span>;
+}
+
 function GuideButton({ variant }: { variant: "desktop" | "mobile" }) {
   return (
     <Link
@@ -71,16 +75,12 @@ export function DesktopMapSidebar({
 }) {
   return (
     <aside
-      className={`relative z-30 hidden h-full shrink-0 flex-col border-r border-foreground/8 bg-ink-900/98 backdrop-blur-2xl lg:flex ${width == null ? "lg:w-[420px]" : ""}`}
+      className={`relative z-30 hidden h-full shrink-0 flex-col border-r border-foreground/8 bg-[var(--brand-header)] backdrop-blur-2xl lg:flex ${width == null ? "lg:w-[420px]" : ""}`}
       style={width != null ? { width: `${width}px` } : undefined}
     >
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-foreground/8 px-5 py-4">
         <div className="flex items-center gap-2.5">
-          <span className="relative flex h-2.5 w-2.5" aria-hidden="true">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-lima opacity-50" />
-            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-lima" />
-          </span>
-          <p className="font-serif-display text-[16px] font-black tracking-tight text-white">UruGo</p>
+          <MapBrandMark />
           <span className="rounded-full border border-lima/25 bg-lima/10 px-2 py-0.5 text-[11px] font-semibold text-lima">
             {routeCount} rutas
           </span>
@@ -146,8 +146,7 @@ export function MobileMapControls({
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72 bg-gradient-to-b from-black/45 via-black/20 to-transparent" aria-hidden="true" />
       <div className="flex items-center gap-1 pr-10">
         <div className="ov-panel pointer-events-auto inline-flex items-center gap-1.5 rounded-2xl border px-2 py-2 shadow-[0_4px_24px_rgba(0,0,0,0.18)] backdrop-blur-xl">
-          <span className="h-2 w-2 rounded-full bg-lima" aria-hidden="true" />
-          <p className="ov-text font-serif-display text-[15px] font-black leading-none tracking-tight">UruGo</p>
+          <MapBrandMark />
           <span className="sr-only">{routeCount} rutas disponibles</span>
         </div>
         <GuideButton variant="mobile" />

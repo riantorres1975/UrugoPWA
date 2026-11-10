@@ -1150,7 +1150,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   if (fetchError) {
     const offline = !isOnline;
     return (
-      <main className="relative flex h-dvh w-full flex-col items-center justify-center gap-4 overflow-hidden bg-ink-900 px-6 text-center">
+      <main className="map-brand relative flex h-dvh w-full flex-col items-center justify-center gap-4 overflow-hidden bg-ink-900 px-6 text-center">
         <p className="font-display text-[18px] font-semibold text-white">No se pudieron cargar las rutas</p>
         <p className="max-w-sm text-[13px] leading-6 text-foreground/60">
           {offline
@@ -1367,7 +1367,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   };
 
   return (
-    <main className="relative flex h-dvh w-full overflow-hidden">
+    <main className="map-brand relative flex h-dvh w-full overflow-hidden">
       <h1 className="sr-only">Mapa de rutas de transporte en Uruapan</h1>
 
       {/* ══════════════════════════════════════════════════════════════════════

@@ -76,23 +76,23 @@ export default async function AdminRoutePage({ params, searchParams }: Props) {
   const linkedReport = reportsByIdResult.data as ApprovedReport | null;
 
   return (
-    <main className="min-h-dvh bg-[#0c110a] text-[#e8f2d8]">
+    <main className="min-h-dvh bg-[var(--admin-bg)] text-[var(--brand-white)]">
       <AdminHeader email={access.email} active="routes" />
       <div className="mx-auto max-w-[1500px] px-5 py-8 sm:px-8 lg:py-10">
-        <Link href="/admin/routes" className="inline-flex items-center gap-2 text-xs font-bold text-[#78965f] transition hover:text-[#b8e840]"><ArrowLeft className="h-4 w-4" /> Volver al inventario</Link>
+        <Link href="/admin/routes" className="inline-flex items-center gap-2 text-xs font-bold text-[var(--admin-muted)] transition hover:text-[var(--brand-lime)]"><ArrowLeft className="h-4 w-4" /> Volver al inventario</Link>
 
-        <div className="mt-6 flex flex-col gap-5 border-b border-white/[0.08] pb-8 md:flex-row md:items-end md:justify-between">
+        <div className="mt-6 flex flex-col gap-5 border-b border-[var(--admin-line)] pb-8 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-xs font-black uppercase text-[#b8e840]">Ruta #{route.id} · versión {route.data_version}</p>
+            <p className="text-xs font-black uppercase text-[var(--brand-lime)]">Ruta #{route.id} · versión {route.data_version}</p>
             <h1 className="mt-2 font-serif text-4xl font-black sm:text-5xl">{route.name}</h1>
-            <p className="mt-2 text-sm text-[#78965f]">{route.original_name}</p>
+            <p className="mt-2 text-sm text-[var(--admin-muted)]">{route.original_name}</p>
           </div>
-          <Link href={`/mapa?r=${encodeURIComponent(route.name)}`} target="_blank" className="inline-flex h-10 w-fit items-center border border-white/15 px-4 text-xs font-bold text-[#a8c888] hover:border-[#6aab48]/60 hover:text-[#e8f2d8]">Abrir en el mapa</Link>
+          <Link href={`/mapa?r=${encodeURIComponent(route.name)}`} target="_blank" className="inline-flex h-10 w-fit items-center border border-white/15 px-4 text-xs font-bold text-[var(--admin-muted)] hover:border-[#6aab48]/60 hover:text-[var(--brand-white)]">Abrir en el mapa</Link>
         </div>
 
         {query.publicada && (
           <div className="mt-6 flex items-center gap-3 border-l-2 border-[#b8e840] bg-[#b8e840]/[0.06] px-4 py-3 text-sm text-[#c9dbb9]" role="status">
-            <CheckCircle2 className="h-4 w-4 text-[#b8e840]" /> Versión {query.publicada} publicada{query.restaurada ? ` desde la versión ${query.restaurada}` : ""}.
+            <CheckCircle2 className="h-4 w-4 text-[var(--brand-lime)]" /> Versión {query.publicada} publicada{query.restaurada ? ` desde la versión ${query.restaurada}` : ""}.
           </div>
         )}
 
@@ -111,15 +111,15 @@ export default async function AdminRoutePage({ params, searchParams }: Props) {
         </div>
 
         {verificationHistoryResult.error ? (
-          <p className="border-b border-white/[0.08] py-4 text-xs text-[#f4df98]">El historial estará disponible después de aplicar la migración de verificaciones.</p>
+          <p className="border-b border-[var(--admin-line)] py-4 text-xs text-[#f4df98]">El historial estará disponible después de aplicar la migración de verificaciones.</p>
         ) : fieldVerifications.length > 0 ? (
-          <section className="border-b border-white/[0.08] py-6" aria-labelledby="verification-history-heading">
-            <h2 id="verification-history-heading" className="text-xs font-black uppercase text-[#78965f]">Comprobaciones recientes</h2>
+          <section className="border-b border-[var(--admin-line)] py-6" aria-labelledby="verification-history-heading">
+            <h2 id="verification-history-heading" className="text-xs font-black uppercase text-[var(--admin-muted)]">Comprobaciones recientes</h2>
             <ol className="mt-4 divide-y divide-white/[0.06]">
               {fieldVerifications.map((verification) => (
                 <li key={verification.id} className="grid gap-2 py-3 text-sm sm:grid-cols-[170px_minmax(0,1fr)]">
                   <time dateTime={verification.verified_at} className="text-xs text-[#57d6e8]">{formatDate(verification.verified_at)}</time>
-                  <p className="leading-6 text-[#a8c888]">{verification.note}</p>
+                  <p className="leading-6 text-[var(--admin-muted)]">{verification.note}</p>
                 </li>
               ))}
             </ol>
@@ -127,7 +127,7 @@ export default async function AdminRoutePage({ params, searchParams }: Props) {
         ) : null}
 
         <section className="py-8" aria-labelledby="editor-heading">
-          <h2 id="editor-heading" className="mb-6 text-sm font-black uppercase text-[#a8c888]">Preparar nueva versión</h2>
+          <h2 id="editor-heading" className="mb-6 text-sm font-black uppercase text-[var(--admin-muted)]">Preparar nueva versión</h2>
           <RoutePathEditor
             route={{
               id: route.id,
@@ -144,22 +144,22 @@ export default async function AdminRoutePage({ params, searchParams }: Props) {
           />
         </section>
 
-        <section className="border-t border-white/[0.08] py-8" aria-labelledby="history-heading">
-          <div className="mb-5 flex items-center gap-3"><History className="h-5 w-5 text-[#b8e840]" /><h2 id="history-heading" className="text-sm font-black uppercase text-[#a8c888]">Historial de publicaciones</h2></div>
+        <section className="border-t border-[var(--admin-line)] py-8" aria-labelledby="history-heading">
+          <div className="mb-5 flex items-center gap-3"><History className="h-5 w-5 text-[var(--brand-lime)]" /><h2 id="history-heading" className="text-sm font-black uppercase text-[var(--admin-muted)]">Historial de publicaciones</h2></div>
           {revisionsResult.error ? (
             <p className="text-sm text-[#f4df98]">No se pudo cargar el historial.</p>
           ) : (
-            <div className="divide-y divide-white/[0.08] border-y border-white/[0.08]">
+            <div className="divide-y divide-white/[0.08] border-y border-[var(--admin-line)]">
               {revisions.map((revision) => (
                 <article key={revision.id} className="grid gap-4 py-5 md:grid-cols-[100px_minmax(0,1fr)_190px] md:items-center">
-                  <div><strong className="font-serif text-2xl text-[#e8f2d8]">v{revision.version}</strong>{revision.version === route.data_version && <span className="ml-2 text-[10px] font-black uppercase text-[#b8e840]">Actual</span>}</div>
-                  <div><p className="text-sm leading-6 text-[#c9dbb9]">{revision.change_summary || "Sin resumen"}</p><p className="mt-1 text-[11px] text-[#60784f]">{formatDate(revision.published_at ?? revision.created_at)} · {revision.source}</p></div>
+                  <div><strong className="font-serif text-2xl text-[var(--brand-white)]">v{revision.version}</strong>{revision.version === route.data_version && <span className="ml-2 text-[10px] font-black uppercase text-[var(--brand-lime)]">Actual</span>}</div>
+                  <div><p className="text-sm leading-6 text-[#c9dbb9]">{revision.change_summary || "Sin resumen"}</p><p className="mt-1 text-[11px] text-[var(--admin-muted)]">{formatDate(revision.published_at ?? revision.created_at)} · {revision.source}</p></div>
                   {revision.version !== route.data_version && (
                     <form action={restoreRouteRevision}>
                       <input type="hidden" name="routeId" value={route.id} />
                       <input type="hidden" name="expectedVersion" value={route.data_version} />
                       <input type="hidden" name="revisionId" value={revision.id} />
-                      <button className="inline-flex h-9 w-full items-center justify-center gap-2 border border-white/15 px-3 text-xs font-bold text-[#a8c888] transition hover:border-[#f4c84a]/50 hover:text-[#f4df98]"><RotateCcw className="h-3.5 w-3.5" /> Restaurar esta versión</button>
+                      <button className="inline-flex h-9 w-full items-center justify-center gap-2 border border-white/15 px-3 text-xs font-bold text-[var(--admin-muted)] transition hover:border-[#f4c84a]/50 hover:text-[#f4df98]"><RotateCcw className="h-3.5 w-3.5" /> Restaurar esta versión</button>
                     </form>
                   )}
                 </article>

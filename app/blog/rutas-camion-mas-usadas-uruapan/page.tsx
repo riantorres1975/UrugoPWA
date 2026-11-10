@@ -66,7 +66,7 @@ export default function RutasCamionMasUsadasPage() {
           eyebrow="En preparación"
           title={
             <>
-              Las rutas de <span className="italic text-lima">camión</span> más usadas en Uruapan.
+              Las rutas de <em>camión</em> más usadas en Uruapan.
             </>
           }
           intro="Estamos preparando un ranking detallado de las rutas más consultadas, sus destinos principales y cómo conectan con el Teleférico."
@@ -103,29 +103,29 @@ export default function RutasCamionMasUsadasPage() {
             <Link
               key={r.id}
               href={`/mapa?destino=${encodeURIComponent(r.id)}`}
-              className="group rounded-lg border border-foreground/10 bg-ink-900/60 p-5 transition hover:border-[#6aab48]/40"
+              className="group rounded-lg border border-[var(--public-border)] bg-[var(--public-surface)] p-5 transition hover:border-[#6aab48]/40"
             >
-              <p className="text-[10px] font-bold uppercase text-lima">{r.id}</p>
-              <h3 className="mt-1 font-sans text-lg font-bold text-white">{r.nombre}</h3>
-              <p className="mt-1 text-[11px] font-semibold text-avocado-400">{r.detalle}</p>
-              <p className="mt-3 text-sm leading-6 text-foreground/70">{r.desc}</p>
-              <span className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-lima transition group-hover:gap-2">
+              <p className="text-[10px] font-bold uppercase text-[var(--public-accent)]">{r.id}</p>
+              <h3 className="mt-1 font-sans text-lg font-bold text-[var(--public-ink)]">{r.nombre}</h3>
+              <p className="mt-1 text-[11px] font-semibold text-[var(--public-accent)]">{r.detalle}</p>
+              <p className="mt-3 text-sm leading-6 text-[var(--public-secondary)]">{r.desc}</p>
+              <span className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-[var(--public-accent)] transition group-hover:gap-2">
                 Ver en el mapa →
               </span>
             </Link>
           ))}
         </section>
 
-        <section id="explorar" className="mt-8 scroll-mt-40 border-t border-foreground/12 pt-8">
-          <h2 className="text-white public-section-title">
+        <section id="explorar" className="mt-8 scroll-mt-40 border-t border-[var(--public-border)] pt-8">
+          <h2 className="text-[var(--public-ink)] public-section-title">
             Próximamente
           </h2>
-          <p className="mt-3 text-sm leading-7 text-foreground/75">
+          <p className="mt-3 text-sm leading-7 text-[var(--public-secondary)]">
             Mientras terminamos esta guía, puedes explorar todas las rutas en el mapa interactivo. Son 40 rutas de camión urbano y el Teleférico que cubren toda la ciudad.
           </p>
           <Link
             href="/mapa"
-            className="mt-6 inline-flex min-h-11 items-center rounded-md bg-[#b8e840] px-6 py-2 text-sm font-bold text-[#0c110a] hover:bg-[#c6f052]"
+            className="mt-6 inline-flex min-h-11 items-center rounded-md bg-[var(--brand-lime)] px-6 py-2 text-sm font-bold text-[var(--brand-deep)] hover:bg-[#e7ffa7]"
           >
             Explorar el mapa →
           </Link>

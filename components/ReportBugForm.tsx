@@ -192,7 +192,7 @@ export default function ReportBugForm({
 
   if (submitState === "success") {
     return (
-      <section className="border-y border-[#6aab48]/30 bg-[#10180d] px-5 py-10 text-center sm:px-8" aria-live="polite">
+      <section className="border-y border-[#6aab48]/30 rounded-2xl bg-[var(--public-tint)] px-5 py-10 text-center sm:px-8" aria-live="polite">
         <CheckCircle2 className="mx-auto h-10 w-10 text-[var(--public-accent)]" aria-hidden="true" />
         <p className="mt-5 text-xs font-bold uppercase text-[var(--public-muted)]">Reporte recibido</p>
         <h2 className="mt-2 text-[var(--public-ink)] public-section-title">Gracias, recibimos tu reporte.</h2>
@@ -208,22 +208,22 @@ export default function ReportBugForm({
             setProposedPath([]);
             setSubmitState("idle");
           }}
-          className="mt-7 inline-flex h-11 items-center justify-center bg-[#6aab48] px-5 text-sm font-bold text-[#0c110a] transition hover:bg-[#79bd55]"
+          className="mt-7 inline-flex h-11 items-center justify-center bg-[var(--brand-lime)] px-5 text-sm font-bold text-[var(--brand-deep)] transition hover:bg-[#e7ffa7]"
         >
           Enviar otro reporte
         </button>
-        <Link href="/#tu-dia" className="mt-3 block min-h-11 py-3 text-sm font-bold text-lima underline">Consultar mis reportes</Link>
+        <Link href="/#tu-dia" className="mt-3 block min-h-11 py-3 text-sm font-bold text-[var(--public-accent)] underline">Consultar mis reportes</Link>
       </section>
     );
   }
 
-  const fieldClass = "mt-2 w-full border border-[#6aab48]/25 bg-[#0a1008] px-4 text-base text-[var(--public-ink)] outline-none placeholder:text-white/30 focus:border-[#b8e840]/70 focus:ring-2 focus:ring-[#b8e840]/10";
+  const fieldClass = "mt-2 w-full rounded-lg border border-[var(--public-border)] bg-[var(--public-surface)] px-4 text-base text-[var(--public-ink)] outline-none placeholder:text-[var(--public-muted)] focus:border-[#b8e840]/70 focus:ring-2 focus:ring-[#b8e840]/10";
 
   return (
-    <form className="border-y border-[var(--public-border)] bg-[#0f170c]" onSubmit={submitReport}>
+    <form className="overflow-hidden rounded-2xl border border-[var(--public-border)] bg-[var(--public-surface)]" onSubmit={submitReport}>
       <section className="px-5 py-7 sm:px-8 sm:py-9" aria-labelledby="report-problem-title">
         <div className="flex items-center gap-3">
-          <span className="grid h-7 w-7 place-items-center bg-[#b8e840] text-xs font-bold text-[#0c110a]">1</span>
+          <span className="grid h-7 w-7 place-items-center bg-[var(--brand-lime)] text-xs font-bold text-[var(--brand-deep)]">1</span>
           <h2 id="report-problem-title" className="text-[var(--public-ink)] public-section-title">¿Qué está mal?</h2>
         </div>
         <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -231,7 +231,7 @@ export default function ReportBugForm({
             const Icon = choice.icon;
             const selected = reportType === choice.value;
             return (
-              <label key={choice.value} className={`relative min-h-28 cursor-pointer border p-4 transition ${index === 0 ? "col-span-2 sm:col-span-3" : ""} ${selected ? "border-[#b8e840] bg-[#b8e840]/10" : "border-[var(--public-border)] bg-[#0a1008] hover:border-[#6aab48]/50"}`}>
+              <label key={choice.value} className={`relative min-h-28 cursor-pointer rounded-xl border p-4 transition ${index === 0 ? "col-span-2 sm:col-span-3" : ""} ${selected ? "border-[var(--public-accent)] bg-[var(--public-tint)]" : "border-[var(--public-border)] bg-[var(--public-surface)] hover:border-[#6aab48]/50"}`}>
                 <input
                   type="radio"
                   name="reportType"
@@ -255,7 +255,7 @@ export default function ReportBugForm({
 
       <section className="border-t border-[var(--public-border)] px-5 py-7 sm:px-8 sm:py-9" aria-labelledby="report-route-title">
         <div className="flex items-center gap-3">
-          <span className="grid h-7 w-7 place-items-center bg-[#b8e840] text-xs font-bold text-[#0c110a]">2</span>
+          <span className="grid h-7 w-7 place-items-center bg-[var(--brand-lime)] text-xs font-bold text-[var(--brand-deep)]">2</span>
           <h2 id="report-route-title" className="text-[var(--public-ink)] public-section-title">{requiresRoute ? "¿Qué ruta es?" : "¿Dónde ocurrió?"}</h2>
         </div>
 
@@ -281,7 +281,7 @@ export default function ReportBugForm({
           <div className="mt-5 border-y border-[var(--public-border)] py-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-xs font-bold uppercase text-[#74dceb]">Ejemplo rápido</p>
+                <p className="text-xs font-bold uppercase text-[var(--public-teal)]">Ejemplo rápido</p>
                 <p className="mt-1 text-sm leading-6 text-[var(--public-secondary)]">Mira cómo seleccionar una ruta y marcar las calles correctas.</p>
               </div>
               <button
@@ -289,7 +289,7 @@ export default function ReportBugForm({
                 onClick={() => setShowRouteGuide((visible) => !visible)}
                 aria-expanded={showRouteGuide}
                 aria-controls="route-report-guide"
-                className="inline-flex h-11 shrink-0 items-center justify-center gap-2 border border-[#48cce0]/40 px-4 text-sm font-bold text-[#8de6f1] transition hover:border-[#48cce0] hover:bg-[#48cce0]/10"
+                className="inline-flex h-11 shrink-0 items-center justify-center gap-2 border border-[#48cce0]/40 px-4 text-sm font-bold text-[var(--public-teal)] transition hover:border-[#48cce0] hover:bg-[#48cce0]/10"
               >
                 {showRouteGuide ? <X className="h-4 w-4" aria-hidden="true" /> : <PlayCircle className="h-4 w-4" aria-hidden="true" />}
                 {showRouteGuide ? "Ocultar ejemplo" : "Ver ejemplo"}
@@ -335,20 +335,20 @@ export default function ReportBugForm({
 
         {canProposePath && (
           <div className="mt-5 border-l-2 border-[#48cce0] bg-[#48cce0]/[0.06] p-4 sm:p-5">
-            <p className="text-xs font-bold uppercase text-[#74dceb]">¿El recorrido del mapa está mal?</p>
+            <p className="text-xs font-bold uppercase text-[var(--public-teal)]">¿El recorrido del mapa está mal?</p>
             <h3 className="mt-2 text-lg font-bold text-[var(--public-ink)]">Marca por dónde pasa realmente.</h3>
             <p className="mt-1 text-xs leading-5 text-[var(--public-muted)]">Verás la ruta publicada como referencia. Toca las calles en orden para dibujar la corrección.</p>
             <div className="mt-4">
               <RouteProposalMap routeKey={selectedRouteKey} points={proposedPath} onChange={setProposedPath} />
             </div>
-            {proposedPath.length === 1 && <p className="mt-2 text-xs text-[#f4df98]">Marca un segundo punto para formar el recorrido.</p>}
+            {proposedPath.length === 1 && <p className="mt-2 text-xs text-[var(--public-amber)]">Marca un segundo punto para formar el recorrido.</p>}
           </div>
         )}
       </section>
 
       <section className="border-t border-[var(--public-border)] px-5 py-7 sm:px-8 sm:py-9" aria-labelledby="report-detail-title">
         <div className="flex items-center gap-3">
-          <span className="grid h-7 w-7 place-items-center bg-[#b8e840] text-xs font-bold text-[#0c110a]">3</span>
+          <span className="grid h-7 w-7 place-items-center bg-[var(--brand-lime)] text-xs font-bold text-[var(--brand-deep)]">3</span>
           <h2 id="report-detail-title" className="text-[var(--public-ink)] public-section-title">Cuéntanos qué cambió</h2>
         </div>
         <label className="mt-5 block">
@@ -378,7 +378,7 @@ export default function ReportBugForm({
 
         {submitState === "error" && (
           <div className="mt-5 border-l-2 border-[#f4c84a] bg-[#f4c84a]/[0.07] px-4 py-3" role="alert">
-            <p className="text-sm font-bold text-[#f4df98]">{submitError}</p>
+            <p className="text-sm font-bold text-[var(--public-amber)]">{submitError}</p>
             <p className="mt-1 text-xs leading-5 text-[var(--public-secondary)]">Tus datos siguen en el formulario. Intenta nuevamente en un momento.</p>
           </div>
         )}
@@ -388,7 +388,7 @@ export default function ReportBugForm({
             <p className="text-xs font-bold text-[var(--public-secondary)]">{summary}</p>
             <p className="mt-1 max-w-md text-[11px] leading-5 text-[var(--public-muted)]">El reporte será privado hasta que se revise. No cambiaremos una ruta automáticamente.</p>
           </div>
-          <button type="submit" disabled={!canSubmit} className="inline-flex h-12 min-w-48 items-center justify-center gap-2 bg-[#b8e840] px-6 text-sm font-bold text-[#0c110a] transition hover:bg-[#c7f35c] disabled:cursor-not-allowed disabled:opacity-40">
+          <button type="submit" disabled={!canSubmit} className="inline-flex h-12 min-w-48 items-center justify-center gap-2 bg-[var(--brand-lime)] px-6 text-sm font-bold text-[var(--brand-deep)] transition hover:bg-[#e7ffa7] disabled:cursor-not-allowed disabled:opacity-40">
             {submitState === "submitting" ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Send className="h-4 w-4" aria-hidden="true" />}
             {submitState === "submitting" ? "Enviando" : "Enviar reporte"}
           </button>

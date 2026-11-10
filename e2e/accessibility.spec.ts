@@ -12,6 +12,10 @@ const pages = [
   { name: "reporte de errores", path: "/reportar-error" },
   { name: "apoyo al proyecto", path: "/apoyar" },
   { name: "artículo del blog", path: "/blog/como-usar-el-teleferico-uruapan" },
+  { name: "estaciones del Teleférico", path: "/teleferico-uruapan-horario" },
+  { name: "ficha de ruta", path: "/ruta/ruta-17-purhepechas" },
+  { name: "guía para estudiantes", path: "/blog/guia-transporte-publico-estudiantes-uruapan" },
+  { name: "artículo de rutas populares", path: "/blog/rutas-camion-mas-usadas-uruapan" },
 ] as const;
 
 async function expectNoWcagViolations(page: import("@playwright/test").Page) {

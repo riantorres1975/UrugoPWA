@@ -79,7 +79,7 @@ export default function RutasFilter({ total, gridId = "rutas-grid", emptyId = "r
   return (
     <div
       className="sticky top-[72px] z-30 mb-2 border-b pb-2 pt-2"
-      style={{ borderColor: "var(--public-border)", background: "var(--public-bg)" }}
+      style={{ borderColor: "var(--public-border)", background: "var(--public-tint)" }}
     >
       <label className="block">
         <span className="sr-only">Buscar ruta por número, colonia o destino</span>

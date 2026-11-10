@@ -78,7 +78,7 @@ const submissionExample = `curl -X POST ${submissionEndpoint} \\
 
 export default function DataApiPage() {
   return (
-    <main className="public-page min-h-dvh bg-[#0c110a] text-[var(--public-ink)]" data-theme="dark">
+    <main className="public-page min-h-dvh bg-[var(--public-bg)] text-[var(--public-ink)]" data-theme="dark">
       <ForceDark />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <PublicHeader />
@@ -88,7 +88,7 @@ export default function DataApiPage() {
           <div className="mx-auto max-w-[1240px]">
             <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-end">
               <div>
-                <p className="text-[11px] font-bold uppercase text-[#57d6e8]">Consulta pública · Escritura moderada</p>
+                <p className="text-[11px] font-bold uppercase text-[var(--public-teal)]">Consulta pública · Escritura moderada</p>
                 <h1 className="mt-5 max-w-4xl public-page-title">
                   Datos y API <span className="text-[var(--public-accent)]">de UruGo.</span>
                 </h1>
@@ -98,9 +98,9 @@ export default function DataApiPage() {
                 <a
                   href="/api/v1/openapi"
                   download="urugo-openapi.json"
-                  className="mt-7 inline-flex min-h-11 items-center gap-2 border border-[#57d6e8]/40 px-4 text-sm font-bold text-[var(--public-ink)] transition hover:border-[#57d6e8] hover:text-white"
+                  className="mt-7 inline-flex min-h-11 items-center gap-2 border border-[#57d6e8]/40 px-4 text-sm font-bold text-[var(--public-ink)] transition hover:border-[#57d6e8] hover:text-[var(--public-ink)]"
                 >
-                  <FileJson2 className="h-4 w-4 text-[#57d6e8]" aria-hidden="true" />
+                  <FileJson2 className="h-4 w-4 text-[var(--public-teal)]" aria-hidden="true" />
                   Descargar OpenAPI
                 </a>
               </div>
@@ -118,20 +118,20 @@ export default function DataApiPage() {
           <div className="mx-auto max-w-[1240px]">
             <div className="grid gap-10 lg:grid-cols-[300px_minmax(0,1fr)]">
               <div>
-                <Database className="h-8 w-8 text-[#57d6e8]" strokeWidth={1.6} aria-hidden="true" />
+                <Database className="h-8 w-8 text-[var(--public-teal)]" strokeWidth={1.6} aria-hidden="true" />
                 <h2 id="endpoint-title" className="mt-5 public-section-title">Un punto de entrada.</h2>
                 <p className="mt-4 text-sm leading-7 text-[var(--public-secondary)]">Devuelve únicamente recorridos activos y publicados. Si la base remota falla, UruGo conserva un respaldo estático.</p>
               </div>
 
               <div className="min-w-0 border-y border-[var(--public-border)]">
                 <div className="flex flex-col gap-3 border-b border-[var(--public-border)] py-5 sm:flex-row sm:items-center">
-                  <span className="w-fit bg-[#b8e840] px-2 py-1 text-[11px] font-bold text-[#0c110a]">GET</span>
+                  <span className="w-fit bg-[var(--brand-lime)] px-2 py-1 text-[11px] font-bold text-[var(--brand-deep)]">GET</span>
                   <code className="min-w-0 break-all text-sm text-[var(--public-ink)]">{endpoint}</code>
                   <a href={endpoint} target="_blank" rel="noreferrer" aria-label="Abrir respuesta de la API" title="Abrir respuesta" className="grid h-9 w-9 shrink-0 place-items-center border border-[var(--public-border)] text-[var(--public-secondary)] transition hover:border-[#57d6e8]/60 hover:text-[var(--public-ink)] sm:ml-auto">
                     <ExternalLink className="h-4 w-4" aria-hidden="true" />
                   </a>
                 </div>
-                <pre className="overflow-x-auto py-6 text-xs leading-6 text-[#9fc083]"><code>{`curl -H "Accept: application/json" \\\n+  ${endpoint}`}</code></pre>
+                <pre tabIndex={0} role="region" aria-label="Comando de consulta" className="overflow-x-auto py-6 text-xs leading-6 text-[var(--public-accent)]"><code>{`curl -H "Accept: application/json" \\\n+  ${endpoint}`}</code></pre>
               </div>
             </div>
           </div>
@@ -141,8 +141,8 @@ export default function DataApiPage() {
           <div className="mx-auto max-w-[1240px]">
             <div className="grid gap-12 lg:grid-cols-[300px_minmax(0,1fr)]">
               <div>
-                <KeyRound className="h-8 w-8 text-[#f4c84a]" strokeWidth={1.6} aria-hidden="true" />
-                <p className="mt-6 text-[11px] font-bold uppercase text-[#f4c84a]">Acceso por invitación</p>
+                <KeyRound className="h-8 w-8 text-[var(--public-amber)]" strokeWidth={1.6} aria-hidden="true" />
+                <p className="mt-6 text-[11px] font-bold uppercase text-[var(--public-amber)]">Acceso por invitación</p>
                 <h2 id="write-api-title" className="mt-3 public-section-title">Aportes desde otros proyectos.</h2>
                 <p className="mt-4 text-sm leading-7 text-[var(--public-secondary)]">
                   Organizaciones y herramientas locales pueden solicitar una clave para enviar correcciones. Cada clave tiene cuota propia, puede revocarse y nunca permite editar una ruta publicada.
@@ -151,11 +151,11 @@ export default function DataApiPage() {
 
               <div className="min-w-0">
                 <div className="flex flex-col gap-3 border-y border-[var(--public-border)] py-5 sm:flex-row sm:items-center">
-                  <span className="w-fit bg-[#f4c84a] px-2 py-1 text-[11px] font-bold text-[#0c110a]">POST</span>
+                  <span className="w-fit bg-[#f4c84a] px-2 py-1 text-[11px] font-bold text-[var(--brand-deep)]">POST</span>
                   <code className="min-w-0 break-all text-sm text-[var(--public-ink)]">{submissionEndpoint}</code>
                   <span className="text-xs font-bold text-[var(--public-muted)] sm:ml-auto">Servidor a servidor</span>
                 </div>
-                <pre className="max-h-[440px] overflow-auto border-b border-[var(--public-border)] py-6 text-[11px] leading-6 text-[#9fc083]"><code>{submissionExample}</code></pre>
+                <pre tabIndex={0} role="region" aria-label="Ejemplo de envío" className="max-h-[440px] overflow-auto border-b border-[var(--public-border)] py-6 text-[11px] leading-6 text-[var(--public-accent)]"><code>{submissionExample}</code></pre>
 
                 <ol className="grid border-b border-[var(--public-border)] sm:grid-cols-3">
                   <li className="py-5 sm:border-r sm:border-[var(--public-border)] sm:pr-5"><span className="font-sans text-2xl font-bold text-[var(--public-accent)]">01</span><p className="mt-2 text-sm font-bold">Recibir</p><p className="mt-2 text-xs leading-5 text-[var(--public-muted)]">La propuesta entra como pendiente.</p></li>
@@ -179,9 +179,9 @@ export default function DataApiPage() {
               </div>
             </div>
 
-            <div className="min-w-0 border border-[var(--public-border)] bg-[#090d08]">
-              <div className="flex items-center gap-2 border-b border-[var(--public-border)] px-5 py-4 text-xs font-bold text-[var(--public-secondary)]"><Braces className="h-4 w-4 text-[#57d6e8]" /> Respuesta abreviada</div>
-              <pre className="max-h-[440px] overflow-auto p-5 text-[11px] leading-6 text-[#9fc083]"><code>{responseExample}</code></pre>
+            <div className="min-w-0 border border-[var(--public-border)] bg-[var(--public-surface)]">
+              <div className="flex items-center gap-2 border-b border-[var(--public-border)] px-5 py-4 text-xs font-bold text-[var(--public-secondary)]"><Braces className="h-4 w-4 text-[var(--public-teal)]" /> Respuesta abreviada</div>
+              <pre tabIndex={0} role="region" aria-label="Ejemplo de respuesta" className="max-h-[440px] overflow-auto p-5 text-[11px] leading-6 text-[var(--public-accent)]"><code>{responseExample}</code></pre>
             </div>
           </div>
         </section>
@@ -191,8 +191,8 @@ export default function DataApiPage() {
             <h2 id="rules-title" className="max-w-3xl public-section-title">Reglas pequeñas, datos más confiables.</h2>
             <div className="mt-10 grid border-y border-[var(--public-border)] md:grid-cols-3">
               <div className="border-b border-[var(--public-border)] py-7 md:border-b-0 md:border-r md:pr-8"><TimerReset className="h-6 w-6 text-[var(--public-accent)]" /><h3 className="mt-6 font-sans text-2xl font-bold">Caché consciente</h3><p className="mt-3 text-sm leading-7 text-[var(--public-secondary)]">La respuesta puede almacenarse una hora y publica <code>ETag</code> para evitar descargas repetidas.</p></div>
-              <div className="border-b border-[var(--public-border)] py-7 md:border-b-0 md:border-r md:px-8"><Route className="h-6 w-6 text-[#57d6e8]" /><h3 className="mt-6 font-sans text-2xl font-bold">Lectura desde otras apps</h3><p className="mt-3 text-sm leading-7 text-[var(--public-secondary)]">El endpoint admite CORS para solicitudes <code>GET</code>. No expone contactos, reportes ni identificadores comunitarios.</p></div>
-              <div className="py-7 md:pl-8"><ShieldCheck className="h-6 w-6 text-[#f4c84a]" /><h3 className="mt-6 font-sans text-2xl font-bold">Escritura controlada</h3><p className="mt-3 text-sm leading-7 text-[var(--public-secondary)]">Las integraciones autorizadas sólo crean propuestas pendientes. Cada corrección se modera y publica como una versión nueva.</p></div>
+              <div className="border-b border-[var(--public-border)] py-7 md:border-b-0 md:border-r md:px-8"><Route className="h-6 w-6 text-[var(--public-teal)]" /><h3 className="mt-6 font-sans text-2xl font-bold">Lectura desde otras apps</h3><p className="mt-3 text-sm leading-7 text-[var(--public-secondary)]">El endpoint admite CORS para solicitudes <code>GET</code>. No expone contactos, reportes ni identificadores comunitarios.</p></div>
+              <div className="py-7 md:pl-8"><ShieldCheck className="h-6 w-6 text-[var(--public-amber)]" /><h3 className="mt-6 font-sans text-2xl font-bold">Escritura controlada</h3><p className="mt-3 text-sm leading-7 text-[var(--public-secondary)]">Las integraciones autorizadas sólo crean propuestas pendientes. Cada corrección se modera y publica como una versión nueva.</p></div>
             </div>
           </div>
         </section>
@@ -203,7 +203,7 @@ export default function DataApiPage() {
               <GitPullRequest className="h-7 w-7 text-[var(--public-accent)]" strokeWidth={1.6} aria-hidden="true" />
               <h2 className="mt-5 public-section-title">¿El dato ya cambió?</h2>
               <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--public-secondary)]">Envía la ruta, una referencia y, cuando sea posible, evidencia o un trazo aproximado. Dos aportes independientes ayudan a confirmar actividad; un administrador decide qué se publica.</p>
-              <Link href="/reportar-error" className="mt-7 inline-flex min-h-12 items-center gap-2 bg-[#6aab48] px-5 text-sm font-bold text-[#0c110a] transition hover:bg-[#7cbd59]">Proponer una corrección <ArrowRight className="h-4 w-4" /></Link>
+              <Link href="/reportar-error" className="mt-7 inline-flex min-h-12 items-center gap-2 bg-[var(--brand-lime)] px-5 text-sm font-bold text-[var(--brand-deep)] transition hover:bg-[#e7ffa7]">Proponer una corrección <ArrowRight className="h-4 w-4" /></Link>
             </div>
             <div className="border-l border-[var(--public-border)] pl-6 text-sm leading-7 text-[var(--public-muted)] sm:pl-8">
               <p className="font-bold text-[var(--public-ink)]">Reutilización</p>

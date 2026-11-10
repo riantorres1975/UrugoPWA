@@ -8,6 +8,7 @@ import PrivacySafeAnalytics from "@/components/PrivacySafeAnalytics";
 import ClientErrorReporter from "@/components/ClientErrorReporter";
 import { SITE_URL } from "@/lib/site-url";
 import "./globals.css";
+import "./brand.css";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],

@@ -193,7 +193,7 @@ export default async function RoutePage({ params }: RoutePageProps) {
                 className="route-detail-map group flex w-full flex-col overflow-hidden lg:min-h-[440px]"
                 style={{
                   borderBottom: "1px solid rgba(140,200,80,0.08)",
-                  background: "rgba(0,0,0,0.3)",
+                  background: "var(--public-tint)",
                   lineHeight: 0,
                 }}
               >
@@ -248,7 +248,7 @@ export default async function RoutePage({ params }: RoutePageProps) {
                 <div className="mt-8 hidden flex-wrap gap-3 lg:flex">
                   <Link
                     href={`/mapa?r=${encodeURIComponent(route.name)}`}
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-[#b8e840] px-6 text-sm font-bold text-[#0c110a] transition hover:bg-[#c6f052]"
+                    className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-[var(--brand-lime)] px-6 text-sm font-bold text-[var(--brand-deep)] transition hover:bg-[#e7ffa7]"
                   >
                     <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
                       <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -258,7 +258,7 @@ export default async function RoutePage({ params }: RoutePageProps) {
                   </Link>
                   <Link
                     href="/horarios"
-                    className="inline-flex h-12 items-center justify-center rounded-md border px-6 text-sm font-bold transition hover:bg-white/5"
+                    className="inline-flex h-12 items-center justify-center rounded-md border px-6 text-sm font-bold transition hover:bg-[var(--public-hover)]"
                     style={{ borderColor: "var(--public-border)", color: "var(--public-ink)" }}
                   >
                     Consultar horarios
@@ -364,8 +364,8 @@ export default async function RoutePage({ params }: RoutePageProps) {
               )}
 
               <section
-                className="mt-8 rounded-lg border bg-[rgba(184,232,64,0.06)] p-5 lg:mt-0 lg:rounded-none lg:border-y-0 lg:border-r-0 lg:bg-transparent lg:pl-10"
-                style={{ borderColor: "rgba(184,232,64,0.2)" }}
+                className="mt-8 rounded-lg border bg-[var(--public-tint)] p-5 lg:mt-0 lg:rounded-none lg:border-y-0 lg:border-r-0 lg:bg-transparent lg:pl-10"
+                style={{ borderColor: "var(--public-border)" }}
               >
                 <h2 className="public-section-title" style={{ color: "var(--public-ink)" }}>Cómo planear tu viaje</h2>
                 <p className="mt-3 text-sm leading-7" style={{ color: "var(--public-secondary)" }}>
@@ -405,7 +405,7 @@ export default async function RoutePage({ params }: RoutePageProps) {
               <div className="mt-10 flex flex-col gap-3 border-t pt-8 sm:flex-row lg:justify-end" style={{ borderColor: "var(--public-border)" }}>
                 <Link
                   href={`/mapa?r=${encodeURIComponent(route.name)}`}
-                  className="inline-flex h-12 items-center justify-center rounded-md bg-[#b8e840] px-6 text-sm font-bold text-[#0c110a] transition hover:bg-[#c6f052]"
+                  className="inline-flex h-12 items-center justify-center rounded-md bg-[var(--brand-lime)] px-6 text-sm font-bold text-[var(--brand-deep)] transition hover:bg-[#e7ffa7]"
                 >
                   Ver en el mapa
                 </Link>
@@ -450,7 +450,7 @@ export default async function RoutePage({ params }: RoutePageProps) {
       >
         <Link
           href={`/mapa?r=${encodeURIComponent(route.name)}`}
-          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-[#b8e840] px-3 py-2 text-center text-sm font-bold text-[#0c110a] transition hover:bg-[#c6f052]"
+          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-[var(--brand-lime)] px-3 py-2 text-center text-sm font-bold text-[var(--brand-deep)] transition hover:bg-[#e7ffa7]"
         >
           <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
             <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

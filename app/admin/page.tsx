@@ -80,11 +80,11 @@ export default async function AdminPage({ searchParams }: Props) {
 
   if (access.status === "denied") {
     return (
-      <main className="grid min-h-dvh place-items-center bg-[#0c110a] px-5 text-[#e8f2d8]">
-        <section className="max-w-lg border border-[#f4c84a]/30 bg-[#111a0d] p-8">
+      <main className="grid min-h-dvh place-items-center bg-[var(--admin-bg)] px-5 text-[var(--brand-white)]">
+        <section className="max-w-lg border border-[#f4c84a]/30 bg-[var(--admin-surface)] p-8">
           <ShieldCheck className="h-8 w-8 text-[#f4c84a]" aria-hidden="true" />
           <h1 className="mt-6 font-serif text-3xl font-black">Acceso no autorizado.</h1>
-          <p className="mt-3 text-sm leading-7 text-[#a8c888]">Agrega {access.email ?? "este correo"} a <code className="text-[#e8f2d8]">ADMIN_EMAILS</code> o a la tabla de administradores.</p>
+          <p className="mt-3 text-sm leading-7 text-[var(--admin-muted)]">Agrega {access.email ?? "este correo"} a <code className="text-[var(--brand-white)]">ADMIN_EMAILS</code> o a la tabla de administradores.</p>
           <form action={signOutAdmin}><button className="mt-6 h-11 bg-[#6aab48] px-5 text-sm font-black text-[#0c110a]">Cerrar sesión</button></form>
         </section>
       </main>
@@ -134,61 +134,61 @@ export default async function AdminPage({ searchParams }: Props) {
   const apiClientNames = new Map((apiClientResult.data ?? []).map((client) => [client.id, client.name]));
 
   return (
-    <main className="min-h-dvh bg-[#0c110a] text-[#e8f2d8]">
+    <main className="min-h-dvh bg-[var(--admin-bg)] text-[var(--brand-white)]">
       <AdminHeader email={access.email} active="reports" />
 
       <div className="mx-auto max-w-[1500px] px-5 py-8 sm:px-8 lg:py-10">
-        <div className="flex flex-col gap-5 border-b border-white/[0.08] pb-8 md:flex-row md:items-end md:justify-between">
-          <div><p className="text-xs font-black uppercase text-[#b8e840]">Bandeja comunitaria</p><h1 className="mt-2 font-serif text-4xl font-black sm:text-5xl">Revisar antes de mover el mapa.</h1></div>
-          <Link href="/reportar-error" target="_blank" className="inline-flex h-10 w-fit items-center gap-2 border border-white/15 px-4 text-xs font-bold text-[#a8c888] transition hover:border-[#6aab48]/60 hover:text-[#e8f2d8]">Ver formulario público <ExternalLink className="h-3.5 w-3.5" /></Link>
+        <div className="flex flex-col gap-5 border-b border-[var(--admin-line)] pb-8 md:flex-row md:items-end md:justify-between">
+          <div><p className="text-xs font-black uppercase text-[var(--brand-lime)]">Bandeja comunitaria</p><h1 className="mt-2 font-serif text-4xl font-black sm:text-5xl">Revisar antes de mover el mapa.</h1></div>
+          <Link href="/reportar-error" target="_blank" className="inline-flex h-10 w-fit items-center gap-2 border border-white/15 px-4 text-xs font-bold text-[var(--admin-muted)] transition hover:border-[#6aab48]/60 hover:text-[var(--brand-white)]">Ver formulario público <ExternalLink className="h-3.5 w-3.5" /></Link>
         </div>
 
-        <section className="grid grid-cols-2 border-b border-white/[0.08] md:grid-cols-4" aria-label="Resumen de reportes">
+        <section className="grid grid-cols-2 border-b border-[var(--admin-line)] md:grid-cols-4" aria-label="Resumen de reportes">
           {filters.map((filter, index) => (
-            <Link key={filter.value} href={`/admin?estado=${filter.value}`} className={`border-white/[0.08] px-4 py-5 transition hover:bg-white/[0.02] ${index < 3 ? "md:border-r" : ""} ${index % 2 === 0 ? "border-r" : ""}`}>
-              <span className="text-xs font-bold text-[#78965f]">{filter.label}</span>
-              <strong className="mt-2 block font-serif text-3xl text-[#e8f2d8]">{counts[index].count ?? 0}</strong>
+            <Link key={filter.value} href={`/admin?estado=${filter.value}`} className={`border-[var(--admin-line)] px-4 py-5 transition hover:bg-white/[0.02] ${index < 3 ? "md:border-r" : ""} ${index % 2 === 0 ? "border-r" : ""}`}>
+              <span className="text-xs font-bold text-[var(--admin-muted)]">{filter.label}</span>
+              <strong className="mt-2 block font-serif text-3xl text-[var(--brand-white)]">{counts[index].count ?? 0}</strong>
             </Link>
           ))}
         </section>
 
-        <nav className="flex gap-1 overflow-x-auto border-b border-white/[0.08] py-4" aria-label="Filtrar reportes">
-          {filters.map((filter) => <Link key={filter.value} href={`/admin?estado=${filter.value}`} aria-current={status === filter.value ? "page" : undefined} className={`shrink-0 px-4 py-2 text-xs font-black transition ${status === filter.value ? "bg-[#b8e840] text-[#0c110a]" : "text-[#78965f] hover:bg-white/[0.04] hover:text-[#e8f2d8]"}`}>{filter.label}</Link>)}
+        <nav className="flex gap-1 overflow-x-auto border-b border-[var(--admin-line)] py-4" aria-label="Filtrar reportes">
+          {filters.map((filter) => <Link key={filter.value} href={`/admin?estado=${filter.value}`} aria-current={status === filter.value ? "page" : undefined} className={`shrink-0 px-4 py-2 text-xs font-black transition ${status === filter.value ? "bg-[var(--brand-lime)] text-[#0c110a]" : "text-[var(--admin-muted)] hover:bg-white/[0.04] hover:text-[var(--brand-white)]"}`}>{filter.label}</Link>)}
         </nav>
 
         <section className="py-6" aria-labelledby="reports-title">
-          <div className="mb-5 flex items-center justify-between"><h2 id="reports-title" className="text-sm font-black uppercase text-[#a8c888]">{filters.find((filter) => filter.value === status)?.label}</h2><span className="text-xs text-[#60784f]">Máximo 50 por vista</span></div>
+          <div className="mb-5 flex items-center justify-between"><h2 id="reports-title" className="text-sm font-black uppercase text-[var(--admin-muted)]">{filters.find((filter) => filter.value === status)?.label}</h2><span className="text-xs text-[var(--admin-muted)]">Máximo 50 por vista</span></div>
 
           {reportError ? (
             <p className="border-l-2 border-[#f4c84a] px-4 py-3 text-sm text-[#f4df98]">No se pudo cargar la bandeja: {reportError.message}</p>
           ) : reports.length === 0 ? (
-            <div className="grid min-h-56 place-items-center border border-dashed border-white/10 text-center"><div><Search className="mx-auto h-7 w-7 text-[#60784f]" /><p className="mt-4 font-serif text-2xl font-black">Nada por aquí.</p><p className="mt-2 text-sm text-[#78965f]">No hay reportes en este estado.</p></div></div>
+            <div className="grid min-h-56 place-items-center border border-dashed border-white/10 text-center"><div><Search className="mx-auto h-7 w-7 text-[var(--admin-muted)]" /><p className="mt-4 font-serif text-2xl font-black">Nada por aquí.</p><p className="mt-2 text-sm text-[var(--admin-muted)]">No hay reportes en este estado.</p></div></div>
           ) : (
-            <div className="divide-y divide-white/[0.08] border-y border-white/[0.08]">
+            <div className="divide-y divide-white/[0.08] border-y border-[var(--admin-line)]">
               {reports.map((report) => (
                 <article key={report.id} className="grid gap-6 py-6 lg:grid-cols-[190px_minmax(0,1fr)_310px]">
                   <div>
-                    <p className="text-xs font-black uppercase text-[#b8e840]">{reportLabels[report.report_type] ?? report.report_type}</p>
-                    <p className="mt-3 text-sm font-bold text-[#e8f2d8]">{report.route_name || "Sin ruta indicada"}</p>
-                    <p className="mt-1 text-xs leading-5 text-[#78965f]">{report.place || "Sin ubicación aproximada"}</p>
-                    <p className="mt-4 text-[11px] text-[#60784f]">{formatDate(report.created_at)}</p>
+                    <p className="text-xs font-black uppercase text-[var(--brand-lime)]">{reportLabels[report.report_type] ?? report.report_type}</p>
+                    <p className="mt-3 text-sm font-bold text-[var(--brand-white)]">{report.route_name || "Sin ruta indicada"}</p>
+                    <p className="mt-1 text-xs leading-5 text-[var(--admin-muted)]">{report.place || "Sin ubicación aproximada"}</p>
+                    <p className="mt-4 text-[11px] text-[var(--admin-muted)]">{formatDate(report.created_at)}</p>
                   </div>
 
                   <div className="min-w-0">
                     <p className="text-sm leading-7 text-[#c9dbb9]">{report.description}</p>
-                    {report.expected_result && <div className="mt-4 border-l-2 border-[#6aab48] pl-4"><p className="text-[10px] font-black uppercase text-[#78965f]">Debería mostrar</p><p className="mt-1 text-sm leading-6 text-[#a8c888]">{report.expected_result}</p></div>}
-                    <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-[#60784f]">
+                    {report.expected_result && <div className="mt-4 border-l-2 border-[#6aab48] pl-4"><p className="text-[10px] font-black uppercase text-[var(--admin-muted)]">Debería mostrar</p><p className="mt-1 text-sm leading-6 text-[var(--admin-muted)]">{report.expected_result}</p></div>}
+                    <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-[var(--admin-muted)]">
                       {report.submission_source === "external_api" && (
                         <span className="font-bold text-[#57d6e8]">
                           API: {report.api_client_id ? apiClientNames.get(report.api_client_id) ?? "integración revocada" : "integración eliminada"}
                         </span>
                       )}
-                      {report.source_path && <Link href={report.source_path} target="_blank" className="hover:text-[#b8e840]">Abrir página relacionada</Link>}
-                      {report.route_key && <Link href={`/ruta/${report.route_key}`} target="_blank" className="hover:text-[#b8e840]">Ver ficha de la ruta</Link>}
+                      {report.source_path && <Link href={report.source_path} target="_blank" className="hover:text-[var(--brand-lime)]">Abrir página relacionada</Link>}
+                      {report.route_key && <Link href={`/ruta/${report.route_key}`} target="_blank" className="hover:text-[var(--brand-lime)]">Ver ficha de la ruta</Link>}
                       {report.evidence_url?.startsWith("https://") && <a href={report.evidence_url} target="_blank" rel="noreferrer" className="font-bold text-[#f4c84a] hover:underline">Abrir evidencia</a>}
-                      {report.contact && <span>Contacto: <span className="text-[#a8c888]">{report.contact}</span></span>}
+                      {report.contact && <span>Contacto: <span className="text-[var(--admin-muted)]">{report.contact}</span></span>}
                       {report.status === "approved" && (
-                        <Link href={report.route_id ? `/admin/routes/${report.route_id}?reporte=${report.id}` : `/admin/routes?buscar=${encodeURIComponent(report.route_name ?? "")}&reporte=${report.id}`} className="font-bold text-[#b8e840] hover:underline">
+                        <Link href={report.route_id ? `/admin/routes/${report.route_id}?reporte=${report.id}` : `/admin/routes?buscar=${encodeURIComponent(report.route_name ?? "")}&reporte=${report.id}`} className="font-bold text-[var(--brand-lime)] hover:underline">
                           Preparar cambio de ruta
                         </Link>
                       )}
@@ -199,12 +199,12 @@ export default async function AdminPage({ searchParams }: Props) {
                     <ContributorHistory reputation={report.submitted_by_hash ? contributorHistory.get(report.submitted_by_hash) ?? null : null} />
                   </div>
 
-                  <form action={reviewCommunityReport} className="border-l border-white/[0.08] pl-5">
+                  <form action={reviewCommunityReport} className="border-l border-[var(--admin-line)] pl-5">
                     <input type="hidden" name="reportId" value={report.id} />
-                    <label className="block"><span className="text-[10px] font-black uppercase text-[#78965f]">Nota interna</span><textarea name="note" maxLength={1000} defaultValue={report.moderator_note ?? ""} rows={3} placeholder="Qué se comprobó..." className="mt-2 w-full border border-white/10 bg-[#090d08] px-3 py-2 text-xs leading-5 text-[#dceaca] outline-none placeholder:text-white/20 focus:border-[#6aab48]/60" /></label>
+                    <label className="block"><span className="text-[10px] font-black uppercase text-[var(--admin-muted)]">Nota interna</span><textarea name="note" maxLength={1000} defaultValue={report.moderator_note ?? ""} rows={3} placeholder="Qué se comprobó..." className="mt-2 w-full border border-white/10 bg-[var(--brand-header)] px-3 py-2 text-xs leading-5 text-[#dceaca] outline-none placeholder:text-white/20 focus:border-[#6aab48]/60" /></label>
                     <div className="mt-3 grid grid-cols-3 gap-2">
                       <button name="status" value="reviewing" title="Marcar en revisión" className="grid h-10 place-items-center border border-[#f4c84a]/25 text-[#f4c84a] transition hover:bg-[#f4c84a]/10"><Clock3 className="h-4 w-4" /></button>
-                      <button name="status" value="approved" title="Aprobar reporte" className="grid h-10 place-items-center border border-[#6aab48]/30 text-[#b8e840] transition hover:bg-[#6aab48]/10"><CheckCircle2 className="h-4 w-4" /></button>
+                      <button name="status" value="approved" title="Aprobar reporte" className="grid h-10 place-items-center border border-[#6aab48]/30 text-[var(--brand-lime)] transition hover:bg-[#6aab48]/10"><CheckCircle2 className="h-4 w-4" /></button>
                       <button name="status" value="rejected" title="Descartar reporte" className="grid h-10 place-items-center border border-[#dd6b5f]/25 text-[#e98b80] transition hover:bg-[#dd6b5f]/10"><XCircle className="h-4 w-4" /></button>
                     </div>
                   </form>
@@ -214,7 +214,7 @@ export default async function AdminPage({ searchParams }: Props) {
           )}
         </section>
 
-        <aside className="mt-4 flex gap-3 border-t border-white/[0.08] pt-5 text-xs leading-5 text-[#60784f]"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#b8e840]" /><p>Aprobar un reporte reconoce que la información es válida; publicar una nueva geometría será un paso separado y versionado.</p></aside>
+        <aside className="mt-4 flex gap-3 border-t border-[var(--admin-line)] pt-5 text-xs leading-5 text-[var(--admin-muted)]"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--brand-lime)]" /><p>Aprobar un reporte reconoce que la información es válida; publicar una nueva geometría será un paso separado y versionado.</p></aside>
       </div>
     </main>
   );

@@ -1,0 +1,147 @@
+:root {
+  --brand-header: #0e1710;
+  --brand-forest: #111a13;
+  --brand-deep: #0c140f;
+  --brand-lime: #d4f977;
+  --brand-white: #f5f6ed;
+  --brand-paper: #f3f2e8;
+  --brand-ink: #1e271d;
+  --brand-muted: #526052;
+  --brand-line: #d6dacc;
+  --brand-gutter: clamp(20px, 5.25vw, 76px);
+}
+
+.site-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  color: var(--brand-white);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -.07em;
+  white-space: nowrap;
+}
+.site-brand img { border-radius: 9px; flex: none; }
+.site-brand span span { color: var(--brand-lime); }
+.site-header {
+  background: var(--brand-header);
+  color: var(--brand-white);
+  border-bottom: 1px solid #2c3b2c;
+}
+.site-nav-link { color: #c9d4c4; white-space: nowrap; }
+.site-nav-link:hover,
+.site-nav-link[aria-current="page"] { color: var(--brand-lime); }
+.site-nav-link[aria-current="page"] { box-shadow: inset 0 -2px var(--brand-lime); }
+.site-map-button {
+  color: var(--brand-deep);
+  background: var(--brand-lime);
+  border-radius: 9px;
+}
+.site-map-button:hover { background: #e7ffa7; }
+
+.public-page {
+  --public-bg: var(--brand-paper);
+  --public-surface: #fafaf2;
+  --public-tint: #e5ebda;
+  --public-hover: #e7edde;
+  --public-ink: var(--brand-ink);
+  --public-secondary: #435343;
+  --public-muted: var(--brand-muted);
+  --public-accent: #365932;
+  --public-teal: #205f58;
+  --public-amber: #76500f;
+  --public-violet: #604b83;
+  --public-rust: #8b432b;
+  --public-border: #c8d2c1;
+  background: var(--public-bg);
+  color: var(--public-ink);
+}
+.public-night {
+  --public-bg: var(--brand-forest);
+  --public-surface: #1a2b20;
+  --public-tint: #243728;
+  --public-hover: #2d402e;
+  --public-ink: var(--brand-white);
+  --public-secondary: #c3cec1;
+  --public-muted: #aebdab;
+  --public-accent: var(--brand-lime);
+  --public-teal: #9adcd0;
+  --public-amber: #f1bf62;
+  --public-violet: #c7b6f2;
+  --public-rust: #f0a58c;
+  --public-border: #425644;
+  background: var(--public-bg);
+  color: var(--public-ink);
+}
+.public-directory { background: var(--public-tint); color: var(--public-ink); }
+.public-page .public-page-title { letter-spacing: -.045em; font-weight: 700; }
+.public-page .public-section-title { letter-spacing: -.035em; font-weight: 700; }
+.public-page :where(h1, h2) em {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-style: italic;
+  color: var(--public-accent);
+}
+.public-page :focus-visible { outline: 2px solid #487833; outline-offset: 3px; }
+.site-header :focus-visible,
+.public-night :focus-visible { outline: 2px solid var(--brand-lime); outline-offset: 3px; }
+.public-page .public-intro {
+  padding-block: 12px 24px;
+  border-bottom: 1px solid var(--public-border);
+  margin-bottom: 20px;
+}
+.public-page .public-intro > p:first-child { letter-spacing: .15em; }
+.public-page :where(article, details).border { border-radius: 11px; }
+
+.map-brand {
+  --ov-bg: rgba(14, 23, 16, .97);
+  --ov-bg-soft: rgba(25, 41, 29, .96);
+  --ov-border: #3e5240;
+  --ov-border2: #536c51;
+  --ov-text: var(--brand-white);
+  --ov-text-muted: #c5d4c1;
+  --ov-pill-bg: rgba(212, 249, 119, .10);
+  --lima: var(--brand-lime);
+  --ink: var(--brand-white);
+  --muted: #aabca5;
+  --surface: #17261c;
+  --surface-strong: #233728;
+  background: var(--brand-deep);
+}
+.map-brand-mark {
+  display: inline-flex;
+  align-items: center;
+  color: var(--brand-white);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -.06em;
+}
+.map-brand-mark::before {
+  content: "";
+  width: 18px;
+  height: 18px;
+  margin-right: 5px;
+  border-radius: 4px;
+  background: url("/icons/icon.svg") center / cover no-repeat;
+}
+.map-brand-mark > span { color: var(--brand-lime); }
+.map-brand input::placeholder,
+.map-brand textarea::placeholder { color: var(--ov-text-muted); opacity: .85; }
+
+.admin-brand {
+  --admin-bg: var(--brand-forest);
+  --admin-surface: #17261c;
+  --admin-muted: #b3c3b0;
+  --admin-line: #3c513e;
+  color-scheme: dark;
+  background: var(--admin-bg);
+}
+.admin-brand :where(button, input, select, textarea).border { border-radius: 8px; }
+.admin-brand main > :where(section, div) { min-width: 0; }
+.admin-brand h1 { letter-spacing: -.045em; }
+.admin-brand :focus-visible { outline-color: var(--brand-lime); }
+
+@media (max-width: 760px) {
+  .site-brand { font-size: 24px; }
+  .site-brand img { width: 30px; height: 30px; }
+}

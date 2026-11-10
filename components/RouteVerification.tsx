@@ -71,12 +71,12 @@ export default function RouteVerification({ routeKey, routeName }: Props) {
   }
 
   return (
-    <section className="mt-10 border-y border-[#6aab48]/15 bg-[#0c110a] py-6" aria-labelledby="route-verification-title">
+    <section className="mt-10 border-y border-[#6aab48]/15 bg-[var(--public-bg)] py-6" aria-labelledby="route-verification-title">
       {publicStatus && publicStatus.state !== "no_recent_data" && (
         <div className={`mb-6 flex gap-3 border-l-2 px-4 py-3 ${publicStatus.state === "recently_seen" ? "border-[#b8e840] bg-[#b8e840]/[0.06]" : "border-[#f4c84a] bg-[#f4c84a]/[0.06]"}`} role="status">
-          {publicStatus.state === "recently_seen" ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[var(--public-accent)]" aria-hidden="true" /> : publicStatus.state === "collecting_evidence" ? <CircleDashed className="mt-0.5 h-4 w-4 shrink-0 text-[#f4c84a]" aria-hidden="true" /> : <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#f4c84a]" aria-hidden="true" />}
+          {publicStatus.state === "recently_seen" ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[var(--public-accent)]" aria-hidden="true" /> : publicStatus.state === "collecting_evidence" ? <CircleDashed className="mt-0.5 h-4 w-4 shrink-0 text-[var(--public-amber)]" aria-hidden="true" /> : <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--public-amber)]" aria-hidden="true" />}
           <div>
-            <p className={`text-xs font-bold uppercase ${publicStatus.state === "recently_seen" ? "text-[var(--public-accent)]" : "text-[#f4df98]"}`}>{publicStatus.state === "recently_seen" ? "Actividad confirmada" : publicStatus.state === "collecting_evidence" ? "Verificación en curso" : "Información en revisión"}</p>
+            <p className={`text-xs font-bold uppercase ${publicStatus.state === "recently_seen" ? "text-[var(--public-accent)]" : "text-[var(--public-amber)]"}`}>{publicStatus.state === "recently_seen" ? "Actividad confirmada" : publicStatus.state === "collecting_evidence" ? "Verificación en curso" : "Información en revisión"}</p>
             <p className="mt-1 text-sm leading-6 text-[var(--public-secondary)]">
               {publicStatus.state === "recently_seen"
                 ? `${publicStatus.supportCount} confirmaciones independientes y revisadas indican que esta ruta circuló recientemente.`
@@ -90,7 +90,7 @@ export default function RouteVerification({ routeKey, routeName }: Props) {
       )}
       <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex max-w-xl gap-4">
-          <span className="grid h-10 w-10 shrink-0 place-items-center bg-[#b8e840] text-[#0c110a]">
+          <span className="grid h-10 w-10 shrink-0 place-items-center bg-[var(--brand-lime)] text-[var(--brand-deep)]">
             <BusFront className="h-5 w-5" aria-hidden="true" />
           </span>
           <div>
@@ -108,7 +108,7 @@ export default function RouteVerification({ routeKey, routeName }: Props) {
                 type="button"
                 onClick={() => confirm(choice.type)}
                 disabled={state === "submitting" || state === "success"}
-                className="inline-flex h-10 items-center gap-2 border border-[#6aab48]/25 px-3 text-xs font-bold text-[#c9dbb9] transition hover:border-[#b8e840]/60 hover:bg-[#b8e840]/[0.07] disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[#6aab48]/25 px-3 text-xs font-bold text-[var(--public-ink)] transition hover:border-[#b8e840]/60 hover:bg-[#b8e840]/[0.07] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Icon className={`h-4 w-4 text-[var(--public-accent)] ${state === "submitting" && selected === choice.type ? "animate-spin" : ""}`} aria-hidden="true" />
                 {choice.label}
@@ -120,7 +120,7 @@ export default function RouteVerification({ routeKey, routeName }: Props) {
 
       {message && (
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-l-2 border-[#b8e840] bg-[#b8e840]/[0.06] px-4 py-3" role="status">
-          <p className={`text-sm font-semibold ${state === "error" ? "text-[#f4df98]" : "text-[#c9dbb9]"}`}>{message}</p>
+          <p className={`text-sm font-semibold ${state === "error" ? "text-[var(--public-amber)]" : "text-[var(--public-ink)]"}`}>{message}</p>
           {state === "success" && selected !== "seen_today" && (
             <Link href={`/reportar-error?ruta=${encodeURIComponent(routeName)}&clave=${encodeURIComponent(routeKey)}&from=ruta/${routeKey}`} className="text-xs font-bold text-[var(--public-accent)] underline underline-offset-4">
               Agregar detalles

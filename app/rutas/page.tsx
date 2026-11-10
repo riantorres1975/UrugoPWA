@@ -69,9 +69,9 @@ export default function RutasPage() {
       <div className="px-5 pt-24 pb-12 sm:px-8 lg:px-10">
         <div className="mx-auto max-w-5xl">
 
-          <header>
+          <header className="public-intro">
             <p className="text-xs font-bold uppercase tracking-widest text-[var(--public-accent)]">Muévete por Uruapan</p>
-            <h1 className="public-page-title mt-2 text-3xl sm:text-4xl">Directorio de rutas</h1>
+            <h1 className="public-page-title mt-2 text-3xl sm:text-4xl">Directorio de <em>rutas</em></h1>
             <p className="mt-2 text-sm text-[var(--public-secondary)]">Busca tu camión por número, colonia o destino.</p>
             <nav aria-label="Más opciones de transporte" className="mt-3 flex flex-wrap gap-x-5 text-sm font-bold text-[var(--public-accent)]">
               <Link href="/horarios" className="inline-flex min-h-11 items-center hover:underline">Horarios →</Link>
@@ -138,9 +138,9 @@ export default function RutasPage() {
           {/* CTA teleférico */}
           <div
             className="mt-6 rounded-lg border p-4"
-            style={{ borderColor: "rgba(0,212,170,0.2)", background: "rgba(0,212,170,0.04)" }}
+            style={{ borderColor: "var(--public-border)", background: "var(--public-tint)" }}
           >
-            <p className="text-xs font-bold uppercase" style={{ color: "#00D4AA" }}>
+            <p className="text-xs font-bold uppercase" style={{ color: "var(--public-teal)" }}>
               También en Uruapan
             </p>
             <h2 className="mt-1 text-lg font-bold" style={{ color: "var(--public-ink)" }}>
@@ -152,7 +152,7 @@ export default function RutasPage() {
             <Link
               href="/teleferico-uruapan-horario"
               className="mt-3 inline-flex h-11 items-center rounded-md px-5 text-sm font-bold transition hover:opacity-90"
-              style={{ background: "#00D4AA", color: "#0c110a" }}
+              style={{ background: "var(--brand-lime)", color: "var(--brand-deep)" }}
             >
               Ver guía del Teleférico →
             </Link>

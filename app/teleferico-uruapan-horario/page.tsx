@@ -124,7 +124,7 @@ export default function TelefericoHorarioPage() {
           <Link
             href="/mapa?destino=Teleferico%20Uruapan"
             className="inline-flex h-12 items-center justify-center rounded-md px-6 text-sm font-bold transition hover:opacity-90"
-            style={{ background: "#6aab48", color: "var(--public-ink)" }}
+            style={{ background: "var(--brand-lime)", color: "var(--brand-deep)" }}
           >
             Abrir en el mapa →
           </Link>
@@ -138,8 +138,8 @@ export default function TelefericoHorarioPage() {
         </div>
 
         {/* Datos rápidos en grid de 4 */}
-        <section className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-lg border p-4 backdrop-blur" style={{ borderColor: "rgba(184,232,64,0.2)", background: "rgba(184,232,64,0.06)" }}>
+        <dl aria-label="Datos del Teleférico" className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-lg border p-4 backdrop-blur" style={{ borderColor: "var(--public-border)", background: "var(--public-tint)" }}>
             <dt className="text-[10px] font-bold uppercase" style={{ color: "var(--public-accent)" }}>Horario</dt>
             <dd className="mt-2 font-sans text-2xl font-bold" style={{ color: "var(--public-ink)" }}>{TELEFERICO_URUAPAN.hours}</dd>
           </div>
@@ -157,25 +157,24 @@ export default function TelefericoHorarioPage() {
             <dt className="text-[10px] font-bold uppercase" style={{ color: "var(--public-muted)" }}>Frecuencia</dt>
             <dd className="mt-2 text-sm font-bold leading-6" style={{ color: "var(--public-ink)" }}>{TELEFERICO_URUAPAN.frequency}</dd>
           </div>
-        </section>
+        </dl>
 
         {/* Estaciones */}
         <section id="estaciones" className="mt-12 scroll-mt-24">
-          <p className="text-purepecha text-sm">Yáuiri · estaciones</p>
+          <p className="text-sm font-semibold text-[var(--public-accent)]">Yáuiri · estaciones</p>
           <h2 className="mt-2 public-section-title" style={{ color: "var(--public-ink)" }}>
             Las <span style={{ color: "var(--public-accent)" }}>6 estaciones</span> de oriente a poniente.
           </h2>
 
-          <div className="mt-7 overflow-x-auto rounded-lg border border-[#00d4aa]/20 bg-[#071512] px-5 py-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <ol className="relative flex min-w-[760px] items-start justify-between gap-3" aria-label="Recorrido del Teleférico de oriente a poniente">
-              <span className="absolute left-10 right-10 top-5 h-1 rounded-md bg-[#00d4aa]/25" aria-hidden="true" />
+          <div tabIndex={0} role="region" aria-label="Esquema de estaciones del Teleférico" className="public-night mt-7 overflow-x-auto rounded-xl border border-[var(--public-border)] px-5 py-6">
+            <ol className="relative flex min-w-[760px] items-start justify-between gap-3 before:absolute before:left-10 before:right-10 before:top-5 before:h-1 before:rounded-md before:bg-[#00d4aa]/25 before:content-['']" aria-label="Recorrido del Teleférico de oriente a poniente">
               {TELEFERICO_URUAPAN.stations.map((station, index) => (
                 <li key={station} className="relative z-10 flex w-28 flex-col items-center text-center">
-                  <span className="grid h-10 w-10 place-items-center rounded-full border-2 border-[#00d4aa] bg-[#071512] font-bold text-[#00d4aa]">
+                  <span className="grid h-10 w-10 place-items-center rounded-full border-2 border-[#00d4aa] bg-[#071512] font-bold text-[var(--public-accent)]">
                     {index + 1}
                   </span>
                   <span className="mt-3 text-xs font-bold leading-4 text-[var(--public-ink)]">{station}</span>
-                  <span className="mt-1 text-[10px] uppercase text-[#48a878]">E{index + 1}</span>
+                  <span className="mt-1 text-[10px] uppercase text-[var(--public-teal)]">E{index + 1}</span>
                 </li>
               ))}
             </ol>
@@ -230,7 +229,7 @@ export default function TelefericoHorarioPage() {
         <aside
           role="note"
           className="mt-10 rounded-lg border p-5 backdrop-blur"
-          style={{ borderColor: "rgba(184,232,64,0.2)", background: "rgba(184,232,64,0.04)" }}
+          style={{ borderColor: "var(--public-border)", background: "rgba(184,232,64,0.04)" }}
         >
           <p className="text-sm leading-7" style={{ color: "var(--public-ink)" }}>
             <span className="font-bold" style={{ color: "var(--public-ink)" }}>Aviso.</span> La información de horarios y tarifas puede cambiar por operación. Usa esta página como guía de planeación y confirma avisos oficiales antes de abordar.

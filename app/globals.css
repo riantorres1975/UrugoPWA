@@ -80,31 +80,6 @@
 
 
 @layer components {
-  .public-page {
-    --public-bg: #0c110a;
-    --public-surface: #171e14;
-    --public-ink: #eef2ea;
-    --public-secondary: #b6c1af;
-    --public-muted: #a8b5a1;
-    --public-accent: #b8e840;
-    --public-border: rgba(238, 242, 234, 0.18);
-    color: var(--public-ink);
-    background: var(--public-bg);
-  }
-
-  .public-directory {
-    --public-bg: #131912;
-    --public-surface: #1b2318;
-    --public-hover: #232e1e;
-    --public-ink: #eef2ea;
-    --public-secondary: #c0cbb9;
-    --public-muted: #a8b5a1;
-    --public-accent: #b8e840;
-    --public-border: rgba(238, 242, 234, 0.15);
-    color: var(--public-ink);
-    background: var(--public-bg);
-  }
-
   .public-page-title {
     @apply font-sans text-4xl font-extrabold sm:text-5xl;
     line-height: 1.1;
@@ -116,15 +91,6 @@
     @apply font-sans text-2xl font-extrabold sm:text-3xl;
     line-height: 1.2;
     letter-spacing: 0;
-  }
-
-  .public-page :where(h1, h2) em {
-    font-style: normal;
-  }
-
-  .public-directory :where(a, button, input, select, textarea):focus-visible {
-    outline-color: #b8e840;
-    box-shadow: none;
   }
 
   .card-base {

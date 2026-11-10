@@ -95,7 +95,7 @@ export default function GuiaEstudiantesPage() {
           eyebrow="En preparación"
           title={
             <>
-              Guía para <span className="italic text-lima">estudiantes</span> en Uruapan.
+              Guía para <em>estudiantes</em> en Uruapan.
             </>
           }
           intro="37 escuelas conectadas, Wi-Fi en el Teleférico y cámaras en los camiones. Todo lo que necesitas para moverte entre prepa, uni y casa."
@@ -105,23 +105,23 @@ export default function GuiaEstudiantesPage() {
           {CARDS.map((card) => (
             <div
               key={card.title}
-              className="rounded-lg border border-foreground/10 bg-ink-900/60 p-5"
+              className="rounded-lg border border-[var(--public-border)] bg-[var(--public-surface)] p-5"
             >
-              <p className="text-[10px] font-bold uppercase text-lima">{card.eyebrow}</p>
-              <h3 className="mt-1 font-sans text-lg font-bold text-white">{card.title}</h3>
-              <p className="mt-3 text-sm leading-6 text-foreground/70">{card.body}</p>
+              <p className="text-[10px] font-bold uppercase text-[var(--public-accent)]">{card.eyebrow}</p>
+              <h3 className="mt-1 font-sans text-lg font-bold text-[var(--public-ink)]">{card.title}</h3>
+              <p className="mt-3 text-sm leading-6 text-[var(--public-secondary)]">{card.body}</p>
             </div>
           ))}
         </section>
 
-        <section id="planear" className="mt-8 scroll-mt-40 border-t border-foreground/12 pt-8">
-          <h2 className="text-white public-section-title">Próximamente</h2>
-          <p className="mt-3 text-sm leading-7 text-foreground/75">
+        <section id="planear" className="mt-8 scroll-mt-40 border-t border-[var(--public-border)] pt-8">
+          <h2 className="text-[var(--public-ink)] public-section-title">Próximamente</h2>
+          <p className="mt-3 text-sm leading-7 text-[var(--public-secondary)]">
             Estamos armando esta guía con la ubicación de las 37 escuelas conectadas al sistema, horarios pico, rutas terrestres recomendadas y cómo aprovechar el Wi-Fi gratuito y las cámaras de seguridad en tus trayectos de prepa o universidad. Mientras tanto, planea tu viaje en el mapa.
           </p>
           <Link
             href="/mapa"
-            className="mt-6 inline-flex min-h-11 items-center rounded-md bg-[#b8e840] px-6 py-2 text-sm font-bold text-[#0c110a] hover:bg-[#c6f052]"
+            className="mt-6 inline-flex min-h-11 items-center rounded-md bg-[var(--brand-lime)] px-6 py-2 text-sm font-bold text-[var(--brand-deep)] hover:bg-[#e7ffa7]"
           >
             Planear mi trayecto →
           </Link>

@@ -9,7 +9,7 @@ test("la guía explica las funciones y carga sus capturas reales", async ({ page
   await expect(sectionNavigation).toHaveCSS("scrollbar-width", "none");
   await expect(page.getByRole("heading", { name: "Planea tu viaje en cuatro pasos." })).toBeVisible();
 
-  const screenshots = page.locator("main img");
+  const screenshots = page.locator('main img[alt]:not([alt=""])');
   await expect(screenshots).toHaveCount(7);
   await expect(page.getByAltText(/camión animado sobre una ruta urbana/i)).toBeVisible();
   await expect(page.getByAltText(/cabina animada sobre el recorrido del Teleférico/i)).toBeVisible();

@@ -164,32 +164,32 @@ export default function ReportPathComparison({ routeKey, proposedPath }: Props) 
       >
         <MapPinned className="h-4 w-4" aria-hidden="true" />
         Comparar recorridos
-        <span className="text-[#60784f]">{points.length} puntos</span>
+        <span className="text-[var(--admin-muted)]">{points.length} puntos</span>
       </button>
     );
   }
 
   return (
-    <section className="mt-4 border border-[#48cce0]/25 bg-[#090d08]" aria-label="Comparación de recorridos">
+    <section className="mt-4 border border-[#48cce0]/25 bg-[var(--brand-header)]" aria-label="Comparación de recorridos">
       <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
         <div>
           <p className="text-xs font-black uppercase text-[#74dceb]">Comparación del reporte</p>
-          <p className="mt-1 text-[11px] text-[#78965f]">Azul: publicado. Amarillo: propuesta de la comunidad.</p>
+          <p className="mt-1 text-[11px] text-[var(--admin-muted)]">Azul: publicado. Amarillo: propuesta de la comunidad.</p>
         </div>
-        <button type="button" onClick={() => setOpen(false)} aria-label="Cerrar comparación" className="grid h-9 w-9 place-items-center text-[#78965f] hover:text-[#e8f2d8]">
+        <button type="button" onClick={() => setOpen(false)} aria-label="Cerrar comparación" className="grid h-9 w-9 place-items-center text-[var(--admin-muted)] hover:text-[var(--brand-white)]">
           <X className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
       <div className="relative h-80 bg-[#10170e]">
         <div ref={containerRef} className="absolute inset-0" />
-        {state === "loading" && <div className="absolute inset-0 grid place-items-center bg-[#0c110a]/85"><LoaderCircle className="h-6 w-6 animate-spin text-[#48cce0]" aria-label="Cargando comparación" /></div>}
+        {state === "loading" && <div className="absolute inset-0 grid place-items-center bg-[var(--admin-bg)]/85"><LoaderCircle className="h-6 w-6 animate-spin text-[#48cce0]" aria-label="Cargando comparación" /></div>}
         {state === "ready" && (
           <div className="pointer-events-none absolute left-3 top-3 flex gap-2 text-[10px] font-black uppercase">
-            <span className="bg-[#0c110a]/95 px-2.5 py-2 text-[#74dceb]">Publicado</span>
-            <span className="bg-[#0c110a]/95 px-2.5 py-2 text-[#f4c84a]">Propuesta</span>
+            <span className="bg-[var(--admin-bg)]/95 px-2.5 py-2 text-[#74dceb]">Publicado</span>
+            <span className="bg-[var(--admin-bg)]/95 px-2.5 py-2 text-[#f4c84a]">Propuesta</span>
           </div>
         )}
-        {state === "error" && <p className="absolute inset-x-4 top-4 border-l-2 border-[#f4c84a] bg-[#0c110a]/95 px-4 py-3 text-xs text-[#f4df98]" role="alert">{error}</p>}
+        {state === "error" && <p className="absolute inset-x-4 top-4 border-l-2 border-[#f4c84a] bg-[var(--admin-bg)]/95 px-4 py-3 text-xs text-[#f4df98]" role="alert">{error}</p>}
       </div>
     </section>
   );

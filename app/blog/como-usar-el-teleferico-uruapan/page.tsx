@@ -115,7 +115,7 @@ export default function TelefericoBlogArticlePage() {
           eyebrow="Guía 2026"
           title={
             <>
-              Cómo usar el <span className="italic text-lima">Teleférico</span> de Uruapan paso a paso.
+              Cómo usar el <em>Teleférico</em> de Uruapan paso a paso.
             </>
           }
           intro="Aprende cómo abordar, pagar y combinar el Teleférico de Uruapan con rutas de camión urbano desde UruGo."
@@ -128,36 +128,36 @@ export default function TelefericoBlogArticlePage() {
               id={section.id}
               className="scroll-mt-40 border-t border-[var(--public-border)] py-8 first:border-t-0 first:pt-0"
             >
-              <p className="font-sans text-3xl font-bold text-lima">
+              <p className="font-sans text-3xl font-bold text-[var(--public-accent)]">
                 {section.n}
               </p>
-              <h2 className="mt-2 text-white public-section-title">
+              <h2 className="mt-2 text-[var(--public-ink)] public-section-title">
                 {section.title}
               </h2>
-              <p className="mt-3 text-sm leading-7 text-foreground/75">
+              <p className="mt-3 text-sm leading-7 text-[var(--public-secondary)]">
                 {section.body}
               </p>
             </section>
           ))}
 
           <section id="estaciones" className="scroll-mt-40 border-t border-[var(--public-border)] pt-8">
-            <p className="font-sans text-3xl font-bold text-lima">06</p>
-            <h2 className="mt-2 text-white public-section-title">
+            <p className="font-sans text-3xl font-bold text-[var(--public-accent)]">06</p>
+            <h2 className="mt-2 text-[var(--public-ink)] public-section-title">
               Las 6 estaciones, de oriente a poniente
             </h2>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               {TELEFERICO_URUAPAN.stations.map((station, index) => (
                 <article
                   key={station}
-                  className="rounded-lg border border-foreground/10 bg-ink-900/65 p-4"
+                  className="rounded-lg border border-[var(--public-border)] bg-[var(--public-surface)] p-4"
                 >
-                  <p className="font-sans text-xs font-bold text-lima">
+                  <p className="font-sans text-xs font-bold text-[var(--public-accent)]">
                     E{index + 1}
                   </p>
-                  <h3 className="mt-2 font-sans text-lg font-bold text-white">
+                  <h3 className="mt-2 font-sans text-lg font-bold text-[var(--public-ink)]">
                     {station}
                   </h3>
-                  <p className="mt-2 text-xs leading-6 text-foreground/65">
+                  <p className="mt-2 text-xs leading-6 text-[var(--public-secondary)]">
                     {stationDescriptions[index]}
                   </p>
                 </article>

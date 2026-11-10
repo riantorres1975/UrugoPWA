@@ -6,5 +6,5 @@ export const metadata: Metadata = {
 };
 
 export default function AdminLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return children;
+  return <div className="admin-brand">{children}</div>;
 }

@@ -12,7 +12,7 @@ type Props = {
 export default function PageHeader({ kicker, eyebrow, title, intro }: Props) {
   return (
     <div>
-      <header className="max-w-3xl">
+      <header className="public-intro max-w-3xl">
         {kicker && <p className="mb-2 text-xs text-[var(--public-muted)]">{kicker}</p>}
         {eyebrow && (
           <p

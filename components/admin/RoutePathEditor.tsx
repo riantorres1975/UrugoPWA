@@ -26,7 +26,7 @@ type Props = {
   linkedReport?: { id: string; label: string; proposedPath: unknown } | null;
 };
 
-const fieldClass = "mt-2 h-11 w-full border border-white/10 bg-[#090d08] px-3 text-sm text-[#dceaca] outline-none transition focus:border-[#6aab48]/70";
+const fieldClass = "mt-2 h-11 w-full border border-white/10 bg-[var(--brand-header)] px-3 text-sm text-[#dceaca] outline-none transition focus:border-[#6aab48]/70";
 
 function previewPath(serializedPath: string) {
   const points = parseRoutePath(serializedPath);
@@ -70,12 +70,12 @@ export default function RoutePathEditor({ route, linkedReport }: Props) {
       <div className="space-y-7">
         {linkedReport && (
           <div className="border-l-2 border-[#b8e840] bg-[#b8e840]/[0.06] px-4 py-3 text-sm text-[#c9dbb9]">
-            <p>Esta revisión quedará vinculada al reporte aprobado: <strong className="text-[#e8f2d8]">{linkedReport.label}</strong></p>
+            <p>Esta revisión quedará vinculada al reporte aprobado: <strong className="text-[var(--brand-white)]">{linkedReport.label}</strong></p>
             {proposedPath && (
               <button
                 type="button"
                 onClick={() => setPath(JSON.stringify(proposedPath))}
-                className="mt-3 inline-flex h-9 items-center border border-[#b8e840]/30 px-3 text-xs font-black text-[#b8e840] transition hover:bg-[#b8e840]/10"
+                className="mt-3 inline-flex h-9 items-center border border-[#b8e840]/30 px-3 text-xs font-black text-[var(--brand-lime)] transition hover:bg-[#b8e840]/10"
               >
                 Cargar propuesta como borrador
               </button>
@@ -84,17 +84,17 @@ export default function RoutePathEditor({ route, linkedReport }: Props) {
         )}
 
         <fieldset className="grid gap-5 sm:grid-cols-2">
-          <legend className="mb-4 text-xs font-black uppercase text-[#b8e840]">Identidad de la ruta</legend>
+          <legend className="mb-4 text-xs font-black uppercase text-[var(--brand-lime)]">Identidad de la ruta</legend>
           <input type="hidden" name="verified" value={route.verified ? "on" : "off"} />
-          <label className="block text-xs font-bold text-[#89a873]">
+          <label className="block text-xs font-bold text-[var(--admin-muted)]">
             Nombre público
             <input name="name" defaultValue={route.name} required maxLength={120} className={fieldClass} />
           </label>
-          <label className="block text-xs font-bold text-[#89a873]">
+          <label className="block text-xs font-bold text-[var(--admin-muted)]">
             Nombre de dirección
             <input name="originalName" defaultValue={route.originalName} required maxLength={160} className={fieldClass} />
           </label>
-          <label className="block text-xs font-bold text-[#89a873]">
+          <label className="block text-xs font-bold text-[var(--admin-muted)]">
             Estado operativo
             <select name="operationalStatus" defaultValue={route.operationalStatus} className={fieldClass}>
               <option value="active">Activa</option>
@@ -103,24 +103,24 @@ export default function RoutePathEditor({ route, linkedReport }: Props) {
               <option value="historical">Histórica</option>
             </select>
           </label>
-          <label className="block text-xs font-bold text-[#89a873]">
+          <label className="block text-xs font-bold text-[var(--admin-muted)]">
             Ancho de búsqueda (metros)
             <input name="corridorWidthM" type="number" min={10} max={1000} step={10} defaultValue={route.corridorWidthM} required className={fieldClass} />
           </label>
-          <label className="block text-xs font-bold text-[#89a873]">
+          <label className="block text-xs font-bold text-[var(--admin-muted)]">
             Color
-            <span className="mt-2 flex h-11 items-center gap-3 border border-white/10 bg-[#090d08] px-3">
+            <span className="mt-2 flex h-11 items-center gap-3 border border-white/10 bg-[var(--brand-header)] px-3">
               <input name="color" type="color" value={color} onChange={(event) => setColor(event.target.value)} className="h-7 w-9 cursor-pointer border-0 bg-transparent p-0" aria-label="Color de la ruta" />
               <span className="font-mono text-sm uppercase text-[#dceaca]">{color}</span>
             </span>
           </label>
-          <div className="flex items-center gap-3 self-end border border-white/10 bg-[#090d08] px-4 py-3 text-sm font-bold text-[#c9dbb9]">
-            <CheckCircle2 className={`h-4 w-4 ${route.verified ? "text-[#b8e840]" : "text-[#60784f]"}`} aria-hidden="true" />
+          <div className="flex items-center gap-3 self-end border border-white/10 bg-[var(--brand-header)] px-4 py-3 text-sm font-bold text-[#c9dbb9]">
+            <CheckCircle2 className={`h-4 w-4 ${route.verified ? "text-[var(--brand-lime)]" : "text-[var(--admin-muted)]"}`} aria-hidden="true" />
             {route.verified ? "Recorrido comprobado" : "Pendiente de comprobación"}
           </div>
         </fieldset>
 
-        <label className="block text-xs font-bold text-[#89a873]">
+        <label className="block text-xs font-bold text-[var(--admin-muted)]">
           Coordenadas del recorrido
           <textarea
             name="path"
@@ -129,32 +129,32 @@ export default function RoutePathEditor({ route, linkedReport }: Props) {
             required
             rows={12}
             spellCheck={false}
-            className="mt-2 w-full resize-y border border-white/10 bg-[#090d08] p-3 font-mono text-xs leading-5 text-[#c9dbb9] outline-none transition focus:border-[#6aab48]/70"
+            className="mt-2 w-full resize-y border border-white/10 bg-[var(--brand-header)] p-3 font-mono text-xs leading-5 text-[#c9dbb9] outline-none transition focus:border-[#6aab48]/70"
           />
-          <span className="mt-2 block text-[11px] font-normal leading-5 text-[#60784f]">Acepta una matriz de coordenadas, un LineString o un Feature GeoJSON. La longitud va primero.</span>
+          <span className="mt-2 block text-[11px] font-normal leading-5 text-[var(--admin-muted)]">Acepta una matriz de coordenadas, un LineString o un Feature GeoJSON. La longitud va primero.</span>
         </label>
 
-        <label className="block text-xs font-bold text-[#89a873]">
+        <label className="block text-xs font-bold text-[var(--admin-muted)]">
           Resumen del cambio
-          <textarea name="changeSummary" required minLength={10} maxLength={1000} rows={4} placeholder="Qué cambió, cómo se comprobó y con qué fuente..." className="mt-2 w-full resize-y border border-white/10 bg-[#090d08] p-3 text-sm leading-6 text-[#dceaca] outline-none placeholder:text-white/20 focus:border-[#6aab48]/70" />
+          <textarea name="changeSummary" required minLength={10} maxLength={1000} rows={4} placeholder="Qué cambió, cómo se comprobó y con qué fuente..." className="mt-2 w-full resize-y border border-white/10 bg-[var(--brand-header)] p-3 text-sm leading-6 text-[#dceaca] outline-none placeholder:text-white/20 focus:border-[#6aab48]/70" />
         </label>
       </div>
 
       <aside className="xl:sticky xl:top-6 xl:self-start">
         <div className="border border-white/10 bg-[#0f170c]">
           <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-            <span className="text-xs font-black uppercase text-[#a8c888]">Vista del trazado</span>
-            <span className={`text-xs font-bold ${preview ? "text-[#b8e840]" : "text-[#f4c84a]"}`}>{preview ? `${preview.count} puntos` : "Datos inválidos"}</span>
+            <span className="text-xs font-black uppercase text-[var(--admin-muted)]">Vista del trazado</span>
+            <span className={`text-xs font-bold ${preview ? "text-[var(--brand-lime)]" : "text-[#f4c84a]"}`}>{preview ? `${preview.count} puntos` : "Datos inválidos"}</span>
           </div>
-          <svg viewBox="0 0 720 260" className="block aspect-[18/7] w-full bg-[#090d08]" role="img" aria-label="Vista previa del recorrido">
+          <svg viewBox="0 0 720 260" className="block aspect-[18/7] w-full bg-[var(--brand-header)]" role="img" aria-label="Vista previa del recorrido">
             <path d="M0 65H720M0 130H720M0 195H720M180 0V260M360 0V260M540 0V260" stroke="rgba(255,255,255,.05)" strokeWidth="1" />
             {preview && <path d={preview.d} fill="none" stroke="#071006" strokeWidth="11" strokeLinecap="round" strokeLinejoin="round" />}
             {preview && <path d={preview.d} fill="none" stroke={color} strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />}
           </svg>
           <div className="border-t border-white/10 p-4">
-            <p className="flex gap-2 text-xs leading-5 text-[#78965f]"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#f4c84a]" /> Publicar cambia lo que reciben el mapa y la API. La versión anterior seguirá disponible para restaurarla.</p>
+            <p className="flex gap-2 text-xs leading-5 text-[var(--admin-muted)]"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#f4c84a]" /> Publicar cambia lo que reciben el mapa y la API. La versión anterior seguirá disponible para restaurarla.</p>
             {state.status === "error" && <p className="mt-4 border-l-2 border-[#e98b80] px-3 py-2 text-xs leading-5 text-[#f1b3ac]" role="alert">{state.message}</p>}
-            <button disabled={pending || !preview} className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 bg-[#b8e840] px-5 text-sm font-black text-[#0c110a] transition hover:bg-[#c8f251] disabled:cursor-not-allowed disabled:opacity-50">
+            <button disabled={pending || !preview} className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 bg-[var(--brand-lime)] px-5 text-sm font-black text-[#0c110a] transition hover:bg-[#c8f251] disabled:cursor-not-allowed disabled:opacity-50">
               {pending ? <CheckCircle2 className="h-4 w-4 animate-pulse" /> : <Save className="h-4 w-4" />}
               {pending ? "Publicando..." : `Publicar versión ${route.dataVersion + 1}`}
             </button>

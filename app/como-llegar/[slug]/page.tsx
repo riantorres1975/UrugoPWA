@@ -117,7 +117,7 @@ export default async function ComoLlegarPage({ params }: PlacePageProps) {
           </p>
           <h1
             className="mt-2 public-page-title"
-            style={{ color: "var(--public-ink)", letterSpacing: "0" }}
+            style={{ color: "var(--public-ink)" }}
           >
             {place.slug === "centro" ? "Cómo llegar al Centro de Uruapan" : place.label}
           </h1>
@@ -191,7 +191,7 @@ export default async function ComoLlegarPage({ params }: PlacePageProps) {
           {/* CTA principal */}
           <div
             className="mt-8 rounded-lg border p-5"
-            style={{ borderColor: "rgba(184,232,64,0.2)", background: "rgba(184,232,64,0.06)" }}
+            style={{ borderColor: "var(--public-border)", background: "var(--public-tint)" }}
           >
             <h2 className="public-section-title" style={{ color: "var(--public-ink)" }}>
               Planea tu viaje exacto
@@ -202,7 +202,7 @@ export default async function ComoLlegarPage({ params }: PlacePageProps) {
             </p>
             <Link
               href={mapHref}
-              className="mt-4 inline-flex min-h-11 items-center rounded-md bg-[#b8e840] px-6 py-2 text-sm font-bold text-[#0c110a] transition hover:bg-[#c6f052]"
+              className="mt-4 inline-flex min-h-11 items-center rounded-md bg-[var(--brand-lime)] px-6 py-2 text-sm font-bold text-[var(--brand-deep)] transition hover:bg-[#e7ffa7]"
             >
               Cómo llegar desde mi ubicación →
             </Link>
@@ -242,7 +242,7 @@ export default async function ComoLlegarPage({ params }: PlacePageProps) {
       >
         <Link
           href={mapHref}
-          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-[#b8e840] px-3 py-2 text-center text-sm font-bold text-[#0c110a] transition hover:bg-[#c6f052]"
+          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-[var(--brand-lime)] px-3 py-2 text-center text-sm font-bold text-[var(--brand-deep)] transition hover:bg-[#e7ffa7]"
         >
           <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
             <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

@@ -38,7 +38,7 @@ export default async function ReportErrorPage({ searchParams }: ReportErrorPageP
     .sort((left, right) => left.name.localeCompare(right.name, "es-MX", { numeric: true }));
 
   return (
-    <main className="public-page min-h-dvh bg-[#0c110a] text-[var(--public-ink)]">
+    <main className="public-page min-h-dvh bg-[var(--public-bg)] text-[var(--public-ink)]">
       <ForceDark />
       <PublicHeader active="reportar-error" />
 
@@ -57,7 +57,7 @@ export default async function ReportErrorPage({ searchParams }: ReportErrorPageP
           <div className="mt-7 flex flex-wrap gap-x-6 gap-y-3 border-t border-[var(--public-border)] pt-5 text-xs font-bold text-[var(--public-muted)]">
             <span className="inline-flex items-center gap-2"><Check className="h-4 w-4 text-[var(--public-accent)]" /> No necesitas cuenta</span>
             <span className="inline-flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[var(--public-accent)]" /> Revisión antes de publicar</span>
-            <span className="inline-flex items-center gap-2"><MapPinned className="h-4 w-4 text-[#48cce0]" /> Puedes marcar las calles</span>
+            <span className="inline-flex items-center gap-2"><MapPinned className="h-4 w-4 text-[var(--public-teal)]" /> Puedes marcar las calles</span>
           </div>
         </div>
       </section>

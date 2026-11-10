@@ -93,7 +93,7 @@ const aboutJsonLd = {
 
 export default function AboutPage() {
   return (
-    <main className="public-page min-h-dvh bg-[#0c110a] text-[var(--public-ink)]" data-theme="dark">
+    <main className="public-page min-h-dvh bg-[var(--public-bg)] text-[var(--public-ink)]" data-theme="dark">
       <ForceDark />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutJsonLd) }} />
       <PublicHeader />
@@ -204,11 +204,11 @@ export default function AboutPage() {
                 UruGo es un proyecto independiente mantenido con tiempo propio y apoyo de la comunidad. Las visitas y recomendaciones ayudan a que más personas encuentren el mapa; los reportes ayudan a mantenerlo correcto.
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
-                <Link href={PROJECT.repositoryUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-12 items-center gap-2 rounded-md border border-[var(--public-border)] px-5 text-sm font-bold transition hover:border-[#b8e840]/50 hover:bg-white/[0.04]">
+                <Link href={PROJECT.repositoryUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-12 items-center gap-2 rounded-md border border-[var(--public-border)] px-5 text-sm font-bold transition hover:border-[#b8e840]/50 hover:bg-[var(--public-hover)]">
                   <FileCode2 className="h-4 w-4" aria-hidden="true" />
                   Ver repositorio
                 </Link>
-                <Link href={PROJECT.supportUrl} className="inline-flex min-h-12 items-center gap-2 rounded-md bg-[#6aab48] px-5 text-sm font-bold text-[#0c110a] transition hover:bg-[#7cbd59]">
+                <Link href={PROJECT.supportUrl} className="inline-flex min-h-12 items-center gap-2 rounded-md bg-[var(--brand-lime)] px-5 text-sm font-bold text-[var(--brand-deep)] transition hover:bg-[#e7ffa7]">
                   <Heart className="h-4 w-4" aria-hidden="true" />
                   Apoyar el proyecto
                 </Link>
@@ -216,7 +216,7 @@ export default function AboutPage() {
             </div>
 
             <div className="border-l border-[var(--public-border)] pl-6 sm:pl-8">
-              <Database className="h-7 w-7 text-[#57d6e8]" strokeWidth={1.6} aria-hidden="true" />
+              <Database className="h-7 w-7 text-[var(--public-teal)]" strokeWidth={1.6} aria-hidden="true" />
               <p className="mt-5 font-sans text-2xl font-bold">¿Encontraste un cambio?</p>
               <p className="mt-3 text-sm leading-7 text-[var(--public-secondary)]">Indica la ruta, la calle o el horario. Un reporte concreto es la forma más rápida de mejorar el dato para todos.</p>
               <Link href="/reportar-error" className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-[var(--public-accent)]">
@@ -233,13 +233,13 @@ export default function AboutPage() {
         </section>
       </article>
 
-      <section className="bg-[#b8e840] px-5 py-12 text-[#0c110a] sm:px-8 lg:py-16">
+      <section className="bg-[var(--brand-lime)] px-5 py-12 text-[var(--brand-deep)] sm:px-8 lg:py-16">
         <div className="mx-auto flex max-w-[1240px] flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-[11px] font-bold uppercase text-[#3d6828]">Consulta los datos</p>
+            <p className="text-[11px] font-bold uppercase text-[var(--public-accent)]">Consulta los datos</p>
             <h2 className="mt-2 public-section-title">Encuentra tu ruta en el mapa.</h2>
           </div>
-          <Link href="/mapa" className="inline-flex min-h-14 items-center justify-center gap-2 rounded-md bg-[#0c110a] px-7 text-sm font-bold text-[var(--public-ink)]">
+          <Link href="/mapa" className="inline-flex min-h-14 items-center justify-center gap-2 rounded-md bg-[var(--brand-forest)] px-7 text-sm font-bold text-[var(--brand-white)]">
             <MapPinned className="h-4 w-4" aria-hidden="true" />
             Abrir UruGo
           </Link>

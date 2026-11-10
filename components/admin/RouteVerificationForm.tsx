@@ -26,17 +26,17 @@ export default function RouteVerificationForm({ routeId, dataVersion, lastVerifi
   );
 
   return (
-    <section className="grid gap-6 border-y border-white/[0.08] py-6 lg:grid-cols-[280px_minmax(0,1fr)]" aria-labelledby="field-verification-heading">
+    <section className="grid gap-6 border-y border-[var(--admin-line)] py-6 lg:grid-cols-[280px_minmax(0,1fr)]" aria-labelledby="field-verification-heading">
       <div>
         <CalendarCheck2 className="h-6 w-6 text-[#57d6e8]" strokeWidth={1.7} aria-hidden="true" />
         <h2 id="field-verification-heading" className="mt-4 font-serif text-2xl font-black">Verificación de campo</h2>
-        <p className="mt-2 text-xs leading-5 text-[#78965f]">{formatDate(lastVerifiedAt)}</p>
+        <p className="mt-2 text-xs leading-5 text-[var(--admin-muted)]">{formatDate(lastVerifiedAt)}</p>
       </div>
 
       <form action={action} className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_190px] sm:items-end">
         <input type="hidden" name="routeId" value={routeId} />
         <input type="hidden" name="expectedVersion" value={dataVersion} />
-        <label className="block text-xs font-bold text-[#89a873]">
+        <label className="block text-xs font-bold text-[var(--admin-muted)]">
           Qué comprobaste y cómo
           <textarea
             name="note"
@@ -45,7 +45,7 @@ export default function RouteVerificationForm({ routeId, dataVersion, lastVerifi
             maxLength={1_000}
             rows={3}
             placeholder="Ej. Recorrido confirmado abordando la unidad desde Centro hasta Hospital Regional."
-            className="mt-2 block w-full resize-y border border-white/10 bg-[#090d08] px-3 py-2 text-sm leading-6 text-[#dceaca] outline-none placeholder:text-white/20 focus:border-[#57d6e8]/60"
+            className="mt-2 block w-full resize-y border border-white/10 bg-[var(--brand-header)] px-3 py-2 text-sm leading-6 text-[#dceaca] outline-none placeholder:text-white/20 focus:border-[#57d6e8]/60"
           />
         </label>
         <button

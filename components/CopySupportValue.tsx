@@ -24,7 +24,7 @@ export default function CopySupportValue({ value }: Props) {
     <button
       type="button"
       onClick={copyValue}
-      className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-md border border-[var(--public-border)] px-4 text-sm font-bold text-[var(--public-ink)] transition hover:border-[#b8e840]/60 hover:bg-white/[0.04]"
+      className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-md border border-[var(--public-border)] px-4 text-sm font-bold text-[var(--public-ink)] transition hover:border-[#b8e840]/60 hover:bg-[var(--public-hover)]"
       aria-label="Copiar CLABE"
     >
       {copied ? <Check className="h-4 w-4 text-[var(--public-accent)]" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}

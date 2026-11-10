@@ -9,12 +9,13 @@ const pages = [
   "/pagina-inexistente-diseno",
 ];
 
-test("los directorios públicos mantienen la paleta oscura", async ({ page }) => {
+test("los directorios usan papel claro y la cabecera de UruGo", async ({ page }) => {
   for (const path of ["/rutas", "/horarios", "/como-llegar"]) {
     await page.goto(path);
     const directory = page.locator(".public-directory");
-    await expect(directory).toHaveCSS("background-color", "rgb(19, 25, 18)");
-    await expect(directory).toHaveCSS("color", "rgb(238, 242, 234)");
+    await expect(directory).toHaveCSS("background-color", "rgb(229, 235, 218)");
+    await expect(directory).toHaveCSS("color", "rgb(30, 39, 29)");
+    await expect(page.locator(".site-header")).toHaveCSS("background-color", "rgb(14, 23, 16)");
   }
 });
 
@@ -26,7 +27,7 @@ for (const width of [320, 1440]) {
       await page.goto(path);
       await expect(page.locator("main.public-page")).toBeVisible();
       await expect(page.locator("h1")).toHaveClass(/public-page-title/);
-      await expect(page.locator("footer")).toHaveCSS("color", "rgb(238, 242, 234)");
+      await expect(page.locator("footer")).toHaveCSS("color", "rgb(245, 246, 237)");
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
       expect(overflow, `Desbordamiento horizontal en ${path}`).toBe(false);
     }
