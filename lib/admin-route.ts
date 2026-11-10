@@ -1,7 +1,14 @@
+import { replaceSegment } from "@/lib/map-debug";
 import type { Coordinates } from "@/lib/types";
 
 export const ROUTE_OPERATIONAL_STATUSES = ["active", "under_review", "inactive", "historical"] as const;
 export const MAX_ROUTE_POINTS = 20_000;
+
+export type RouteSegmentDraft = {
+  start: number | null;
+  end: number | null;
+  points: Coordinates[];
+};
 
 export type RouteOperationalStatus = (typeof ROUTE_OPERATIONAL_STATUSES)[number];
 
@@ -81,6 +88,23 @@ export function insertRoutePoint(
 ): { path: Coordinates[]; index: number } {
   const index = side === "before" ? anchor : anchor + 1;
   return { path: [...path.slice(0, index), point, ...path.slice(index)], index };
+}
+
+export function joinRouteSegment(
+  path: Coordinates[],
+  start: number,
+  end: number,
+  points: Coordinates[],
+): Coordinates[] | null {
+  if (!path[start] || !path[end] || start === end || points.length === 0) return null;
+  const first = Math.min(start, end);
+  const last = Math.max(start, end);
+  const ordered = start < end ? points : [...points].reverse();
+  const section = [path[first], ...ordered, path[last]].filter(([lng, lat], index, coords) => (
+    index === 0 || lng !== coords[index - 1][0] || lat !== coords[index - 1][1]
+  ));
+  if (section.length < 3 || path.length - (last - first + 1) + section.length > MAX_ROUTE_POINTS) return null;
+  return replaceSegment(path, first, last, section);
 }
 
 export function getReportRouteEditorHref(report: {

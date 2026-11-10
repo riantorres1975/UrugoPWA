@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getReportRouteEditorHref, insertRoutePoint, parseRoutePath, parseRoutePublicationForm } from "@/lib/admin-route";
+import { getReportRouteEditorHref, insertRoutePoint, joinRouteSegment, parseRoutePath, parseRoutePublicationForm } from "@/lib/admin-route";
 import type { Coordinates } from "@/lib/types";
 
 describe("admin route publication validation", () => {
@@ -91,5 +91,29 @@ describe("orden de puntos en el editor", () => {
     const last: Coordinates = [-102.076, 19.4121];
     expect(insertRoutePoint(path, 0, "before", first)).toEqual({ index: 0, path: [first, ...path] });
     expect(insertRoutePoint(path, path.length - 1, "after", last)).toEqual({ index: path.length, path: [...path, last] });
+  });
+});
+
+describe("unir un tramo al recorrido", () => {
+  const path: Coordinates[] = [
+    [-102.075, 19.41], [-102.073, 19.41], [-102.071, 19.41],
+    [-102.069, 19.41], [-102.067, 19.41],
+  ];
+  const north: Coordinates = [-102.073, 19.412];
+  const east: Coordinates = [-102.069, 19.412];
+
+  it("conserva las conexiones y reemplaza solo los puntos intermedios", () => {
+    expect(joinRouteSegment(path, 1, 3, [north, east])).toEqual([path[0], path[1], north, east, path[3], path[4]]);
+  });
+
+  it("respeta el sentido cuando las conexiones se seleccionan al revés", () => {
+    expect(joinRouteSegment(path, 3, 1, [east, north])).toEqual([path[0], path[1], north, east, path[3], path[4]]);
+  });
+
+  it("descarta conexiones inválidas y evita duplicar los extremos", () => {
+    expect(joinRouteSegment(path, 1, 1, [north])).toBeNull();
+    expect(joinRouteSegment(path, 1, 8, [north])).toBeNull();
+    expect(joinRouteSegment(path, 1, 3, [])).toBeNull();
+    expect(joinRouteSegment(path, 1, 3, [path[1], north, path[3]])).toEqual([path[0], path[1], north, path[3], path[4]]);
   });
 });

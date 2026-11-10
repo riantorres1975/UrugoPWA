@@ -115,11 +115,16 @@ export function getRouteSearchTerms(routeName: string): string[] {
   return terms;
 }
 
+export function getRouteDirectionLabel(originalName: string): "Ida" | "Vuelta" | null {
+  const direction = originalName.match(/\((ida|vuelta)\)\s*$/i)?.[1].toLowerCase();
+  return direction === "ida" ? "Ida" : direction === "vuelta" ? "Vuelta" : null;
+}
+
 export function formatRouteLabel(routeName: string, baseName?: string): string {
   const base = (baseName ?? routeName).trim();
   const destino = getRouteDestination(base);
   if (!destino) return routeName;
-  const directionMatch = routeName.match(/\((ida|vuelta)\)\s*$/i);
-  const directionSuffix = directionMatch ? ` (${directionMatch[1].toLowerCase()})` : "";
+  const direction = getRouteDirectionLabel(routeName);
+  const directionSuffix = direction ? ` (${direction.toLowerCase()})` : "";
   return `${destino} · ${base}${directionSuffix}`;
 }

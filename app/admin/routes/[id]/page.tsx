@@ -6,7 +6,8 @@ import AdminHeader from "@/components/admin/AdminHeader";
 import RoutePathEditor from "@/components/admin/RoutePathEditor";
 import RouteVerificationForm from "@/components/admin/RouteVerificationForm";
 import { getAdminAccess } from "@/lib/admin-auth";
-import type { RouteOperationalStatus } from "@/lib/admin-route";
+import { parseRoutePath, type RouteOperationalStatus } from "@/lib/admin-route";
+import { getRouteDirectionLabel } from "@/lib/route-names";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -75,6 +76,21 @@ export default async function AdminRoutePage({ params, searchParams }: Props) {
   const fieldVerifications = (verificationHistoryResult.data ?? []) as FieldVerificationRow[];
   const report = reportsByIdResult.data as ApprovedReport | null;
   const linkedReport = report && (report.route_id === null || report.route_id === route.id) ? report : null;
+  // The public map groups all geometry records with the same route name.
+  const otherRoutes = await supabase.from("routes")
+    .select("id,original_name,path")
+    .eq("name", route.name)
+    .neq("id", route.id)
+    .order("id");
+  const reportContext = linkedReport?.route_id === null
+    ? `?reporte=${encodeURIComponent(linkedReport.id)}`
+    : "";
+  const relatedDirections = (otherRoutes.data ?? []).map((other) => ({
+    id: other.id as number,
+    label: getRouteDirectionLabel(other.original_name) ?? other.original_name,
+    href: `/admin/routes/${other.id}${reportContext}`,
+    path: parseRoutePath(JSON.stringify(other.path)),
+  }));
 
   return (
     <main className="min-h-dvh bg-[var(--admin-bg)] text-[var(--brand-white)]">
@@ -91,7 +107,7 @@ export default async function AdminRoutePage({ params, searchParams }: Props) {
           <div className="flex flex-wrap gap-2">
             <a href="#verificacion" className="admin-button inline-flex min-h-11 items-center px-3 text-xs font-bold">Verificación</a>
             <a href="#historial" className="admin-button inline-flex min-h-11 items-center px-3 text-xs font-bold">Historial</a>
-            <Link href={`/mapa?r=${encodeURIComponent(route.name)}`} target="_blank" className="admin-button inline-flex min-h-11 items-center px-3 text-xs font-bold">Mapa público</Link>
+            <Link href={`/mapa?r=${encodeURIComponent(route.name)}`} target="_blank" className="admin-button inline-flex min-h-11 items-center px-3 text-xs font-bold">Mapa público{relatedDirections.length > 0 && " · todos los sentidos"}</Link>
           </div>
         </div>
 
@@ -134,6 +150,8 @@ export default async function AdminRoutePage({ params, searchParams }: Props) {
                 dataVersion: route.data_version,
                 path: route.path,
               }}
+              directionLabel={getRouteDirectionLabel(route.original_name) ?? route.original_name}
+              relatedDirections={relatedDirections}
               linkedReport={linkedReport ? { id: linkedReport.id, proposedPath: linkedReport.proposed_path } : null}
             />
           </section>
