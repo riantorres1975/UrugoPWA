@@ -1171,6 +1171,14 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   // ── Bloque de JSX compartido: controles A/B + resultado de ruta ──────────────
   // Se renderiza tanto en el overlay mobile como en el sidebar desktop.
   // Extraido como funcion local para evitar duplicacion de JSX.
+  const editJourneyPoint = (point: "origin" | "destination") => {
+    setActivePoint(point);
+    setShowHint(true);
+    if (!isDesktopLayout) {
+      setAbExpanded(true);
+      setIsResultSheetOpen(false);
+    }
+  };
   const renderRouteControls = (context: "mobile" | "desktop", hideStep3 = false, onlyStep3 = false) => {
     const isMobile = context === "mobile";
     return (
@@ -1183,11 +1191,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
           isMobile={isMobile}
           lastTrip={lastTrip}
           usingAutomaticOrigin={userLocation !== null && manualOrigin === null}
-          onChooseManualOrigin={() => {
-            setAbExpanded(true);
-            setActivePoint("origin");
-            setShowHint(true);
-          }}
+          onChooseManualOrigin={() => editJourneyPoint("origin")}
           onDestinationSelect={handleChipSearch}
           onPlaceSelect={handlePlaceSearch}
           onRepeatTrip={repeatTrip}
@@ -1220,10 +1224,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
             setActivePoint(userLocation ? "destination" : "origin");
             setShowHint(true);
           }}
-          onSelectPoint={(point) => {
-            setActivePoint(point);
-            setShowHint(true);
-          }}
+          onSelectPoint={editJourneyPoint}
         />
         </>
         )}
@@ -1232,21 +1233,9 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
         {flowStep === 3 && !hideStep3 && (
           <div
             aria-live="polite"
-            className="ov-panel-soft w-full overflow-hidden rounded-2xl border shadow-lg transition-all duration-300"
-            style={{ borderLeftWidth: "3px", borderLeftColor: bestSuggestion?.routeColor ?? selectedRoute?.color ?? "#b8e840" }}
+            className="map-result ov-panel-soft w-full overflow-hidden rounded-2xl border"
+            style={{ borderTopWidth: "3px", borderTopColor: bestSuggestion?.routeColor ?? selectedRoute?.color ?? "var(--brand-lime)" }}
           >
-            <JourneyPreferences value={journeyPreference} settings={journeySettings} onSettingsChange={(settings) => {
-              handleClearSelection();
-              clearSharedRoute();
-              setJourneySettings(settings);
-            }} disabled={isTripActive} onChange={(preference) => {
-              handleClearSelection();
-              clearSharedRoute();
-              setJourneyPreference(preference);
-            }} />
-            {!isCalculatingSuggestions && currentCalculation?.refinement === "pending" && !isTripActive && <p role="status" className="ov-text-muted px-4 py-2 text-xs">Comprobando los accesos a pie por calles…</p>}
-            {!!currentCalculation?.unreachableCount && <p className="ov-text-muted px-4 py-2 text-xs">Descartamos {currentCalculation.unreachableCount} {currentCalculation.unreachableCount === 1 ? "opción sin conexión peatonal encontrada" : "opciones sin conexión peatonal encontrada"}.</p>}
-            {!!currentCalculation?.checkedReserveCount && <p className="ov-text-muted px-4 py-2 text-xs">Revisamos {currentCalculation.checkedReserveCount} {currentCalculation.checkedReserveCount === 1 ? "opción adicional" : "opciones adicionales"} para buscar mejores accesos a pie.</p>}
             {isCalculatingSuggestions ? (
               <div className="flex items-center gap-3 px-4 py-3.5">
                 <span className="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-lima/60 border-t-transparent" />
@@ -1259,16 +1248,8 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
                   isTripActive={isTripActive}
                   route={bestSuggestion}
                   routeEta={bestSuggestionEta}
-                  onEditDestination={() => {
-                    setActivePoint("destination");
-                    setShowHint(true);
-                    if (isMobile) setIsResultSheetOpen(false);
-                  }}
-                  onEditOrigin={() => {
-                    setActivePoint("origin");
-                    setShowHint(true);
-                    if (isMobile) setIsResultSheetOpen(false);
-                  }}
+                  onEditDestination={() => editJourneyPoint("destination")}
+                  onEditOrigin={() => editJourneyPoint("origin")}
                   onShare={() => shareDirectRoute(bestSuggestion)}
                   onToggleTrip={isTripActive ? handleStopTrip : handleStartTrip}
                   onViewMap={() => {
@@ -1299,21 +1280,27 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
             ) : transfers.length > 0 ? (
               <TransferOptionsResult
                 transfers={transfers}
-                onMoveDestination={() => {
-                  setActivePoint("destination");
-                  setShowHint(true);
-                }}
+                onMoveDestination={() => editJourneyPoint("destination")}
                 onSelect={setSelectedTransfer}
               />
             ) : (
               <EmptyRouteResult
-                onMoveDestination={() => {
-                  setActivePoint("destination");
-                  setShowHint(true);
-                }}
+                onMoveDestination={() => editJourneyPoint("destination")}
               />
             )}
 
+            <JourneyPreferences value={journeyPreference} settings={journeySettings} onSettingsChange={(settings) => {
+              handleClearSelection();
+              clearSharedRoute();
+              setJourneySettings(settings);
+            }} disabled={isTripActive} onChange={(preference) => {
+              handleClearSelection();
+              clearSharedRoute();
+              setJourneyPreference(preference);
+            }} />
+            {!isCalculatingSuggestions && currentCalculation?.refinement === "pending" && !isTripActive && <p role="status" className="ov-text-muted px-4 py-2 text-xs">Comprobando los accesos a pie por calles…</p>}
+            {!!currentCalculation?.unreachableCount && <p className="ov-text-muted px-4 py-2 text-xs">Descartamos {currentCalculation.unreachableCount} {currentCalculation.unreachableCount === 1 ? "opción sin conexión peatonal encontrada" : "opciones sin conexión peatonal encontrada"}.</p>}
+            {!!currentCalculation?.checkedReserveCount && <p className="ov-text-muted px-4 py-2 text-xs">Revisamos {currentCalculation.checkedReserveCount} {currentCalculation.checkedReserveCount === 1 ? "opción adicional" : "opciones adicionales"} para buscar mejores accesos a pie.</p>}
             {!isCalculatingSuggestions && !isTripActive && (bestSuggestion || selectedTransfer) && (
               <JourneyExplanation active={(bestSuggestion ?? selectedTransfer)?.cost}
                 costs={[...suggestions, ...transfers].flatMap((option) => option.cost ? [option.cost] : [])}
@@ -1693,11 +1680,11 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
         {/* ── MOBILE ONLY: FAB row — Resultado (izq) + Rutas (der) ── */}
         {!isDesktopLayout && (
         <div
-          className={`absolute inset-x-4 z-20 items-end gap-2 lg:hidden ${isTripActive ? "hidden" : "flex"}`}
-          style={{ bottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }}
+          className={`pointer-events-none absolute inset-x-3 z-20 items-end gap-2 lg:hidden ${isTripActive ? "hidden" : "flex"}`}
+          style={{ bottom: "calc(0.875rem + env(safe-area-inset-bottom, 0px))" }}
         >
-          {flowStep === 3 && !resultSheetOpen && !isSheetOpen && (
-            <div className="absolute inset-x-0 bottom-16">
+          {flowStep === 3 && (
+            <div className="pointer-events-auto absolute inset-x-0 bottom-14">
               <JourneyPreview route={bestSuggestion} transfer={selectedTransfer} pending={isCalculatingSuggestions} onOpen={() => setIsResultSheetOpen(true)} />
             </div>
           )}
@@ -1705,7 +1692,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
           {/* Chat + Rutas apilados verticalmente — pegados a la esquina inferior derecha */}
           <div className="flex shrink-0 flex-row items-end gap-2 self-end ml-auto">
             {/* Botón chat — se oculta cuando el sheet está abierto */}
-            <div className={`pointer-events-auto transition-all duration-200 ${isSheetOpen ? "pointer-events-none opacity-0 translate-y-1" : "opacity-100 translate-y-0"}`}>
+            <div className="pointer-events-auto">
               <ChatBotLauncher />
             </div>
             {/* Botón ver todas las rutas */}
@@ -1713,7 +1700,8 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
               type="button"
               onPointerDown={() => { void preloadRouteList(); }}
               onClick={openRouteList}
-              className={`ov-panel pointer-events-auto inline-flex h-12 items-center gap-2 rounded-2xl border pl-3.5 pr-4 text-[14px] font-semibold shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl transition hover:border-lima/40 hover:shadow-[0_8px_32px_rgba(232,93,47,0.15)] active:scale-[0.97] ${isNearbyMode ? "border-lima/50 bg-lima/10" : ""}`}
+              className="map-routes-trigger pointer-events-auto inline-flex h-12 items-center gap-2 rounded-xl border px-3 text-sm font-bold shadow-soft transition active:scale-[0.97]"
+              aria-haspopup="dialog"
               aria-label={selectedRoute
                 ? `Ruta activa: ${formatRouteLabel(selectedRoute.name, selectedRoute.name)}`
                   : isNearbySearchPending
@@ -1737,13 +1725,13 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
                   <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-lima" aria-hidden="true">
                     <path d="M4 7H20M4 12H20M4 17H14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
                   </svg>
-                  <span className="ov-text">
+                  <span>
                     {isNearbySearchPending ? "Buscando cerca" : isNearbyMode ? "Cerca de ti" : "Rutas"}
                   </span>
                   {isNearbySearchPending ? (
                     <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-lima/50 border-t-lima" aria-hidden="true" />
                   ) : (
-                    <span className="ml-0.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-lima/20 px-1.5 text-[11px] font-bold text-lima">
+                    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-md bg-black/10 px-1.5 text-[11px] font-bold">
                       {displayedRouteCount}
                     </span>
                   )}

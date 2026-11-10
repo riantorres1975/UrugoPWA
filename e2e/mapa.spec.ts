@@ -111,7 +111,7 @@ test("encuentra rutas por los nuevos puntos de referencia", async ({ page }) => 
 
   await page.locator('button[aria-label^="Rutas "]:visible').click();
   const routeSheet = page.getByRole("dialog", { name: "Selecciona una ruta" });
-  await routeSheet.getByPlaceholder(/punto de referencia/i).fill("Galerias Metropolitana Uruapan");
+  await routeSheet.getByRole("textbox", { name: "Buscar ruta por colonia o número" }).fill("Galerias Metropolitana Uruapan");
 
   await expect(routeSheet.getByText("Ruta 26", { exact: true })).toBeVisible();
   await expect(routeSheet.getByText(/Pasa por: Galerías Metropolitana Uruapan/i)).toBeVisible();
@@ -123,7 +123,7 @@ test("encuentra la Ruta 27 al buscar el Tec Uruapan", async ({ page }) => {
 
   await page.locator('button[aria-label^="Rutas "]:visible').click();
   const routeSheet = page.getByRole("dialog", { name: "Selecciona una ruta" });
-  await routeSheet.getByPlaceholder(/punto de referencia/i).fill("Tec Uruapan");
+  await routeSheet.getByRole("textbox", { name: "Buscar ruta por colonia o número" }).fill("Tec Uruapan");
 
   await expect(routeSheet.getByText("Ruta 27", { exact: true })).toBeVisible();
   await expect(routeSheet.getByText(/Pasa por: Instituto Tecnológico Superior de Uruapan/i)).toBeVisible();

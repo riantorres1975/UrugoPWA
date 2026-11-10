@@ -74,10 +74,14 @@ export default function BottomSheet({
   const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
     if (pointerStartY.current === null) return;
     const diff = event.clientY - pointerStartY.current;
-    if (diff > 0) setDragOffset(Math.min(diff, 320));
-    if (diff < 0 && snapPoints && snapAtDragStart.current === "mini") {
-      setDragOffset(Math.max(diff, -180));
-    }
+    const minOffset = snapPoints && snapAtDragStart.current === "mini" ? -180 : 0;
+    setDragOffset(Math.max(minOffset, Math.min(diff, 320)));
+  };
+
+  const resetDrag = () => {
+    setIsDragging(false);
+    setDragOffset(0);
+    pointerStartY.current = null;
   };
 
   const onPointerEnd = (event: PointerEvent<HTMLDivElement>) => {
@@ -96,18 +100,16 @@ export default function BottomSheet({
       if (dragOffset > 120) onOpenChange(false);
     }
 
-    setIsDragging(false);
-    setDragOffset(0);
-    pointerStartY.current = null;
+    resetDrag();
   };
 
   // Altura y transform según snap
   const isMini = snapPoints && snap === "mini";
-  const sheetHeight = isMini ? `${miniHeight}px` : "80dvh";
+  const sheetHeight = "var(--map-sheet-height, 80dvh)";
 
   // translateY: cuando está mini, deslizar hasta que solo sobresalga miniHeight
   // La hoja mide 80dvh en full, así que en mini debe estar desplazada (80dvh - miniHeight) hacia abajo.
-  const miniTranslate = isMini ? `calc(80dvh - ${miniHeight}px)` : "0px";
+  const miniTranslate = isMini ? `calc(${sheetHeight} - ${miniHeight}px)` : "0px";
   const baseTransform = open ? `translateY(calc(${miniTranslate} + ${dragOffset}px))` : "translateY(102%)";
 
   useEffect(() => {
@@ -115,8 +117,25 @@ export default function BottomSheet({
     previousFocusRef.current = document.activeElement instanceof HTMLElement
       ? document.activeElement
       : null;
+    return () => {
+      const previous = previousFocusRef.current;
+      if (previous?.isConnected) previous.focus({ preventScroll: true });
+    };
+  }, [open]);
 
+  useEffect(() => {
+    if (!open || isMini) return;
+    const sheet = sheetRef.current;
+    if (sheet && !sheet.contains(document.activeElement)) {
+      const closeButton = sheet.querySelector<HTMLButtonElement>("header button");
+      (closeButton ?? sheet).focus({ preventScroll: true });
+    }
+  }, [isMini, open]);
+
+  useEffect(() => {
+    if (!open) return;
     const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return;
       if (event.key === "Escape") {
         event.preventDefault();
         if (snapPoints && snap === "full") setSnap("mini");
@@ -127,11 +146,14 @@ export default function BottomSheet({
       if (event.key !== "Tab" || isMini || !sheetRef.current) return;
       const focusable = Array.from(sheetRef.current.querySelectorAll<HTMLElement>(
         'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-      ));
+      )).filter((element) => element.getClientRects().length > 0 && !element.closest("[inert]"));
       if (focusable.length === 0) return;
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
+      if (!sheetRef.current.contains(document.activeElement)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      } else if (event.shiftKey && document.activeElement === first) {
         event.preventDefault();
         last.focus();
       } else if (!event.shiftKey && document.activeElement === last) {
@@ -143,7 +165,6 @@ export default function BottomSheet({
     document.addEventListener("keydown", onKeyDown);
     return () => {
       document.removeEventListener("keydown", onKeyDown);
-      previousFocusRef.current?.focus();
     };
   }, [isMini, onOpenChange, open, setSnap, snap, snapPoints]);
 
@@ -153,7 +174,7 @@ export default function BottomSheet({
       <div
         aria-hidden="true"
         onClick={() => (snapPoints && snap === "full" ? setSnap("mini") : onOpenChange(false))}
-        className={`fixed inset-0 z-30 bg-slate-950/60 transition-opacity duration-300 lg:hidden ${
+        className={`map-sheet-backdrop fixed inset-0 z-30 transition-opacity duration-200 motion-reduce:transition-none lg:hidden ${
           open && (!snapPoints || snap === "full")
             ? "pointer-events-auto opacity-100"
             : "pointer-events-none opacity-0"
@@ -163,13 +184,14 @@ export default function BottomSheet({
       {/* ── MOBILE: Bottom Sheet ── */}
       <section
         ref={sheetRef}
+        tabIndex={-1}
         role={isMini ? "region" : "dialog"}
         aria-modal={open && !isMini ? "true" : undefined}
         aria-labelledby={titleId}
         aria-hidden={!open}
         inert={!open ? true : undefined}
-        style={{ transform: baseTransform, height: "80dvh", background: "var(--ov-bg)", borderTop: "1px solid var(--ov-border)" }}
-        className={`fixed inset-x-0 bottom-0 z-40 flex flex-col rounded-t-[28px] shadow-soft will-change-transform lg:hidden ${
+        style={{ transform: baseTransform, height: sheetHeight }}
+        className={`map-sheet fixed inset-x-0 bottom-0 z-40 flex flex-col rounded-t-[24px] motion-reduce:transition-none lg:hidden ${
           isDragging ? "transition-none" : "transition-[transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
         }`}
       >
@@ -178,11 +200,11 @@ export default function BottomSheet({
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerEnd}
-          onPointerCancel={onPointerEnd}
+          onPointerCancel={resetDrag}
           style={{ borderBottomColor: "var(--ov-border)" }}
-          className="relative shrink-0 cursor-grab touch-none select-none border-b px-5 pb-4 pt-3.5 active:cursor-grabbing"
+          className="relative shrink-0 cursor-grab touch-none select-none border-b px-4 pb-3 pt-2.5 active:cursor-grabbing"
         >
-          <div className="mx-auto mb-3 h-1 w-10 rounded-full" style={{ background: "var(--ov-border2, rgba(60,100,40,0.25))" }} />
+          <div className="mx-auto mb-2 h-1 w-9 rounded-full" style={{ background: "var(--ov-border2)" }} />
 
           {snapPoints ? (
             /* En modo snap: la cabecera es solo el handle + contenido mini */
@@ -204,12 +226,12 @@ export default function BottomSheet({
               </svg>
             </button>
           ) : (
-            <>
-              <p id={titleId} className="pr-12 font-display text-lg font-bold" style={{ color: "var(--ov-text)" }}>{title}</p>
+            <div className="flex min-h-11 items-center justify-between gap-3">
+              <h2 id={titleId} className="ov-text text-xl font-bold leading-tight tracking-tight">{title}</h2>
               <button
                 type="button"
                 onClick={() => onOpenChange(false)}
-                className="absolute right-4 top-2.5 rounded-full p-2.5 transition active:scale-[0.97]"
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-xl transition active:scale-[0.97]"
                 style={{ background: "var(--ov-pill-bg)", color: "var(--ov-text)" }}
                 aria-label="Cerrar panel"
               >
@@ -217,18 +239,18 @@ export default function BottomSheet({
                   <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                 </svg>
               </button>
-            </>
+            </div>
           )}
         </header>
 
         <div
           aria-hidden={isMini || !open}
           inert={isMini || !open ? true : undefined}
-          className={`min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-5 transition-opacity duration-200 ${
+          className={`map-sheet-content min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pt-3 transition-opacity duration-200 motion-reduce:transition-none ${
             snapPoints && snap === "mini" ? "pointer-events-none opacity-0" : "opacity-100"
           }`}
           style={{
-            paddingBottom: "calc(2rem + env(safe-area-inset-bottom, 0px))",
+            paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px))",
           }}
         >
           {open || keepMounted ? children : null}

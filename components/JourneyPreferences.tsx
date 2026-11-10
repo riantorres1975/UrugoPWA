@@ -17,7 +17,7 @@ const extraMinuteOptions = [
 ] as const;
 
 const choiceClass = (selected: boolean) =>
-  `min-h-11 rounded-xl border px-2 py-2 text-xs font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-lima ${selected ? "border-lima bg-lima text-ink-900" : "ov-border ov-text ov-pill"}`;
+  `min-h-11 rounded-xl border px-2 py-2 text-xs font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-lima ${selected ? "map-primary" : "ov-border ov-text ov-pill"}`;
 
 export default function JourneyPreferences({ value, onChange, disabled, settings, onSettingsChange }: { value: JourneyPreference; onChange: (value: JourneyPreference) => void; disabled?: boolean; settings: JourneySettings; onSettingsChange: (settings: JourneySettings) => void }) {
   const [expanded, setExpanded] = useState(false);

@@ -53,7 +53,7 @@ export default function RoutePlannerPoints({
         <button
           type="button"
           onClick={onExpand}
-          className="ov-panel flex w-full items-center gap-2 rounded-2xl border px-3 py-2.5 shadow-soft backdrop-blur-xl transition active:scale-[0.99]"
+          className="map-points flex min-h-11 w-full items-center gap-2 rounded-xl px-2.5 py-2 transition active:scale-[0.99]"
           aria-expanded={false}
           aria-label="Ajustar origen y destino manualmente"
         >
@@ -74,27 +74,22 @@ export default function RoutePlannerPoints({
           </svg>
         </button>
       ) : (
-        <div className="ov-panel w-full rounded-2xl border p-1.5 shadow-soft backdrop-blur-xl">
+        <div className="map-points w-full rounded-xl p-1">
           <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={() => onSelectPoint("origin")}
-              className={`inline-flex min-h-16 min-w-0 flex-1 items-center gap-1.5 rounded-xl border px-2 py-2 text-left text-[13px] font-semibold transition active:scale-[0.97] ${
-                originPoint
-                  ? "border-lima/50 bg-lima/15 text-lima"
-                  : activePoint === "origin"
-                    ? "ring-pulse-active border-lima/60 bg-lima/10 text-lima"
-                    : "ov-pill ov-border ov-text-muted"
+              className={`inline-flex min-h-12 min-w-0 flex-1 items-center gap-2 rounded-lg border px-2 py-1.5 text-left text-xs font-semibold transition active:scale-[0.97] ${
+                activePoint === "origin"
+                  ? "border-lima/60 bg-lima/10 text-lima"
+                  : "border-transparent ov-text"
               }`}
               aria-label={getOriginAriaLabel({ geoAccuracyWarning, geoStatus, manualOrigin, userLocation })}
             >
-              <svg viewBox="0 0 24 24" fill="none" className="hidden h-4 w-4 shrink-0 min-[380px]:block" aria-hidden="true">
-                <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                <circle cx="12" cy="10" r="2" fill="currentColor" />
-              </svg>
+              <span className="map-point-id" data-filled={!!originPoint} aria-hidden="true">A</span>
               <span className="min-w-0 flex-1">
                 <span className="block">Origen</span>
-                <span className="ov-text-muted mt-0.5 line-clamp-2 break-words text-[10px] font-medium leading-[14px]">
+                <span className="ov-text-muted line-clamp-2 break-words text-[11px] font-medium leading-[14px]">
                   {manualOrigin ? originPlaceLabel ?? "Marcado en mapa" : geoStatus === "outside" ? "Elige en Uruapan" : geoAccuracyWarning ? "GPS impreciso" : userLocation ? "Mi ubicación" : "Elige un lugar"}
                 </span>
               </span>
@@ -103,27 +98,22 @@ export default function RoutePlannerPoints({
               )}
             </button>
 
-            <ArrowIcon className="ov-text-muted h-4 w-4 shrink-0" />
+            <ArrowIcon className="ov-text-muted h-3 w-3 shrink-0" />
 
             <button
               type="button"
               onClick={() => onSelectPoint("destination")}
               disabled={!originPoint}
-              className={`inline-flex min-h-16 min-w-0 flex-1 items-center gap-1.5 rounded-xl border px-2 py-2 text-left text-[13px] font-semibold transition active:scale-[0.97] disabled:opacity-40 ${
-                destinationPoint
-                  ? "border-lima/50 bg-lima/15 text-lima"
-                  : activePoint === "destination"
-                    ? "ring-pulse-active border-lima/60 bg-lima/10 text-lima"
-                    : "ov-pill ov-border ov-text-muted"
+              className={`inline-flex min-h-12 min-w-0 flex-1 items-center gap-2 rounded-lg border px-2 py-1.5 text-left text-xs font-semibold transition active:scale-[0.97] disabled:opacity-65 ${
+                activePoint === "destination"
+                  ? "border-lima/60 bg-lima/10 text-lima"
+                  : "border-transparent ov-text"
               }`}
               aria-label={destinationPoint ? "Destino marcado, toca para cambiar" : "Toca el mapa para marcar tu destino"}
             >
-              <svg viewBox="0 0 24 24" fill="none" className="hidden h-4 w-4 shrink-0 min-[380px]:block" aria-hidden="true">
-                <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.8" />
-                <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.4" strokeOpacity="0.5" />
-              </svg>
+              <span className="map-point-id map-point-destination" data-filled={!!destinationPoint} aria-hidden="true">B</span>
               <span className="min-w-0 flex-1"><span className="block">Destino</span>
-                <span className="ov-text-muted mt-0.5 line-clamp-2 break-words text-[10px] font-medium leading-[14px]">{destinationPoint ? destinationPlaceLabel ?? "Marcado en mapa" : "Elige un lugar"}</span>
+                <span className="ov-text-muted line-clamp-2 break-words text-[11px] font-medium leading-[14px]">{destinationPoint ? destinationPlaceLabel ?? "Marcado en mapa" : "Elige un lugar"}</span>
               </span>
             </button>
 
@@ -131,7 +121,7 @@ export default function RoutePlannerPoints({
               <button
                 type="button"
                 onClick={onReset}
-                className="ov-pill ov-border ov-text-muted inline-flex h-10 items-center rounded-xl border px-2.5 text-[12px] font-semibold transition hover:border-red-400/40 hover:text-red-400 active:scale-[0.97]"
+                className="ov-text-muted grid h-11 w-11 shrink-0 place-items-center rounded-lg transition hover:bg-white/10 active:scale-[0.97]"
                 aria-label="Reiniciar puntos A y B"
               >
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
@@ -145,7 +135,7 @@ export default function RoutePlannerPoints({
               <button
                 type="button"
                 onClick={onCollapse}
-                className="ov-pill ov-border ov-text-muted inline-flex h-10 w-9 shrink-0 items-center justify-center rounded-xl border transition hover:text-lima active:scale-[0.97]"
+                className="ov-text-muted grid h-11 w-9 shrink-0 place-items-center rounded-lg transition hover:text-lima active:scale-[0.97]"
                 aria-label="Colapsar origen y destino"
               >
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
@@ -159,12 +149,9 @@ export default function RoutePlannerPoints({
 
       {(flowStep === 1 || flowStep === 2 || (flowStep === 3 && activePoint !== null)) && (
         <div className="w-full">
-          <div className="ov-panel flex items-center gap-1.5 rounded-2xl border px-3 py-2 shadow-[0_2px_12px_rgba(0,0,0,0.15)] backdrop-blur-xl">
-            <span className="relative flex h-2.5 w-2.5 shrink-0" aria-hidden="true">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-lima/60 opacity-75" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-lima" />
-            </span>
-            <p className="ov-text flex-1 text-[12px] font-medium leading-snug">
+          <div className="flex items-center gap-2 px-1.5 py-0.5">
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-lima" aria-hidden="true" />
+            <p className="ov-text-muted flex-1 text-xs font-medium leading-snug">
               <PointGuidance activePoint={activePoint} destinationPoint={destinationPoint} flowStep={flowStep} geoStatus={geoStatus} />
             </p>
           </div>

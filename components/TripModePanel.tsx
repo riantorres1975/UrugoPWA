@@ -267,10 +267,10 @@ export default function TripModePanel({
   return (
     <section
       aria-label="Modo viaje"
-      className={`pointer-events-auto overflow-y-auto rounded-2xl ${expanded ? "max-h-[60dvh]" : "max-h-[45dvh]"}`}
+      className={`pointer-events-auto overflow-y-auto overscroll-contain rounded-2xl ${expanded ? "max-h-[60dvh]" : "max-h-[47dvh]"}`}
     >
-      <div className="ov-panel ov-border overflow-hidden rounded-2xl border shadow-[0_12px_40px_rgba(0,0,0,0.38)] backdrop-blur-xl">
-        <div className="flex items-center gap-3 px-3.5 py-3">
+      <div className="map-trip-panel ov-panel overflow-hidden rounded-2xl border">
+        <div className="flex items-start gap-3 px-3.5 py-3">
           <span className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border ${toneClass(copy.tone)}`}>
             {locationStatus === "locating" ? (
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden="true" />
@@ -283,9 +283,9 @@ export default function TripModePanel({
           </span>
 
           <div className="min-w-0 flex-1" role="status" aria-live="polite">
-            <p className="text-[9px] font-bold tracking-[1.5px] text-lima">{copy.eyebrow}</p>
-            <p className="ov-text text-[14px] font-bold leading-5">{copy.title}</p>
-            <p className="ov-text-muted text-[11px] leading-4">{copy.detail}</p>
+            <p className="map-eyebrow">{copy.eyebrow}</p>
+            <p className="ov-text text-base font-bold leading-tight">{copy.title}</p>
+            <p className="ov-text-muted mt-0.5 text-xs leading-4">{copy.detail}</p>
             <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1.5">
               <span className={`inline-flex min-h-6 items-center rounded-full border px-2 py-1 text-[10px] font-bold ${toneClass(copy.tone)}`}>
                 <Navigation className="mr-1 h-3 w-3" aria-hidden="true" />
@@ -295,11 +295,6 @@ export default function TripModePanel({
                 {statusText}
               </span>
             </div>
-            {landmarkCue ? (
-              <p className="mt-0.5 truncate text-[11px] font-semibold leading-4 text-lima/90">
-                Próxima referencia: {landmarkCue.name} · ~{Math.round(landmarkCue.distanceM)} m
-              </p>
-            ) : null}
           </div>
 
           <button
@@ -314,9 +309,15 @@ export default function TripModePanel({
         </div>
 
         <div className="space-y-2 px-3.5 pb-3">
+          {landmarkCue && (
+            <p role="status" className="map-trip-reference flex items-start gap-2 rounded-lg px-2.5 py-2 text-xs leading-4">
+              <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <span>Próxima referencia: <strong>{landmarkCue.name}</strong> · ~{Math.round(landmarkCue.distanceM)} m</span>
+            </p>
+          )}
           {progress?.phase === "arrived" || progress?.phase === "walking-destination" ? (
             <button type="button" onClick={onConfirmArrival}
-              className="min-h-11 w-full rounded-xl bg-lima px-3 text-sm font-bold text-ink-900">
+              className="map-primary min-h-11 w-full rounded-xl px-3 text-sm font-bold">
               Llegué a mi destino
             </button>
           ) : null}
@@ -325,7 +326,7 @@ export default function TripModePanel({
           ) : null}
           {awaitingBoarding ? (
             <button type="button" disabled={!canConfirm} onClick={() => onConfirmStage("board")}
-              className="min-h-11 w-full rounded-xl bg-lima px-3 text-sm font-bold text-ink-900 disabled:opacity-50">
+              className="map-primary min-h-11 w-full rounded-xl px-3 text-sm font-bold disabled:opacity-50">
               Ya subí
             </button>
           ) : riding ? (
@@ -335,10 +336,19 @@ export default function TripModePanel({
             </button>
           ) : null}
           {awaitingBoarding ? <p className="ov-text-muted text-[11px]">Confirma cuando estés dentro del vehículo. Acercarte a la ruta no inicia el recorrido.</p> : null}
-          <button type="button" aria-expanded={expanded} aria-controls={detailsId} onClick={() => setExpanded(!expanded)}
-            className="ov-text-muted min-h-11 w-full rounded-xl text-xs font-semibold hover:ov-text">
-            {expanded ? "Ocultar detalles y avisos ↑" : "Detalles y avisos ↓"}
-          </button>
+          <div className="flex gap-2">
+            {progress?.phase !== "arrived" && (
+              <button type="button" disabled={locationStatus !== "ready" || actionBusy} onClick={onLocate}
+                aria-label="Ver dónde estoy"
+                className="ov-pill ov-border ov-text inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl border px-3 text-xs font-semibold disabled:opacity-50">
+                <LocateFixed className="h-4 w-4" aria-hidden="true" /> Centrar
+              </button>
+            )}
+            <button type="button" aria-expanded={expanded} aria-controls={expanded ? detailsId : undefined} onClick={() => setExpanded(!expanded)}
+              className="ov-pill ov-border ov-text min-h-11 flex-1 rounded-xl border px-2 text-xs font-semibold">
+              {expanded ? "Ocultar detalles y avisos ↑" : "Detalles y avisos ↓"}
+            </button>
+          </div>
           {expanded ? (
             <div id={detailsId} className="space-y-3 border-t border-white/10 pt-3">
               <ol aria-label="Pasos de tu viaje" className="space-y-2">
@@ -368,8 +378,6 @@ export default function TripModePanel({
           ) : null}
           {(expanded || progress?.phase === "off-route") && progress?.phase !== "arrived" ? (
             <div className="grid gap-2">
-              <button type="button" disabled={locationStatus !== "ready" || actionBusy} onClick={onLocate}
-                className="ov-pill ov-border ov-text min-h-11 rounded-xl border px-3 text-xs font-semibold disabled:opacity-50">Ver dónde estoy</button>
               <button type="button" disabled={actionBusy} onClick={onFindAnother}
                 className="ov-pill ov-border ov-text min-h-11 rounded-xl border px-3 text-xs font-semibold disabled:opacity-50">
                 {actionBusy ? "Actualizando ubicación…" : "Buscar otra opción desde aquí"}

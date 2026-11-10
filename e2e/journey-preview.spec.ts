@@ -17,6 +17,14 @@ test("el resumen deja el mapa visible y permite enfocar y recuperar el viaje", a
   await page.screenshot({ path: testInfo.outputPath("resumen-320.png") });
   await preview.click();
   const panel = page.locator('[role="dialog"]:visible').filter({ hasText: "RUTA RECOMENDADA" });
+  const close = panel.getByRole("button", { name: "Cerrar panel" });
+  await expect(close).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(panel.locator(":focus")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(panel).toBeHidden();
+  await expect(preview).toBeFocused();
+  await preview.click();
   await panel.getByRole("button", { name: "Sube aquí", exact: true }).click();
   await expect(panel).toBeHidden();
   const overview = page.getByRole("button", { name: "Ver todo el viaje", exact: true });

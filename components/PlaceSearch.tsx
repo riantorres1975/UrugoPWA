@@ -38,12 +38,39 @@ export default function PlaceSearch({
   const [activeIndex, setActiveIndex] = useState(-1);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
   const lastTrackedQueryRef = useRef("");
   const listboxId = useId();
+  const inputId = `${listboxId}-search`;
 
   // Con el input casi vacío mostramos los destinos recientes.
   const showingRecents = query.trim().length < 2;
   const displayResults = showingRecents ? recents : results;
+  const showList = isOpen && (showingRecents || displayResults.length > 0);
+
+  useEffect(() => {
+    if (!showList) return;
+    const list = listRef.current;
+    const viewport = window.visualViewport;
+    if (!list || !viewport) return;
+
+    const fitList = () => {
+      const room = viewport.offsetTop + viewport.height - list.getBoundingClientRect().top - 12;
+      list.style.setProperty("--map-search-room", `${Math.max(0, room)}px`);
+    };
+    fitList();
+    viewport.addEventListener("resize", fitList);
+    viewport.addEventListener("scroll", fitList);
+    return () => {
+      viewport.removeEventListener("resize", fitList);
+      viewport.removeEventListener("scroll", fitList);
+    };
+  }, [showList]);
+
+  useEffect(() => {
+    if (!showList || activeIndex < 0) return;
+    document.getElementById(`${listboxId}-opt-${activeIndex}`)?.scrollIntoView({ block: "nearest" });
+  }, [activeIndex, listboxId, showList]);
 
   const updateQuery = (value: string) => {
     const trimmed = value.trim();
@@ -115,7 +142,7 @@ export default function PlaceSearch({
     }
     addRecentPlace(result);
     setRecents(getRecentPlaces());
-    document.querySelector<HTMLInputElement>("input:focus")?.blur();
+    document.getElementById(inputId)?.blur();
     onSelect(result);
     // Limpiar el buscador tras aplicar la búsqueda (el destino queda marcado en el mapa).
     updateQuery("");
@@ -123,6 +150,12 @@ export default function PlaceSearch({
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Escape" && isOpen) {
+      event.preventDefault();
+      setIsOpen(false);
+      setActiveIndex(-1);
+      return;
+    }
     if (!isOpen || displayResults.length === 0) {
       if (event.key === "ArrowDown" && displayResults.length > 0) {
         setIsOpen(true);
@@ -142,26 +175,26 @@ export default function PlaceSearch({
       event.preventDefault();
       const target = displayResults[activeIndex] ?? displayResults[0];
       if (target) handleSelect(target);
-    } else if (event.key === "Escape") {
-      setIsOpen(false);
     }
   };
 
   return (
     <div ref={containerRef} className="relative">
-      <div className="relative">
+      <div className="map-search-field relative">
         <svg
           viewBox="0 0 24 24"
           fill="none"
-          className="ov-text-muted pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2"
+          className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2"
           aria-hidden="true"
         >
           <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" />
           <path d="m20 20-3.8-3.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
         </svg>
         <input
+          id={inputId}
           type="text"
           inputMode="search"
+          autoComplete="off"
           value={query}
           autoFocus={autoFocus}
           onChange={(event) => {
@@ -179,16 +212,15 @@ export default function PlaceSearch({
           placeholder={placeholder}
           aria-label={label}
           role="combobox"
-          aria-expanded={isOpen}
-          aria-controls={listboxId}
+          aria-expanded={showList}
+          aria-controls={showList ? listboxId : undefined}
           aria-autocomplete="list"
-          aria-activedescendant={activeIndex >= 0 ? `${listboxId}-opt-${activeIndex}` : undefined}
-          style={{ background: "var(--ov-bg)", color: "var(--ov-text)", borderColor: "var(--ov-border)" }}
-          className="h-12 w-full rounded-2xl border pl-10 pr-11 text-sm outline-none shadow-soft backdrop-blur-xl transition focus:border-lima/40 focus:ring-1 focus:ring-lima/10 [&::placeholder]:opacity-40"
+          aria-activedescendant={showList && activeIndex >= 0 && activeIndex < displayResults.length ? `${listboxId}-opt-${activeIndex}` : undefined}
+          className="map-search-input h-12 w-full rounded-xl border pl-10 pr-12 text-base font-semibold"
         />
         {isSearching ? (
           <span
-            className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin rounded-full border-2 border-lima/60 border-t-transparent"
+            className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin rounded-full border-2 border-current border-t-transparent"
             aria-hidden="true"
           />
         ) : query ? (
@@ -198,7 +230,7 @@ export default function PlaceSearch({
               updateQuery("");
               setIsOpen(false);
             }}
-            className="ov-pill ov-text-muted absolute right-2 top-2.5 grid h-7 w-7 place-items-center rounded-full transition hover:opacity-80"
+            className="absolute right-0.5 top-0.5 grid h-11 w-11 place-items-center rounded-lg transition hover:bg-black/10"
             aria-label="Limpiar búsqueda"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
@@ -208,15 +240,15 @@ export default function PlaceSearch({
         ) : null}
       </div>
 
-      {isOpen && (showingRecents || displayResults.length > 0) && (
+      {showList && (
         <ul
+          ref={listRef}
           id={listboxId}
           role="listbox"
           // Keep the keyboard/layout stable until click applies the selection.
           // Unlike touchstart cancellation, this still allows touch scrolling.
           onMouseDown={(event) => event.preventDefault()}
-          className="ov-panel absolute z-50 mt-2 max-h-72 w-full overflow-y-auto overscroll-contain rounded-2xl border p-1.5 shadow-[0_12px_40px_rgba(0,0,0,0.35)] backdrop-blur-xl"
-          style={{ borderColor: "var(--ov-border)" }}
+          className="map-search-list ov-panel absolute z-50 mt-2 w-full select-none overflow-y-auto overscroll-contain rounded-2xl border p-1.5 shadow-[0_12px_40px_rgba(0,0,0,0.35)]"
         >
           {savingSlot && (
             <li role="presentation" className="mb-1 flex items-center gap-2 rounded-xl border border-lima/30 bg-lima/10 px-3 py-2">
@@ -319,6 +351,11 @@ export default function PlaceSearch({
             </li>
           ))}
         </ul>
+      )}
+      {isOpen && !showingRecents && !isSearching && !displayResults.length && (
+        <p role="status" className="ov-panel absolute z-50 mt-2 w-full rounded-xl border px-3 py-3 text-sm shadow-soft">
+          No encontramos ese lugar. Prueba otro nombre o marca un punto en el mapa.
+        </p>
       )}
     </div>
   );

@@ -2178,12 +2178,12 @@ function MapComponent({
       )}
 
       {/* Locate-me button + accuracy warning — top-right; en desktop debajo del control de zoom */}
-      <div className="absolute right-2.5 top-[10px] z-20 flex flex-col items-end gap-2 md:right-4 md:top-[104px]">
+      <div className="map-locate absolute z-20 flex flex-col items-end gap-2">
         <button
           type="button"
           onClick={tripModeActive ? handleResumeTripFollow : handleLocateMe}
           disabled={tripModeActive ? !tripLocation : locationLoading}
-          className={`ov-panel grid h-10 w-10 place-items-center rounded-xl border text-lima shadow-[0_4px_16px_rgba(0,0,0,0.22)] backdrop-blur-xl transition hover:opacity-90 active:scale-95 disabled:opacity-60 ${
+          className={`ov-panel grid h-11 w-11 place-items-center rounded-xl border text-lima shadow-soft transition hover:opacity-90 active:scale-95 disabled:opacity-60 ${
             tripModeActive && isTripFollowing ? "border-lima/60 bg-lima/15" : "ov-border"
           }`}
           aria-label={tripModeActive

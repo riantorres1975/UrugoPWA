@@ -31,8 +31,8 @@ export function DirectRouteResult({
 }: DirectRouteResultProps) {
   return (
     <div className="px-4 py-3">
-      <p className="ov-text-muted text-[10px] font-bold tracking-[2px]">RUTA RECOMENDADA</p>
-      {showTitle && <p className="ov-text mt-1 font-display text-[17px] font-bold leading-tight">
+      <p className="map-eyebrow">RUTA RECOMENDADA</p>
+      {showTitle && <p className="ov-text mt-1 text-lg font-bold leading-tight tracking-tight">
         {formatRouteLabel(route.ruta)}
       </p>}
 
@@ -58,12 +58,12 @@ export function DirectRouteResult({
 
       </div>
 
-      <JourneyWalkingSummary cost={route.cost} walking={route.walking} concern={route.communityConcern} />
       <TripToggleButton
         active={isTripActive}
         label={`Iniciar viaje en ${formatRouteLabel(route.ruta)}`}
         onClick={onToggleTrip}
       />
+      <JourneyWalkingSummary cost={route.cost} walking={route.walking} concern={route.communityConcern} />
 
       <div className="mt-3 grid grid-cols-2 gap-2">
         <button
@@ -137,7 +137,7 @@ export function SelectedTransferResult({
 }: SelectedTransferResultProps) {
   return (
     <div className="px-4 py-3">
-      <p className="text-[10px] font-bold tracking-[2px] text-avocado-400">TRANSBORDO SELECCIONADO</p>
+      <p className="map-eyebrow">TRANSBORDO SELECCIONADO</p>
       <ol className="mt-3" aria-label="Tramos del viaje">
         <li className="flex gap-3">
           <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-blue-400 text-xs font-bold text-ink-900" aria-hidden="true">1</span>
@@ -155,9 +155,9 @@ export function SelectedTransferResult({
       </ol>
       <p className="ov-text mt-3 text-[13px] font-semibold">{getJourneyFareSummary([transfer.routeAName, transfer.routeBName]).badge}</p>
       {transfer.estimatedMinutes !== undefined && <p className="ov-text-muted mt-1 text-xs">~{Math.round(transfer.estimatedMinutes)} min puerta a puerta</p>}
-      <JourneyWalkingSummary cost={transfer.cost} walking={transfer.walking} concern={transfer.communityConcern} />
-      {transfer.transferReason && <p className="ov-muted mt-2 text-xs">{transfer.transferReason}</p>}
       <TripToggleButton active={isTripActive} className="mt-3" label="Iniciar viaje con transbordo" onClick={onToggleTrip} />
+      <JourneyWalkingSummary cost={transfer.cost} walking={transfer.walking} concern={transfer.communityConcern} />
+      {transfer.transferReason && <p className="ov-text-muted mt-2 text-xs">{transfer.transferReason}</p>}
       <button type="button" onClick={onViewTransfer} className="ov-pill ov-border ov-text mt-2 min-h-11 w-full rounded-xl border px-3 text-[13px] font-semibold">Ver dónde cambiar</button>
       <div className="mt-2 grid grid-cols-2 gap-2">
         <button
@@ -192,9 +192,9 @@ export function TransferOptionsResult({
 }) {
   return (
     <div className="px-4 py-3">
-      <p className="text-[10px] font-bold tracking-[2px] text-avocado-400">CON TRANSBORDO</p>
+      <p className="map-eyebrow">CON TRANSBORDO</p>
       <p className="ov-text-muted mt-0.5 text-[12px]">No hay ruta directa. Opciones con cambio de ruta:</p>
-      <ul className="mt-2 max-h-[200px] space-y-1.5 overflow-y-auto">
+      <ul className="mt-2 space-y-1.5">
         {transfers.map((transfer) => (
           <li key={`${transfer.routeAId}-${transfer.routeBId}`}>
             <button
@@ -208,7 +208,7 @@ export function TransferOptionsResult({
                 <span className="ov-text block text-[12px] font-semibold">{formatRouteLabel(transfer.routeAName)}</span>
                 <span className="ov-text-muted block text-[11px]">→ {formatRouteLabel(transfer.routeBName)}</span>
               </span>
-              <span className="shrink-0 rounded-full bg-avocado-400/15 px-2 py-0.5 text-[10px] font-semibold text-avocado-600">
+              <span className="ov-pill shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold text-lima">
                 ~{Math.round(transfer.cost ? transfer.cost.originWalkM + transfer.cost.transferWalkM + transfer.cost.destinationWalkM : transfer.walkMeters)} m a pie en total
               </span>
               <span className="ov-text-muted flex w-full flex-wrap gap-2 pl-6 text-[11px]">
@@ -274,7 +274,7 @@ function TransferIcon() {
 
 function TripToggleButton({
   active,
-  className = "mt-2",
+  className = "mt-3",
   label,
   onClick,
 }: {
@@ -287,7 +287,7 @@ function TripToggleButton({
     <button
       type="button"
       onClick={onClick}
-      className={`${className} inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl text-[12px] font-bold transition active:scale-[0.98] ${active ? "ov-pill ov-border ov-text border" : "bg-lima text-ink-900 shadow-[0_4px_16px_rgba(181,239,48,0.22)]"}`}
+      className={`${className} inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold transition active:scale-[0.98] ${active ? "ov-pill ov-border ov-text border" : "map-primary"}`}
       aria-label={active ? "Finalizar viaje" : label}
     >
       {active ? (

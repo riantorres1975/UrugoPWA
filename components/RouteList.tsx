@@ -420,7 +420,7 @@ export default function RouteList({
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="ov-text font-display text-[18px] font-bold">Rutas disponibles</h2>
+            <h2 className="ov-text text-lg font-bold tracking-tight">Rutas disponibles</h2>
             <p className="ov-text-muted mt-0.5 text-[13px]">
               Toca una ruta para verla en el mapa.
             </p>
@@ -445,11 +445,11 @@ export default function RouteList({
       <div className="space-y-2">
         <label className="block">
           <span className="sr-only">Buscar ruta por colonia o número</span>
-          <div className="relative">
+          <div className="map-search-field relative">
             <svg
               viewBox="0 0 24 24"
               fill="none"
-              className="ov-text-muted pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2"
+              className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2"
               aria-hidden="true"
             >
               <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" />
@@ -459,15 +459,16 @@ export default function RouteList({
               type="text"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Colonia, destino, punto de referencia o número de ruta…"
-              style={{ background: "var(--ov-pill-bg)", color: "var(--ov-text)", borderColor: "var(--ov-border)" }}
-              className="h-12 w-full rounded-2xl border pl-10 pr-11 text-sm outline-none transition focus:border-lima/40 focus:ring-1 focus:ring-lima/10 [&::placeholder]:opacity-40"
+              placeholder="Número de ruta o lugar"
+              autoComplete="off"
+              inputMode="search"
+              className="map-search-input h-12 w-full rounded-xl border pl-10 pr-12 text-base"
             />
             {query && (
               <button
                 type="button"
                 onClick={() => setQuery("")}
-                className="ov-pill ov-text-muted absolute right-2 top-2.5 grid h-7 w-7 place-items-center rounded-full transition hover:opacity-80"
+                className="absolute right-0.5 top-0.5 grid h-11 w-11 place-items-center rounded-lg transition hover:bg-black/10"
                 aria-label="Limpiar busqueda"
               >
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
