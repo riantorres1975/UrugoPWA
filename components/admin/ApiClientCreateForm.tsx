@@ -24,13 +24,13 @@ export default function ApiClientCreateForm() {
   };
 
   return (
-    <div className="border border-white/10 bg-[#10160d] p-5 sm:p-6">
+    <div className="admin-card p-4 sm:p-5">
       <div className="flex items-start gap-4">
-        <span className="grid h-10 w-10 shrink-0 place-items-center bg-[var(--brand-lime)] text-[#0c110a]">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--admin-tint)] text-[var(--brand-lime)]">
           <KeyRound className="h-5 w-5" aria-hidden="true" />
         </span>
         <div>
-          <h2 className="font-serif text-2xl font-black">Nueva integración</h2>
+          <h2 className="text-lg font-bold">Nueva integración</h2>
           <p className="mt-1 text-xs leading-5 text-[var(--admin-muted)]">Crea una credencial independiente para cada proyecto.</p>
         </div>
       </div>
@@ -38,13 +38,13 @@ export default function ApiClientCreateForm() {
       <form action={action} className="mt-6 grid gap-4 sm:grid-cols-[minmax(0,1fr)_150px_auto] sm:items-end">
         <label>
           <span className="text-[10px] font-black uppercase text-[var(--admin-muted)]">Nombre</span>
-          <input name="name" required minLength={2} maxLength={120} placeholder="Ej. Observatorio universitario" className="mt-2 h-11 w-full border border-white/10 bg-[var(--brand-header)] px-3 text-sm text-[#dceaca] outline-none placeholder:text-white/25 focus:border-[#6aab48]/70" />
+          <input name="name" required minLength={2} maxLength={120} placeholder="Ej. Observatorio universitario" className="admin-field mt-1 w-full" />
         </label>
         <label>
           <span className="text-[10px] font-black uppercase text-[var(--admin-muted)]">Cuota por hora</span>
-          <input name="hourlyLimit" type="number" required min={1} max={1000} defaultValue={30} className="mt-2 h-11 w-full border border-white/10 bg-[var(--brand-header)] px-3 text-sm tabular-nums text-[#dceaca] outline-none focus:border-[#6aab48]/70" />
+          <input name="hourlyLimit" type="number" required min={1} max={1000} defaultValue={30} className="admin-field mt-1 w-full tabular-nums" />
         </label>
-        <button disabled={pending} className="h-11 bg-[#6aab48] px-5 text-xs font-black text-[#0c110a] transition hover:bg-[#7abd53] disabled:cursor-wait disabled:opacity-60">
+        <button disabled={pending} className="admin-button admin-primary min-h-11 px-5 text-xs font-bold">
           {pending ? "Creando..." : "Crear clave"}
         </button>
       </form>

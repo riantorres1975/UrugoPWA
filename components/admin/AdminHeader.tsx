@@ -12,7 +12,7 @@ type Props = {
 function PendingCount({ count }: { count: number }) {
   if (count <= 0) return null;
   return (
-    <span className="inline-grid min-w-5 place-items-center bg-[var(--brand-lime)] px-1.5 py-0.5 text-[10px] font-black tabular-nums text-[#0c110a]">
+    <span className="absolute right-0.5 top-0.5 inline-grid min-w-4 place-items-center rounded-md bg-[var(--brand-lime)] px-0.5 py-0.5 text-[8px] font-bold tabular-nums text-[var(--brand-deep)] sm:static sm:min-w-5 sm:px-1.5 sm:text-[10px]">
       {count > 99 ? "99+" : count}<span className="sr-only"> pendientes</span>
     </span>
   );
@@ -29,46 +29,42 @@ export default async function AdminHeader({ email, active }: Props) {
   const pendingReports = reportsResult.count ?? 0;
   const pendingSignals = signalsResult.count ?? 0;
 
-  const linkClass = (selected: boolean) => `inline-flex min-h-11 items-center gap-2 rounded-lg border px-3 text-xs font-bold transition ${
-    selected
-      ? "border-[#6aab48]/50 bg-[#6aab48]/10 text-[#dceaca]"
-      : "border-transparent text-[var(--admin-muted)] hover:border-white/10 hover:text-[#dceaca]"
-  }`;
+  const links = [
+    { href: "/admin", id: "reports", label: "Reportes", icon: ClipboardList, count: pendingReports },
+    { href: "/admin/routes", id: "routes", label: "Rutas", icon: Route },
+    { href: "/admin/signals", id: "signals", label: "Señales", icon: RadioTower, count: pendingSignals },
+    { href: "/admin/feedback", id: "feedback", label: "Opiniones", icon: ThumbsUp },
+    { href: "/admin/integrations", id: "integrations", label: "Integraciones", icon: KeyRound },
+  ];
 
   return (
     <header className="border-b border-[var(--admin-line)] bg-[var(--brand-header)] px-5 sm:px-8">
-      <div className="mx-auto flex min-h-16 max-w-[1500px] flex-wrap items-center justify-between gap-3 py-3">
-        <div className="flex items-center gap-4">
-          <SiteBrand />
-          <span className="hidden border-l border-white/10 pl-4 text-xs font-black uppercase text-[var(--admin-muted)] sm:block">Control de datos</span>
+      <div className="mx-auto max-w-[1500px] py-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <SiteBrand />
+            <span className="border-l border-[var(--admin-line)] pl-3 text-xs font-semibold text-[var(--admin-muted)]">Admin</span>
+          </div>
+          <div className="flex min-w-0 items-center gap-3 text-xs text-[var(--admin-muted)]">
+            <span className="hidden max-w-52 truncate sm:inline" title={email}>{email}</span>
+            <form action={signOutAdmin}>
+              <button aria-label="Cerrar sesión" title="Cerrar sesión" className="admin-button inline-flex h-11 min-w-11 items-center justify-center gap-2 px-3">
+                <LogOut className="h-4 w-4" aria-hidden="true" /><span className="hidden font-semibold md:inline">Salir</span>
+              </button>
+            </form>
+          </div>
         </div>
-
-        <nav className="order-3 flex w-full gap-1 overflow-x-auto border-t border-white/[0.06] pt-3 sm:order-none sm:w-auto sm:border-0 sm:pt-0" aria-label="Administración">
-          <Link href="/admin" className={linkClass(active === "reports")} aria-current={active === "reports" ? "page" : undefined}>
-            <ClipboardList className="h-4 w-4" aria-hidden="true" /> Reportes <PendingCount count={pendingReports} />
-          </Link>
-          <Link href="/admin/routes" className={linkClass(active === "routes")} aria-current={active === "routes" ? "page" : undefined}>
-            <Route className="h-4 w-4" aria-hidden="true" /> Rutas
-          </Link>
-          <Link href="/admin/signals" className={linkClass(active === "signals")} aria-current={active === "signals" ? "page" : undefined}>
-            <RadioTower className="h-4 w-4" aria-hidden="true" /> Señales <PendingCount count={pendingSignals} />
-          </Link>
-          <Link href="/admin/feedback" className={linkClass(active === "feedback")} aria-current={active === "feedback" ? "page" : undefined}>
-            <ThumbsUp className="h-4 w-4" aria-hidden="true" /> Opiniones
-          </Link>
-          <Link href="/admin/integrations" className={linkClass(active === "integrations")} aria-current={active === "integrations" ? "page" : undefined}>
-            <KeyRound className="h-4 w-4" aria-hidden="true" /> Integraciones
-          </Link>
+        <nav className="mt-2 grid grid-cols-5 gap-0.5 border-t border-[var(--admin-line)] pt-2 sm:flex sm:flex-wrap sm:gap-1" aria-label="Administración">
+          {links.map(({ id, href, label, icon: Icon, count }) => (
+            <Link key={id} href={href} aria-current={active === id ? "page" : undefined}
+              aria-label={id === "integrations" ? label : undefined}
+              className="admin-nav-link relative inline-flex min-h-12 min-w-0 flex-col items-center justify-center gap-1 rounded-lg border border-transparent text-[10px] font-bold text-[var(--admin-muted)] hover:text-[var(--brand-white)] sm:min-h-11 sm:flex-row sm:gap-2 sm:px-3 sm:text-xs">
+              <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+              {id === "integrations" ? <><span className="sm:hidden">API</span><span className="hidden sm:inline">{label}</span></> : label}
+              <PendingCount count={count ?? 0} />
+            </Link>
+          ))}
         </nav>
-
-        <div className="flex items-center gap-3 text-xs text-[var(--admin-muted)]">
-          <span className="hidden max-w-52 truncate lg:inline">{email}</span>
-          <form action={signOutAdmin}>
-            <button aria-label="Cerrar sesión" title="Cerrar sesión" className="grid h-9 w-9 place-items-center border border-white/10 transition hover:border-[#6aab48]/60 hover:text-[var(--brand-white)]">
-              <LogOut className="h-4 w-4" />
-            </button>
-          </form>
-        </div>
       </div>
     </header>
   );

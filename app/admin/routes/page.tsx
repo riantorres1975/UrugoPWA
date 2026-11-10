@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import AdminHeader from "@/components/admin/AdminHeader";
 import { getAdminAccess } from "@/lib/admin-auth";
 import { summarizeAdminRouteReview, type AdminRouteSignal } from "@/lib/admin-route-review";
+import { getRouteKey } from "@/lib/route-names";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -55,7 +56,7 @@ export default async function AdminRoutesPage({ searchParams }: Props) {
   const routes = (routeResult.data ?? []) as RouteRow[];
   const confirmations = (confirmationResult.data ?? []) as ConfirmationRow[];
   const query = params.buscar?.trim().toLocaleLowerCase("es-MX") ?? "";
-  const attentionOnly = params.vista !== "todas";
+  const attentionOnly = params.vista === "prioridad";
 
   const signals = new Map<string, ConfirmationRow[]>();
   for (const confirmation of confirmations) {
@@ -71,7 +72,7 @@ export default async function AdminRoutesPage({ searchParams }: Props) {
   const attentionCount = routeRows.filter(({ review }) => review.needsAttention).length;
   const visibleRoutes = routeRows
     .filter(({ route, review }) => (!attentionOnly || review.needsAttention)
-      && (!query || `${route.name} ${route.original_name} ${route.id}`.toLocaleLowerCase("es-MX").includes(query)))
+      && (!query || `${route.name} ${route.original_name} ${route.id} ${getRouteKey(route.name)}`.toLocaleLowerCase("es-MX").includes(query)))
     .sort((left, right) => right.review.priority - left.review.priority
       || left.route.name.localeCompare(right.route.name, "es-MX")
       || left.route.id - right.route.id);
@@ -90,16 +91,19 @@ export default async function AdminRoutesPage({ searchParams }: Props) {
         <div className="grid gap-6 border-b border-[var(--admin-line)] pb-8 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-end">
           <div>
             <p className="text-xs font-black uppercase text-[var(--brand-lime)]">Inventario publicado</p>
-            <h1 className="mt-2 font-serif text-4xl font-black sm:text-5xl">Rutas con memoria.</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--admin-muted)]">Cada publicación crea una versión restaurable. Las señales comunitarias ayudan a priorizar qué recorrido revisar.</p>
+            <h1 className="mt-2 text-4xl font-bold sm:text-5xl">{params.reporte ? "Elige la ruta del reporte" : "Editar rutas"}</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--admin-muted)]">{params.reporte ? "Confirma el sentido del recorrido antes de abrir el editor." : "Busca una ruta y elige el sentido que quieres editar. Puedes restaurar versiones desde su historial."}</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
-            <form className="relative">
+            <form className="flex min-w-0 gap-2">
               {params.reporte && <input type="hidden" name="reporte" value={params.reporte} />}
               <input type="hidden" name="vista" value={attentionOnly ? "prioridad" : "todas"} />
-              <label htmlFor="route-search" className="sr-only">Buscar ruta</label>
-              <Search className="pointer-events-none absolute left-4 top-3.5 h-4 w-4 text-[var(--admin-muted)]" />
-              <input id="route-search" name="buscar" defaultValue={params.buscar ?? ""} placeholder="Nombre, dirección o número..." className="h-11 w-full border border-white/10 bg-[var(--brand-header)] pl-11 pr-4 text-sm text-[#dceaca] outline-none placeholder:text-white/25 focus:border-[#6aab48]/70" />
+              <label className="relative min-w-0 flex-1">
+                <span className="sr-only">Buscar ruta</span>
+                <Search className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-[var(--admin-muted)]" aria-hidden="true" />
+                <input name="buscar" defaultValue={params.buscar ?? ""} placeholder="Nombre o número" className="h-11 w-full border border-[var(--admin-line)] bg-[var(--brand-header)] pl-9 pr-2 text-sm text-[var(--brand-white)] placeholder:text-[var(--admin-muted)] focus:border-[var(--brand-lime)]" />
+              </label>
+              <button className="h-11 rounded-lg border border-[var(--admin-line)] px-2.5 text-xs font-bold hover:border-[var(--brand-lime)]">Buscar</button>
             </form>
             <a href="/api/admin/routes/export" download className="inline-flex h-11 items-center justify-center gap-2 border border-white/15 px-4 text-xs font-black text-[var(--admin-muted)] transition hover:border-[#6aab48]/60 hover:text-[var(--brand-white)]" title="Descargar rutas e historial en JSON">
               <Download className="h-4 w-4" aria-hidden="true" /> Respaldo
@@ -122,7 +126,7 @@ export default async function AdminRoutesPage({ searchParams }: Props) {
               {visibleRoutes.map(({ route, review }) => {
                 const href = `/admin/routes/${route.id}${params.reporte ? `?reporte=${encodeURIComponent(params.reporte)}` : ""}`;
                 return (
-                  <Link key={route.id} href={href} className="grid gap-4 px-2 py-5 transition hover:bg-white/[0.025] sm:grid-cols-[minmax(0,1fr)_130px_180px_36px] sm:items-center sm:px-4">
+                  <Link key={route.id} href={href} className="grid gap-3 px-2 py-4 transition hover:bg-white/[0.04] sm:grid-cols-[minmax(0,1fr)_100px_180px_68px] sm:items-center sm:px-4">
                     <div className="flex min-w-0 items-center gap-4">
                       <span className="h-9 w-2 shrink-0" style={{ backgroundColor: route.color }} aria-hidden="true" />
                       <div className="min-w-0"><strong className="block truncate text-sm text-[var(--brand-white)]">{route.name}</strong><span className="mt-1 block truncate text-xs text-[var(--admin-muted)]">#{route.id} · {route.original_name}</span><span className="mt-1 block text-[11px] text-[var(--admin-muted)]">{formatVerifiedDate(route.last_verified_at)}</span></div>
@@ -136,12 +140,17 @@ export default async function AdminRoutesPage({ searchParams }: Props) {
                       {review.acceptedSeen > 0 && <span className="inline-flex items-center gap-1 px-2 py-1 text-[var(--admin-muted)]"><CheckCircle2 className="h-3 w-3" /> {review.acceptedSeen} {review.acceptedSeen === 1 ? "vista reciente" : "vistas recientes"}</span>}
                       {!review.needsAttention && review.acceptedSeen === 0 && <span className="inline-flex items-center gap-1 px-2 py-1 text-[var(--admin-muted)]"><CheckCircle2 className="h-3 w-3" /> Sin alertas</span>}
                     </div>
-                    <ArrowRight className="hidden h-4 w-4 text-[var(--admin-muted)] sm:block" aria-hidden="true" />
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--brand-lime)]">Editar <ArrowRight className="h-4 w-4" aria-hidden="true" /></span>
                   </Link>
                 );
               })}
             </div>
-            {visibleRoutes.length === 0 && <p className="py-16 text-center text-sm text-[var(--admin-muted)]">{query ? "No encontramos una ruta con ese nombre." : "No hay rutas que requieran revisión."}</p>}
+            {visibleRoutes.length === 0 && (
+              <div className="space-y-3 py-10 text-center text-sm text-[var(--admin-muted)]">
+                <p>{query ? "No encontramos una ruta con ese nombre." : attentionOnly ? "No hay rutas que requieran revisión." : "El inventario no tiene rutas."}</p>
+                {(query || attentionOnly) && <Link href={params.reporte ? `/admin/routes?reporte=${encodeURIComponent(params.reporte)}` : "/admin/routes"} className="inline-flex min-h-11 items-center rounded-lg border border-[var(--admin-line)] px-4 font-bold text-[var(--brand-lime)]">Ver todas las rutas</Link>}
+              </div>
+            )}
           </section>
         )}
       </div>

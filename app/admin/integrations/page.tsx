@@ -59,10 +59,10 @@ export default async function AdminIntegrationsPage() {
         <header className="grid gap-6 border-b border-[var(--admin-line)] pb-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-end">
           <div>
             <p className="text-xs font-black uppercase text-[var(--brand-lime)]">Acceso externo</p>
-            <h1 className="mt-2 font-serif text-4xl font-black sm:text-5xl">Llaves con dueño y límite.</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--admin-muted)]">Cada proyecto recibe su propia clave. Puede proponer datos, pero nunca aprobarlos ni cambiar el mapa directamente.</p>
+            <h1 className="mt-2 text-4xl font-bold sm:text-5xl">Integraciones</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--admin-muted)]">Gestiona las claves y los límites de los proyectos que envían reportes por la API.</p>
           </div>
-          <dl className="grid grid-cols-2 border-y border-white/10 text-center">
+          <dl className="admin-card grid grid-cols-2 text-center">
             <div className="border-r border-white/10 py-4"><dt className="text-[10px] font-black uppercase text-[var(--admin-muted)]">Activas</dt><dd className="mt-1 font-serif text-3xl font-black text-[var(--brand-lime)]">{activeCount}</dd></div>
             <div className="py-4"><dt className="text-[10px] font-black uppercase text-[var(--admin-muted)]">Históricas</dt><dd className="mt-1 font-serif text-3xl font-black">{clients.length}</dd></div>
           </dl>
@@ -79,13 +79,13 @@ export default async function AdminIntegrationsPage() {
           <>
             <section className="mt-8" aria-label="Crear integración"><ApiClientCreateForm /></section>
             <section className="mt-10" aria-labelledby="api-clients-title">
-              <div className="mb-4 flex items-center justify-between"><h2 id="api-clients-title" className="text-sm font-black uppercase text-[var(--admin-muted)]">Credenciales emitidas</h2><span className="text-xs text-[var(--admin-muted)]">La clave completa no se almacena</span></div>
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><h2 id="api-clients-title" className="text-lg font-bold">Credenciales emitidas</h2><span className="text-xs text-[var(--admin-muted)]">Solo se muestra el prefijo de cada clave</span></div>
               {clients.length === 0 ? (
                 <div className="grid min-h-48 place-items-center border border-dashed border-white/10 text-center"><div><KeyRound className="mx-auto h-7 w-7 text-[var(--admin-muted)]" /><p className="mt-4 font-serif text-2xl font-black">Aún no hay integraciones.</p></div></div>
               ) : (
-                <div className="divide-y divide-white/[0.08] border-y border-[var(--admin-line)]">
+                <div className="space-y-3">
                   {clients.map((client) => (
-                    <article key={client.id} className="grid gap-5 py-5 lg:grid-cols-[minmax(220px,1fr)_180px_180px_minmax(260px,340px)] lg:items-center">
+                    <article key={client.id} className="admin-card grid gap-4 p-4 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_150px_150px_minmax(240px,330px)] xl:items-center">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2"><strong className="truncate text-sm">{client.name}</strong><span className={`px-2 py-1 text-[10px] font-black ${client.active ? "bg-[#6aab48]/10 text-[var(--brand-lime)]" : "bg-white/[0.05] text-[var(--admin-muted)]"}`}>{client.active ? "ACTIVA" : "REVOCADA"}</span></div>
                         <code className="mt-2 block text-xs text-[var(--admin-muted)]">{client.key_prefix}...</code>
@@ -93,15 +93,15 @@ export default async function AdminIntegrationsPage() {
                       <div className="text-xs text-[var(--admin-muted)]"><Clock3 className="mb-2 h-4 w-4 text-[#57d6e8]" /><span className="block">Último uso</span><strong className="mt-1 block text-[var(--admin-muted)]">{formatDate(client.last_used_at)}</strong></div>
                       <div className="text-xs text-[var(--admin-muted)]"><ShieldCheck className="mb-2 h-4 w-4 text-[var(--brand-lime)]" /><span className="block">Creada</span><strong className="mt-1 block text-[var(--admin-muted)]">{formatDate(client.created_at)}</strong></div>
                       {client.active ? (
-                        <div className="grid grid-cols-[minmax(0,1fr)_44px] gap-2">
-                          <form action={updateCommunityApiClient} className="flex min-w-0">
+                        <div className="flex min-w-0 flex-wrap items-end gap-2">
+                          <form action={updateCommunityApiClient} className="flex min-w-0 flex-1 items-end gap-2">
                             <input type="hidden" name="clientId" value={client.id} />
-                            <label className="min-w-0 flex-1"><span className="sr-only">Cuota por hora de {client.name}</span><input name="hourlyLimit" type="number" min={1} max={1000} required defaultValue={client.hourly_limit} className="h-10 w-full border border-white/10 bg-[var(--brand-header)] px-3 text-xs tabular-nums text-[#dceaca] outline-none focus:border-[#6aab48]/70" /></label>
-                            <button className="h-10 border border-l-0 border-white/10 px-3 text-[10px] font-black text-[var(--admin-muted)] hover:text-[var(--brand-white)]">Guardar</button>
+                            <label className="min-w-0 flex-1"><span className="text-xs text-[var(--admin-muted)]">Cuota por hora</span><input name="hourlyLimit" aria-label={`Cuota por hora de ${client.name}`} type="number" min={1} max={1000} required defaultValue={client.hourly_limit} className="admin-field mt-1 block w-full tabular-nums" /></label>
+                            <button className="admin-button min-h-11 px-2 text-xs font-bold">Guardar</button>
                           </form>
                           <form action={revokeCommunityApiClient}>
                             <input type="hidden" name="clientId" value={client.id} />
-                            <button aria-label={`Revocar ${client.name}`} title="Revocar clave" className="grid h-10 w-10 place-items-center border border-[#dd6b5f]/25 text-[#e98b80] transition hover:bg-[#dd6b5f]/10"><Ban className="h-4 w-4" /></button>
+                            <button aria-label={`Revocar ${client.name}`} title="Revocar clave" className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-[#dd6b5f]/40 px-2 text-xs font-bold text-[#f2b7af] hover:bg-[#dd6b5f]/10"><Ban className="h-4 w-4" aria-hidden="true" /> Revocar</button>
                           </form>
                         </div>
                       ) : (

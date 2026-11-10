@@ -1,6 +1,7 @@
 import type { Coordinates } from "@/lib/types";
 
 export const ROUTE_OPERATIONAL_STATUSES = ["active", "under_review", "inactive", "historical"] as const;
+export const MAX_ROUTE_POINTS = 20_000;
 
 export type RouteOperationalStatus = (typeof ROUTE_OPERATIONAL_STATUSES)[number];
 
@@ -11,7 +12,6 @@ export type RoutePublicationInput = {
   originalName: string;
   color: string;
   corridorWidthM: number;
-  verified: boolean;
   operationalStatus: RouteOperationalStatus;
   path: Coordinates[];
   changeSummary: string;
@@ -34,7 +34,7 @@ function normalizedText(value: FormDataEntryValue | null, maxLength: number): st
   return normalized && normalized.length <= maxLength ? normalized : null;
 }
 
-function coordinate(value: unknown): Coordinates | null {
+export function parseRouteCoordinate(value: unknown): Coordinates | null {
   if (!Array.isArray(value) || value.length < 2) return null;
   const longitude = Number(value[0]);
   const latitude = Number(value[1]);
@@ -65,12 +65,25 @@ export function parseRoutePath(value: string): Coordinates[] | null {
       }
     }
 
-    if (!Array.isArray(candidate) || candidate.length < 2 || candidate.length > 20_000) return null;
-    const path = candidate.map(coordinate);
+    if (!Array.isArray(candidate) || candidate.length < 2 || candidate.length > MAX_ROUTE_POINTS) return null;
+    const path = candidate.map(parseRouteCoordinate);
     return path.every((point): point is Coordinates => point !== null) ? path : null;
   } catch {
     return null;
   }
+}
+
+export function getReportRouteEditorHref(report: {
+  id: string;
+  route_id: number | null;
+  route_name: string | null;
+  route_key: string | null;
+}): string {
+  const search = new URLSearchParams({ reporte: report.id });
+  if (report.route_id !== null) return `/admin/routes/${report.route_id}?${search}`;
+  const route = report.route_name || report.route_key;
+  if (route) search.set("buscar", route);
+  return `/admin/routes?${search}`;
 }
 
 export function parseRoutePublicationForm(formData: FormData): RoutePublicationInput | null {
@@ -116,7 +129,6 @@ export function parseRoutePublicationForm(formData: FormData): RoutePublicationI
     originalName,
     color,
     corridorWidthM,
-    verified: formData.get("verified") === "on",
     operationalStatus: operationalStatus as RouteOperationalStatus,
     path,
     changeSummary,

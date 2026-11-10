@@ -80,7 +80,9 @@ test.describe("moderación con Supabase aislado", () => {
       .insert({
         description: reportDescription,
         report_type: "route_inactive",
-        route_name: "Ruta de prueba",
+        route_id: routeId,
+        route_name: routeName,
+        proposed_path: [[-102.071, 19.411], [-102.066, 19.416], [-102.061, 19.421]],
         source_path: "/ruta/ruta-14-llanitos",
         status: "pending",
         submitted_by_hash: "0123456789abcdef0123456789abcdef",
@@ -142,6 +144,14 @@ test.describe("moderación con Supabase aislado", () => {
       report_id: reportId,
     });
 
+    await page.locator("article").filter({ hasText: reportDescription }).getByRole("button", { name: "Aprobar y editar ruta" }).click();
+    await expect(page).toHaveURL(`/admin/routes/${routeId}?reporte=${reportId}`);
+    const editor = page.getByRole("region", { name: "Editor del recorrido" });
+    await editor.getByRole("button", { name: "Cargar propuesta como borrador" }).click();
+    await expect(editor).toContainText("3 puntos · Borrador modificado");
+    await editor.getByRole("button", { name: "Deshacer" }).click();
+    await expect(editor).toContainText("2 puntos · Trazado actual");
+
     await page.goto(`/admin/routes/${routeId}`);
     await expect(page.getByRole("heading", { name: routeName, exact: true })).toBeVisible();
     await page.getByLabel("Qué comprobaste y cómo").fill(verificationNote);
@@ -189,7 +199,7 @@ test.describe("moderación con Supabase aislado", () => {
     expect(revisionCount).toBe(0);
 
     await page.goto("/admin/integrations");
-    await expect(page.getByRole("heading", { name: "Llaves con dueño y límite." })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Integraciones" })).toBeVisible();
     await page.getByLabel("Nombre").fill(integrationName);
     await page.getByLabel("Cuota por hora").fill("7");
     await page.getByRole("button", { name: "Crear clave" }).click();

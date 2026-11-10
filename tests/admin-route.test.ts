@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseRoutePath, parseRoutePublicationForm } from "@/lib/admin-route";
+import { getReportRouteEditorHref, parseRoutePath, parseRoutePublicationForm } from "@/lib/admin-route";
 
 describe("admin route publication validation", () => {
   it("acepta matrices y GeoJSON LineString dentro de la región", () => {
@@ -31,7 +31,6 @@ describe("admin route publication validation", () => {
     form.set("originalName", "Ruta 26 Ida");
     form.set("color", "#AABBCC");
     form.set("corridorWidthM", "500");
-    form.set("verified", "on");
     form.set("operationalStatus", "active");
     form.set("path", "[[-102.08,19.41],[-102.06,19.42]]");
     form.set("changeSummary", "Confirmada directamente con usuarios frecuentes.");
@@ -41,7 +40,6 @@ describe("admin route publication validation", () => {
       expectedVersion: 3,
       name: "Ruta 26",
       color: "#aabbcc",
-      verified: true,
       operationalStatus: "active",
     });
   });
@@ -58,5 +56,14 @@ describe("admin route publication validation", () => {
     form.set("path", "[[-102.08,19.41],[-102.06,19.42]]");
     form.set("changeSummary", "corto");
     expect(parseRoutePublicationForm(form)).toBeNull();
+  });
+});
+
+describe("acceso al editor desde un reporte", () => {
+  it("abre el sentido vinculado o busca entre todas las rutas", () => {
+    const report = { id: "reporte", route_id: 26, route_name: "Ruta 26", route_key: "ruta-26" };
+    expect(getReportRouteEditorHref(report)).toBe("/admin/routes/26?reporte=reporte");
+    expect(getReportRouteEditorHref({ ...report, route_id: null })).toBe("/admin/routes?reporte=reporte&buscar=Ruta+26");
+    expect(getReportRouteEditorHref({ ...report, route_id: null, route_name: null })).toBe("/admin/routes?reporte=reporte&buscar=ruta-26");
   });
 });

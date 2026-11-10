@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { getAdminAccess } from "@/lib/admin-auth";
 import {
   type RouteActionState,
+  getReportRouteEditorHref,
+  parseRoutePath,
   parseRoutePublicationForm,
 } from "@/lib/admin-route";
 import {
@@ -38,7 +40,9 @@ export async function reviewCommunityReport(formData: FormData) {
   if (access.status !== "admin") throw new Error("No tienes permiso para moderar reportes.");
 
   const reportId = String(formData.get("reportId") ?? "").trim();
-  const status = String(formData.get("status") ?? "").trim();
+  const requestedAction = String(formData.get("status") ?? "").trim();
+  const openEditor = requestedAction === "approve_edit";
+  const status = openEditor ? "approved" : requestedAction;
   const note = String(formData.get("note") ?? "").trim().slice(0, 1_000);
   if (!UUID_PATTERN.test(reportId) || !REVIEW_STATUSES.has(status)) {
     throw new Error("La acción de moderación no es válida.");
@@ -46,7 +50,7 @@ export async function reviewCommunityReport(formData: FormData) {
 
   const supabase = createSupabaseAdminClient();
   if (!supabase) throw new Error("Supabase no está configurado.");
-  const { error } = await supabase
+  const { data: report, error } = await supabase
     .from("community_reports")
     .update({
       status,
@@ -54,10 +58,13 @@ export async function reviewCommunityReport(formData: FormData) {
       reviewed_by: access.userId,
       reviewed_at: new Date().toISOString(),
     })
-    .eq("id", reportId);
+    .eq("id", reportId)
+    .select("id,route_id,route_name,route_key")
+    .single();
 
   if (error) throw new Error(`No se pudo actualizar el reporte: ${error.message}`);
   revalidatePath("/admin");
+  if (openEditor) redirect(getReportRouteEditorHref(report));
 }
 
 export async function reviewRouteConfirmation(formData: FormData) {
@@ -194,15 +201,23 @@ export async function publishRouteRevision(
   const supabase = createSupabaseAdminClient();
   if (!supabase) return { status: "error", message: "Supabase no está configurado." };
 
-  const { data: currentRoute, error: routeError } = await supabase
-    .from("routes")
-    .select("landmarks")
-    .eq("id", input.routeId)
-    .single();
+  const [routeResult, reportResult] = await Promise.all([
+    supabase.from("routes").select("landmarks,path,verified").eq("id", input.routeId).single(),
+    input.reportId
+      ? supabase.from("community_reports").select("route_id,status").eq("id", input.reportId).maybeSingle()
+      : null,
+  ]);
+  const currentRoute = routeResult.data;
 
-  if (routeError || !currentRoute) {
+  if (routeResult.error || !currentRoute) {
     return { status: "error", message: "No se encontró la ruta que intentas publicar." };
   }
+  if (reportResult && (reportResult.error || reportResult.data?.status !== "approved"
+    || (reportResult.data.route_id !== null && reportResult.data.route_id !== input.routeId))) {
+    return { status: "error", message: "El reporte debe estar aprobado y corresponder a esta ruta." };
+  }
+  const previousPath = parseRoutePath(JSON.stringify(currentRoute.path));
+  const pathChanged = JSON.stringify(previousPath) !== JSON.stringify(input.path);
 
   const { data: nextVersion, error } = await supabase.rpc("publish_route_revision", {
     p_route_id: input.routeId,
@@ -211,7 +226,7 @@ export async function publishRouteRevision(
     p_original_name: input.originalName,
     p_color: input.color,
     p_corridor_width_m: input.corridorWidthM,
-    p_verified: input.verified,
+    p_verified: currentRoute.verified && !pathChanged,
     p_operational_status: input.operationalStatus,
     p_path: input.path,
     p_landmarks: currentRoute.landmarks ?? [],
@@ -232,7 +247,9 @@ export async function publishRouteRevision(
   }
 
   refreshRouteViews(input.routeId);
-  redirect(`/admin/routes/${input.routeId}?publicada=${Number(nextVersion)}`);
+  const query = new URLSearchParams({ publicada: String(Number(nextVersion)) });
+  if (input.reportId) query.set("reporte", input.reportId);
+  redirect(`/admin/routes/${input.routeId}?${query}`);
 }
 
 export async function restoreRouteRevision(formData: FormData) {

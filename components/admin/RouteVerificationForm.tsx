@@ -26,10 +26,10 @@ export default function RouteVerificationForm({ routeId, dataVersion, lastVerifi
   );
 
   return (
-    <section className="grid gap-6 border-y border-[var(--admin-line)] py-6 lg:grid-cols-[280px_minmax(0,1fr)]" aria-labelledby="field-verification-heading">
+    <section className="grid gap-4 lg:grid-cols-[265px_minmax(0,1fr)]" aria-labelledby="field-verification-heading">
       <div>
         <CalendarCheck2 className="h-6 w-6 text-[#57d6e8]" strokeWidth={1.7} aria-hidden="true" />
-        <h2 id="field-verification-heading" className="mt-4 font-serif text-2xl font-black">Verificación de campo</h2>
+        <h2 id="field-verification-heading" className="mt-2 text-lg font-bold">Verificación de campo</h2>
         <p className="mt-2 text-xs leading-5 text-[var(--admin-muted)]">{formatDate(lastVerifiedAt)}</p>
       </div>
 
@@ -44,13 +44,13 @@ export default function RouteVerificationForm({ routeId, dataVersion, lastVerifi
             minLength={10}
             maxLength={1_000}
             rows={3}
-            placeholder="Ej. Recorrido confirmado abordando la unidad desde Centro hasta Hospital Regional."
-            className="mt-2 block w-full resize-y border border-white/10 bg-[var(--brand-header)] px-3 py-2 text-sm leading-6 text-[#dceaca] outline-none placeholder:text-white/20 focus:border-[#57d6e8]/60"
+            placeholder="Ej. Confirmé el recorrido al tomar el camión desde el Centro."
+            className="admin-field mt-1 block w-full resize-y"
           />
         </label>
         <button
           disabled={pending}
-          className="inline-flex min-h-11 items-center justify-center gap-2 bg-[#57d6e8] px-4 text-xs font-black text-[#07100a] transition hover:bg-[#74e4f3] disabled:cursor-not-allowed disabled:opacity-50"
+          className="admin-button inline-flex min-h-11 items-center justify-center gap-2 px-4 text-xs font-bold"
         >
           {pending ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" /> : <CalendarCheck2 className="h-4 w-4" aria-hidden="true" />}
           {pending ? "Registrando..." : "Confirmar verificación"}

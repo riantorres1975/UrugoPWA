@@ -1,0 +1,59 @@
+.admin-brand {
+  --admin-field: #101a12;
+  --admin-tint: #243729;
+  --admin-accent: var(--brand-lime);
+}
+
+.admin-card {
+  border: 1px solid var(--admin-line);
+  border-radius: 16px;
+  background: var(--admin-surface);
+}
+
+.admin-field {
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--admin-line);
+  border-radius: 9px;
+  background: var(--admin-field);
+  color: var(--brand-white);
+  font-size: 14px;
+}
+
+.admin-field::placeholder { color: var(--admin-muted); }
+
+.admin-brand :focus-visible {
+  outline: 2px solid var(--admin-accent);
+  outline-offset: 2px;
+}
+
+.admin-button {
+  border: 1px solid var(--admin-line);
+  border-radius: 9px;
+  background: var(--admin-tint);
+  color: var(--brand-white);
+}
+
+.admin-button:hover:not(:disabled) { border-color: var(--admin-accent); }
+.admin-button[aria-pressed="true"],
+.admin-primary {
+  border-color: var(--admin-accent);
+  background: var(--admin-accent);
+  color: var(--brand-deep);
+}
+
+.admin-button:disabled { cursor: not-allowed; opacity: .55; }
+
+.admin-nav-link[aria-current="page"] {
+  border-color: var(--admin-line);
+  background: var(--admin-tint);
+  color: var(--admin-accent);
+}
+
+.admin-route-preview {
+  background: radial-gradient(circle at center, #1d3223, var(--admin-field));
+}
+
+.admin-brand summary::marker { color: var(--admin-accent); }
+.admin-brand article { overflow-wrap: anywhere; }

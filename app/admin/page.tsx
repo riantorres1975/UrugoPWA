@@ -1,10 +1,12 @@
-import { AlertCircle, CheckCircle2, Clock3, ExternalLink, Search, ShieldCheck, XCircle } from "lucide-react";
+import { AlertCircle, ArrowRight, ExternalLink, PencilLine, Search, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import AdminHeader from "@/components/admin/AdminHeader";
+import AdminStatusNav from "@/components/admin/AdminStatusNav";
 import ContributorHistory from "@/components/admin/ContributorHistory";
 import ReportPathComparison from "@/components/admin/ReportPathComparison";
 import { getAdminAccess } from "@/lib/admin-auth";
+import { getReportRouteEditorHref } from "@/lib/admin-route";
 import { getContributorReputations } from "@/lib/community-reputation";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { reviewCommunityReport, signOutAdmin } from "@/app/admin/actions";
@@ -138,23 +140,21 @@ export default async function AdminPage({ searchParams }: Props) {
       <AdminHeader email={access.email} active="reports" />
 
       <div className="mx-auto max-w-[1500px] px-5 py-8 sm:px-8 lg:py-10">
-        <div className="flex flex-col gap-5 border-b border-[var(--admin-line)] pb-8 md:flex-row md:items-end md:justify-between">
-          <div><p className="text-xs font-black uppercase text-[var(--brand-lime)]">Bandeja comunitaria</p><h1 className="mt-2 font-serif text-4xl font-black sm:text-5xl">Revisar antes de mover el mapa.</h1></div>
-          <Link href="/reportar-error" target="_blank" className="inline-flex h-10 w-fit items-center gap-2 border border-white/15 px-4 text-xs font-bold text-[var(--admin-muted)] transition hover:border-[#6aab48]/60 hover:text-[var(--brand-white)]">Ver formulario público <ExternalLink className="h-3.5 w-3.5" /></Link>
+        <div className="flex flex-col gap-4 pb-6 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[.16em] text-[var(--brand-lime)]">Bandeja comunitaria</p>
+            <h1 className="mt-1 text-4xl font-bold sm:text-5xl">Reportes</h1>
+            <p className="mt-2 text-sm text-[var(--admin-muted)]">Revisa avisos de la comunidad y abre la ruta si necesita una corrección.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/admin/routes" className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[var(--brand-lime)] px-4 text-xs font-bold text-[var(--brand-deep)]"><PencilLine className="h-4 w-4" aria-hidden="true" /> Editar rutas</Link>
+            <Link href="/reportar-error" target="_blank" className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--admin-line)] px-4 text-xs font-bold text-[var(--admin-muted)] hover:text-[var(--brand-white)]">Ver formulario <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" /></Link>
+          </div>
         </div>
 
-        <section className="grid grid-cols-2 border-b border-[var(--admin-line)] md:grid-cols-4" aria-label="Resumen de reportes">
-          {filters.map((filter, index) => (
-            <Link key={filter.value} href={`/admin?estado=${filter.value}`} className={`border-[var(--admin-line)] px-4 py-5 transition hover:bg-white/[0.02] ${index < 3 ? "md:border-r" : ""} ${index % 2 === 0 ? "border-r" : ""}`}>
-              <span className="text-xs font-bold text-[var(--admin-muted)]">{filter.label}</span>
-              <strong className="mt-2 block font-serif text-3xl text-[var(--brand-white)]">{counts[index].count ?? 0}</strong>
-            </Link>
-          ))}
-        </section>
-
-        <nav className="flex gap-1 overflow-x-auto border-b border-[var(--admin-line)] py-4" aria-label="Filtrar reportes">
-          {filters.map((filter) => <Link key={filter.value} href={`/admin?estado=${filter.value}`} aria-current={status === filter.value ? "page" : undefined} className={`shrink-0 px-4 py-2 text-xs font-black transition ${status === filter.value ? "bg-[var(--brand-lime)] text-[#0c110a]" : "text-[var(--admin-muted)] hover:bg-white/[0.04] hover:text-[var(--brand-white)]"}`}>{filter.label}</Link>)}
-        </nav>
+        <AdminStatusNav label="Filtrar reportes por estado" items={filters.map((filter, index) => ({
+          href: `/admin?estado=${filter.value}`, label: filter.label, selected: status === filter.value, count: counts[index].count,
+        }))} />
 
         <section className="py-6" aria-labelledby="reports-title">
           <div className="mb-5 flex items-center justify-between"><h2 id="reports-title" className="text-sm font-black uppercase text-[var(--admin-muted)]">{filters.find((filter) => filter.value === status)?.label}</h2><span className="text-xs text-[var(--admin-muted)]">Máximo 50 por vista</span></div>
@@ -164,18 +164,17 @@ export default async function AdminPage({ searchParams }: Props) {
           ) : reports.length === 0 ? (
             <div className="grid min-h-56 place-items-center border border-dashed border-white/10 text-center"><div><Search className="mx-auto h-7 w-7 text-[var(--admin-muted)]" /><p className="mt-4 font-serif text-2xl font-black">Nada por aquí.</p><p className="mt-2 text-sm text-[var(--admin-muted)]">No hay reportes en este estado.</p></div></div>
           ) : (
-            <div className="divide-y divide-white/[0.08] border-y border-[var(--admin-line)]">
+            <div className="space-y-3">
               {reports.map((report) => (
-                <article key={report.id} className="grid gap-6 py-6 lg:grid-cols-[190px_minmax(0,1fr)_310px]">
-                  <div>
+                <article key={report.id} id={`reporte-${report.id}`} className="grid min-w-0 gap-5 rounded-2xl border border-[var(--admin-line)] bg-[var(--admin-surface)] p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_300px]">
+                  <div className="min-w-0 [overflow-wrap:anywhere]">
                     <p className="text-xs font-black uppercase text-[var(--brand-lime)]">{reportLabels[report.report_type] ?? report.report_type}</p>
-                    <p className="mt-3 text-sm font-bold text-[var(--brand-white)]">{report.route_name || "Sin ruta indicada"}</p>
-                    <p className="mt-1 text-xs leading-5 text-[var(--admin-muted)]">{report.place || "Sin ubicación aproximada"}</p>
-                    <p className="mt-4 text-[11px] text-[var(--admin-muted)]">{formatDate(report.created_at)}</p>
-                  </div>
-
-                  <div className="min-w-0">
-                    <p className="text-sm leading-7 text-[#c9dbb9]">{report.description}</p>
+                    <h3 className="mt-1 text-lg font-bold text-[var(--brand-white)]">{report.route_name || "Sin ruta indicada"}</h3>
+                    <p className="mt-1 text-xs leading-5 text-[var(--admin-muted)]">
+                      {report.place && <>{report.place} · </>}
+                      <time dateTime={report.created_at}>{formatDate(report.created_at)}</time>
+                    </p>
+                    <p className="mt-3 whitespace-pre-line text-sm leading-6 text-[var(--brand-white)]">{report.description}</p>
                     {report.expected_result && <div className="mt-4 border-l-2 border-[#6aab48] pl-4"><p className="text-[10px] font-black uppercase text-[var(--admin-muted)]">Debería mostrar</p><p className="mt-1 text-sm leading-6 text-[var(--admin-muted)]">{report.expected_result}</p></div>}
                     <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-[var(--admin-muted)]">
                       {report.submission_source === "external_api" && (
@@ -187,11 +186,6 @@ export default async function AdminPage({ searchParams }: Props) {
                       {report.route_key && <Link href={`/ruta/${report.route_key}`} target="_blank" className="hover:text-[var(--brand-lime)]">Ver ficha de la ruta</Link>}
                       {report.evidence_url?.startsWith("https://") && <a href={report.evidence_url} target="_blank" rel="noreferrer" className="font-bold text-[#f4c84a] hover:underline">Abrir evidencia</a>}
                       {report.contact && <span>Contacto: <span className="text-[var(--admin-muted)]">{report.contact}</span></span>}
-                      {report.status === "approved" && (
-                        <Link href={report.route_id ? `/admin/routes/${report.route_id}?reporte=${report.id}` : `/admin/routes?buscar=${encodeURIComponent(report.route_name ?? "")}&reporte=${report.id}`} className="font-bold text-[var(--brand-lime)] hover:underline">
-                          Preparar cambio de ruta
-                        </Link>
-                      )}
                     </div>
                     {report.route_key && Array.isArray(report.proposed_path) && (
                       <ReportPathComparison routeKey={report.route_key} proposedPath={report.proposed_path} />
@@ -199,14 +193,23 @@ export default async function AdminPage({ searchParams }: Props) {
                     <ContributorHistory reputation={report.submitted_by_hash ? contributorHistory.get(report.submitted_by_hash) ?? null : null} />
                   </div>
 
-                  <form action={reviewCommunityReport} className="border-l border-[var(--admin-line)] pl-5">
+                  <form action={reviewCommunityReport} className="min-w-0 space-y-3 border-t border-[var(--admin-line)] pt-4 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
                     <input type="hidden" name="reportId" value={report.id} />
-                    <label className="block"><span className="text-[10px] font-black uppercase text-[var(--admin-muted)]">Nota interna</span><textarea name="note" maxLength={1000} defaultValue={report.moderator_note ?? ""} rows={3} placeholder="Qué se comprobó..." className="mt-2 w-full border border-white/10 bg-[var(--brand-header)] px-3 py-2 text-xs leading-5 text-[#dceaca] outline-none placeholder:text-white/20 focus:border-[#6aab48]/60" /></label>
-                    <div className="mt-3 grid grid-cols-3 gap-2">
-                      <button name="status" value="reviewing" title="Marcar en revisión" className="grid h-10 place-items-center border border-[#f4c84a]/25 text-[#f4c84a] transition hover:bg-[#f4c84a]/10"><Clock3 className="h-4 w-4" /></button>
-                      <button name="status" value="approved" title="Aprobar reporte" className="grid h-10 place-items-center border border-[#6aab48]/30 text-[var(--brand-lime)] transition hover:bg-[#6aab48]/10"><CheckCircle2 className="h-4 w-4" /></button>
-                      <button name="status" value="rejected" title="Descartar reporte" className="grid h-10 place-items-center border border-[#dd6b5f]/25 text-[#e98b80] transition hover:bg-[#dd6b5f]/10"><XCircle className="h-4 w-4" /></button>
+                    <label className="block"><span className="text-xs font-bold text-[var(--admin-muted)]">Nota interna</span><textarea name="note" maxLength={1000} defaultValue={report.moderator_note ?? ""} rows={2} placeholder="Qué se comprobó" className="mt-1 w-full border border-[var(--admin-line)] bg-[var(--brand-header)] px-3 py-2 text-sm text-[var(--brand-white)] placeholder:text-[var(--admin-muted)] focus:border-[var(--brand-lime)]" /></label>
+                    <div className="flex flex-wrap gap-1.5 text-xs font-semibold">
+                      <button name="status" value="reviewing" title="Marcar en revisión" className="min-h-11 border border-[var(--admin-line)] px-2.5 hover:border-[var(--brand-lime)]">{report.status === "reviewing" ? "Guardar nota" : "En revisión"}</button>
+                      <button name="status" value="approved" className="min-h-11 border border-[var(--admin-line)] px-2.5 hover:border-[var(--brand-lime)]">{report.status === "approved" ? "Guardar nota" : "Aprobar"}</button>
+                      <button name="status" value="rejected" className="min-h-11 border border-[var(--admin-line)] px-2.5 text-[#f2b7af] hover:border-[#f2b7af]">{report.status === "rejected" ? "Guardar nota" : "Descartar"}</button>
                     </div>
+                    {report.status === "approved" ? (
+                      <Link href={getReportRouteEditorHref(report)} className="flex min-h-11 items-center justify-between gap-2 rounded-lg bg-[var(--brand-lime)] px-3 text-sm font-bold text-[var(--brand-deep)]">
+                        Editar ruta <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                      </Link>
+                    ) : report.status !== "rejected" && (report.route_id || report.route_key || report.route_name) ? (
+                      <button name="status" value="approve_edit" className="flex min-h-11 w-full items-center justify-between gap-2 rounded-lg bg-[var(--brand-lime)] px-3 text-left text-sm font-bold text-[var(--brand-deep)]">
+                        Aprobar y editar ruta <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                      </button>
+                    ) : null}
                   </form>
                 </article>
               ))}
