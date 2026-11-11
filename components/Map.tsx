@@ -2172,7 +2172,7 @@ function MapComponent({
 
       {(journeyMoved || (journeyFocus && journeyFocus.request !== overviewFocus) || (transferFocus && transferFocus.request !== overviewTransferFocus)) && (selectedRouteSegment?.length || selectedTransfer) && (
         <button type="button" onClick={showWholeJourney}
-          className="ov-panel ov-border ov-text absolute bottom-[170px] right-4 z-20 min-h-11 rounded-full border px-4 text-xs font-semibold shadow-lg lg:bottom-6">
+          className="map-overview ov-panel ov-border ov-text absolute right-4 z-20 min-h-11 rounded-full border px-4 text-xs font-semibold shadow-lg">
           Ver todo el viaje
         </button>
       )}

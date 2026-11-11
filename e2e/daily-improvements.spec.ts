@@ -44,6 +44,7 @@ test("guarda una ficha dentro de la app, permite abrirla y quitarla", async ({ p
   });
   await page.goto("/mapa?guardados=1");
   await expect(library).toContainText("Guardado el");
+  await expect(library).toContainText("Recorrido y tarifa sin cambios en el catálogo");
   await expect.poll(() => page.evaluate(async () => {
     const scripts = [...document.scripts].filter((script) => !script.noModule).map((script) => script.src)
       .filter((src) => src.startsWith(`${location.origin}/_next/static/`));
@@ -52,6 +53,8 @@ test("guarda una ficha dentro de la app, permite abrirla y quitarla", async ({ p
   await context.setOffline(true);
   await page.reload();
   await expect(library).toContainText("Guardado el");
+  await expect(library).toContainText(/Sin conexión: no podemos comprobar cambios|No se pudieron comprobar cambios/);
+  await expect(library).not.toContainText("sin cambios en el catálogo");
   await library.getByRole("button", { name: "Ver indicaciones" }).click();
   await expect(page.frameLocator("iframe").getByRole("heading", { name: "Tu viaje con UruGo" })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("ficha-sin-conexion.png") });

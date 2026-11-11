@@ -3,9 +3,12 @@ import { useState } from "react";
 import { getTripJourneyKey } from "@/lib/trip-mode";
 import { saveOfflineJourney } from "@/lib/offline-journey-storage";
 import type { TripJourney } from "@/lib/trip-mode";
+import type { ProductionRoute } from "@/lib/types";
+import { createJourneySnapshot } from "@/lib/offline-journey-freshness";
 
-export default function JourneyTools({ journey, destinationLabel, onReturn, onOpenSaved, temporary }: {
+export default function JourneyTools({ journey, routes, destinationLabel, onReturn, onOpenSaved, temporary }: {
   journey: TripJourney;
+  routes: ProductionRoute[];
   destinationLabel?: string | null;
   onReturn: () => void;
   onOpenSaved: () => void;
@@ -21,7 +24,8 @@ export default function JourneyTools({ journey, destinationLabel, onReturn, onOp
       const names = journey.kind === "direct" ? [journey.routeName] : [journey.routeAName, journey.routeBName];
       const origin = journey.origin ?? (journey.kind === "direct" ? journey.segment[0] : journey.segmentA[0]);
       const title = destinationLabel ? `${destinationLabel} · ${names.join(" → ")}` : names.join(" → ");
-      saveOfflineJourney({ id: `${getTripJourneyKey(journey)}:${origin.join(",")}`, title, html: offlineJourneyHtml(journey) });
+      const snapshot = await createJourneySnapshot(journey, routes);
+      saveOfflineJourney({ id: `${getTripJourneyKey(journey)}:${origin.join(",")}`, title, html: offlineJourneyHtml(journey), snapshot });
       setMessage("Viaje guardado en este dispositivo. Encuéntralo en «Viajes sin conexión».");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No pudimos guardar el viaje. Intenta de nuevo.");

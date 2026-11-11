@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import AdminHeader from "@/components/admin/AdminHeader";
+import JourneyUsageSummary from "@/components/admin/JourneyUsageSummary";
+import { getJourneyUsage } from "@/lib/journey-usage-server";
 import { getAdminAccess } from "@/lib/admin-auth";
 import { FEEDBACK_REASONS } from "@/lib/journey-feedback";
 import { feedbackPeriod, feedbackTotals, type FeedbackSummary } from "@/lib/journey-feedback-admin";
@@ -19,9 +21,10 @@ export default async function JourneyOpinionsPage({ searchParams }: {
   const supabase = createSupabaseAdminClient();
   if (!supabase) redirect("/admin/login");
   const period = feedbackPeriod(params.desde, params.hasta);
-  const [{ data, error }, qualityGroups] = await Promise.all([
+  const [{ data, error }, qualityGroups, usage] = await Promise.all([
     supabase.rpc("journey_feedback_summary", { p_from: period.fromTimestamp, p_until: period.untilTimestamp }),
     loadJourneyQuality().catch(() => null),
+    getJourneyUsage(period),
   ]);
   const summary = (data ?? { groups: [], previous: { total: 0, positive: 0 } }) as FeedbackSummary;
   const totals = feedbackTotals(summary.groups);
@@ -46,6 +49,7 @@ export default async function JourneyOpinionsPage({ searchParams }: {
           <p className="col-span-2 text-xs text-[var(--admin-muted)]">Hora de Uruapan · Hasta un año por consulta.</p>
         </form>
       </div>
+      <JourneyUsageSummary usage={usage} positive={error ? null : totals.positive} total={error ? null : totals.total} />
       {error ? <p role="alert" className="my-6 rounded-lg border border-amber-300/30 p-5 text-sm text-amber-200">No se pudieron cargar las opiniones. Comprueba la conexión y que la migración de opiniones esté aplicada en Supabase.</p> : <>
         <section aria-label="Resumen de opiniones" className="mt-4 grid grid-cols-3 gap-2">
           {[["Recibidas", totals.total], ["Positivas", positiveRate === null ? "—" : `${positiveRate}%`], ["Negativas", totals.negative]].map(([label, value]) => <div key={label} className="admin-card px-2.5 py-3 sm:p-4"><p className="text-xs text-[var(--admin-muted)]">{label}</p><strong className="mt-1 block text-2xl font-bold tabular-nums sm:text-4xl">{value}</strong></div>)}

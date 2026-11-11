@@ -117,6 +117,13 @@
   color: #783a2d;
 }
 
+.map-overview {
+  bottom: calc(var(--journey-preview-height, 84px) + 86px + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 1024px) {
+  .map-overview { bottom: 24px; }
+}
+
 .map-ticket {
   color: var(--brand-ink);
   background: var(--brand-paper);

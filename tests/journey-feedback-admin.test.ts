@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-const mocks = vi.hoisted(() => ({ access: vi.fn(), rpc: vi.fn(), client: vi.fn() }));
+const mocks = vi.hoisted(() => ({ access: vi.fn(), rpc: vi.fn(), client: vi.fn(), usage: vi.fn() }));
+vi.mock("@/lib/journey-usage-server", () => ({ getJourneyUsage: mocks.usage }));
 vi.mock("@/lib/admin-auth", () => ({ getAdminAccess: mocks.access }));
 vi.mock("@/lib/supabase/server", () => ({ createSupabaseAdminClient: mocks.client }));
 vi.mock("@/components/admin/AdminHeader", () => ({ default: () => null }));
@@ -14,6 +15,7 @@ describe("administración de opiniones", () => {
     mocks.access.mockResolvedValue({ status: "admin", email: "admin@example.com" });
     mocks.client.mockReturnValue({ rpc: mocks.rpc });
     mocks.rpc.mockResolvedValue({ data: { groups: [], previous: { total: 0, positive: 0 } }, error: null });
+    mocks.usage.mockResolvedValue({ started: 109, arrived: 11, days: [{ day: "2026-11-01", started: 109, arrived: 11 }] });
   });
   it("requiere permiso de administrador antes de consultar opiniones", async () => {
     for (const status of ["anonymous", "denied"]) {
@@ -38,6 +40,11 @@ describe("administración de opiniones", () => {
     expect(html).toContain("+25 puntos porcentuales");
     expect(html).toContain("El transbordo está lejos");
     expect(html).toContain("Muestra pequeña");
+    expect(html).toContain("Uso y utilidad");
+    expect(html).toContain("Viajes iniciados");
+    expect(html).toContain("109");
+    expect(html).toContain("Llegadas confirmadas");
+    expect(html).toContain("no se vinculan a un viaje individual");
     expect(mocks.rpc).toHaveBeenCalledWith("journey_feedback_summary", { p_from: "2026-09-01T00:00:00-06:00", p_until: "2026-09-11T00:00:00-06:00" });
   });
 });

@@ -1,8 +1,10 @@
+import { isJourneySnapshot, type JourneySnapshot } from "@/lib/offline-journey-freshness";
+
 export const OFFLINE_JOURNEYS_KEY = "urugo-offline-journeys-v1";
 export const OFFLINE_JOURNEYS_EVENT = "urugo-offline-journeys-changed";
 const MAX_JOURNEYS = 10;
 
-export type OfflineJourney = { id: string; title: string; savedAt: number; html: string };
+export type OfflineJourney = { id: string; title: string; savedAt: number; html: string; snapshot?: JourneySnapshot };
 
 function isOfflineJourney(value: unknown): value is OfflineJourney {
   if (!value || typeof value !== "object") return false;
@@ -18,7 +20,9 @@ export function readOfflineJourneys(): OfflineJourney[] {
   try {
     const value: unknown = JSON.parse(localStorage.getItem(OFFLINE_JOURNEYS_KEY) ?? "[]");
     if (!Array.isArray(value)) return [];
-    return value.filter(isOfflineJourney).slice(0, MAX_JOURNEYS);
+    return value.filter(isOfflineJourney).slice(0, MAX_JOURNEYS).map((entry) => ({
+      ...entry, snapshot: isJourneySnapshot(entry.snapshot) ? entry.snapshot : undefined,
+    }));
   } catch {
     return [];
   }

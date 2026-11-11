@@ -30,8 +30,26 @@ const JourneyPreferences = dynamic(() => import("@/components/JourneyPreferences
 const JourneyTools = dynamic(() => import("@/components/JourneyTools"));
 const JourneyAlternatives = dynamic(() => import("@/components/JourneyAlternatives"));
 const JourneyExplanation = dynamic(() => import("@/components/JourneyExplanation"));
+const observeJourneyPreview = (element: HTMLDivElement | null) => {
+  if (!element) return;
+  const root = element.closest<HTMLElement>(".map-brand");
+  if (!root) return;
+  const update = () => {
+    const height = element.getBoundingClientRect().height;
+    if (height > 0) root.style.setProperty("--journey-preview-height", `${height}px`);
+    else root.style.removeProperty("--journey-preview-height");
+  };
+  update();
+  const observer = new ResizeObserver(update);
+  observer.observe(element);
+  return () => {
+    observer.disconnect();
+    root.style.removeProperty("--journey-preview-height");
+  };
+};
 import { useJourneySettings } from "@/hooks/useJourneySettings";
 import { hasStreetWalking } from "@/lib/journey-walking";
+import { journeyExplanation } from "@/lib/journey-explanation";
 import { useJourneyPreference } from "@/hooks/useJourneyPreference";
 const TripOverlays = dynamic(() => import("@/components/TripOverlays"), { ssr: false });
 import { geocodePlace, type PlaceResult } from "@/lib/geocode";
@@ -1164,6 +1182,11 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     { label: "Baja aquí", onClick: () => focusJourneyPoint([bestSuggestion.segment[bestSuggestion.segment.length - 1]], "Bajada") },
   ] : [];
 
+  const recommendationCost = (bestSuggestion ?? selectedTransfer)?.cost;
+  const comparisonCosts = [...suggestions, ...transfers].flatMap((option) => option.cost ? [option.cost] : []);
+  const recommendationExplanation = recommendationCost && !isTripActive && !isCalculatingSuggestions
+    ? journeyExplanation(recommendationCost, comparisonCosts, journeySettings).explanation : undefined;
+
   if (fetchError && !showSavedJourneys) {
     const offline = !isOnline;
     return (
@@ -1259,6 +1282,8 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
             className="map-result ov-panel-soft w-full overflow-hidden rounded-2xl border"
             style={{ borderTopWidth: "3px", borderTopColor: bestSuggestion?.routeColor ?? selectedRoute?.color ?? "var(--brand-lime)" }}
           >
+            {recommendationExplanation && <JourneyExplanation active={recommendationCost} costs={comparisonCosts}
+              settings={journeySettings} approximate={[...suggestions, ...transfers].some((option) => !hasStreetWalking(option.walking))} />}
             {isCalculatingSuggestions ? (
               <div className="flex items-center gap-3 px-4 py-3.5">
                 <span className="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-lima/60 border-t-transparent" />
@@ -1326,11 +1351,6 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
             {!!currentCalculation?.unreachableCount && <p className="ov-text-muted px-4 py-2 text-xs">Descartamos {currentCalculation.unreachableCount} {currentCalculation.unreachableCount === 1 ? "opción sin conexión peatonal encontrada" : "opciones sin conexión peatonal encontrada"}.</p>}
             {!!currentCalculation?.checkedReserveCount && <p className="ov-text-muted px-4 py-2 text-xs">Revisamos {currentCalculation.checkedReserveCount} {currentCalculation.checkedReserveCount === 1 ? "opción adicional" : "opciones adicionales"} para buscar mejores accesos a pie.</p>}
             {!isCalculatingSuggestions && !isTripActive && (bestSuggestion || selectedTransfer) && (
-              <JourneyExplanation active={(bestSuggestion ?? selectedTransfer)?.cost}
-                costs={[...suggestions, ...transfers].flatMap((option) => option.cost ? [option.cost] : [])}
-                settings={journeySettings} approximate={[...suggestions, ...transfers].some((option) => !hasStreetWalking(option.walking))} />
-            )}
-            {!isCalculatingSuggestions && !isTripActive && (bestSuggestion || selectedTransfer) && (
               <JourneyAlternatives routes={suggestions} transfers={transfers} activeRoute={bestSuggestion} activeTransfer={selectedTransfer}
                 onRoute={(routeId) => {
                   setSelectedTransfer(null);
@@ -1345,7 +1365,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
                 }}
               />
             )}
-            {plannedJourney && !isTripActive && !isCalculatingSuggestions && <JourneyTools journey={plannedJourney}
+            {plannedJourney && !isTripActive && !isCalculatingSuggestions && <JourneyTools journey={plannedJourney} routes={polylineRoutes}
               destinationLabel={requestedDestination}
               onOpenSaved={() => { setIsResultSheetOpen(false); setIsSavedJourneysOpen(true); }}
               temporary={manualOriginSource === "mapbox" || destinationSource === "mapbox"}
@@ -1710,8 +1730,8 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
           style={{ bottom: "calc(0.875rem + env(safe-area-inset-bottom, 0px))" }}
         >
           {flowStep === 3 && (
-            <div className="pointer-events-auto absolute inset-x-0 bottom-14">
-              <JourneyPreview route={bestSuggestion} transfer={selectedTransfer} directAlternative={suggestions[0]} pending={isCalculatingSuggestions} onOpen={() => setIsResultSheetOpen(true)} />
+            <div ref={observeJourneyPreview} className="pointer-events-auto absolute inset-x-0 bottom-14">
+              <JourneyPreview route={bestSuggestion} transfer={selectedTransfer} directAlternative={suggestions[0]} explanation={recommendationExplanation} pending={isCalculatingSuggestions} onOpen={() => setIsResultSheetOpen(true)} />
             </div>
           )}
 

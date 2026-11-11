@@ -23,6 +23,17 @@ La prueba repetible está en `tests/sql/journey-feedback-reasons.sql`.
 
 ## Uso y límites
 
+El panel `/admin/feedback` reúne los inicios del modo viaje, las llegadas
+confirmadas y las respuestas «Sí» en las fechas elegidas. Lee la tabla existente
+`trip_activity_daily` (como máximo 366 días) y el agregado de opiniones; no usa
+Vercel Analytics ni requiere una migración nueva. Un fallo de lectura se muestra
+como datos no disponibles, nunca como cero viajes.
+
+Los votos no están asociados a un viaje individual y pueden enviarse sin iniciar
+el modo viaje. Las llegadas se cuentan en el día de su confirmación, que puede
+diferir del día de inicio. Por eso los contadores no son un embudo ni una tasa de
+conversión. Cerrar el modo viaje tampoco equivale a confirmar una llegada.
+
 - La opinión se guarda inmediatamente. El motivo negativo es opcional y actualiza la misma fila.
 - Hay una opinión por dispositivo, combinación ordenada de rutas y día de Uruapan. Los reintentos son idempotentes dentro del día; una nueva respuesta sustituye la anterior. Invertir las rutas constituye otro transbordo.
 - El navegador conserva un UUID aleatorio. El servidor almacena únicamente su HMAC, sin coordenadas, IP en claro ni agente del navegador en la tabla de opiniones. Borrar los datos del navegador crea otra identidad; también existe un límite de solicitudes por IP.
