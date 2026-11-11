@@ -2,6 +2,8 @@
 
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
+import { Bookmark } from "lucide-react";
+import SavedJourneys from "@/components/SavedJourneys";
 
 // ── Sidebar resize constants ──────────────────────────────────────────────────
 const SIDEBAR_DEFAULT_MD = 380; // px en breakpoint md (768–1023px)
@@ -105,6 +107,16 @@ const PendingJourneyReports = dynamic(() => import("@/components/PendingJourneyR
 type RoutesMapMode = "all-visible" | "all-highlighted";
 const MAP_MODE_KEY = "rutas-map-mode";
 const MAP_MODE_EVENT = "urugo-map-mode-changed";
+const SAVED_JOURNEYS_QUERY_EVENT = "urugo-saved-journeys-query";
+const subscribeSavedJourneysQuery = (callback: () => void) => {
+  window.addEventListener("popstate", callback);
+  window.addEventListener(SAVED_JOURNEYS_QUERY_EVENT, callback);
+  return () => {
+    window.removeEventListener("popstate", callback);
+    window.removeEventListener(SAVED_JOURNEYS_QUERY_EVENT, callback);
+  };
+};
+const getSavedJourneysQuery = () => new URLSearchParams(window.location.search).get("guardados") === "1";
 const DESKTOP_LAYOUT_QUERY = "(min-width: 1024px)";
 const subscribeDesktopLayout = (callback: () => void) => {
   const media = window.matchMedia(DESKTOP_LAYOUT_QUERY);
@@ -239,6 +251,9 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [routeListReady, setRouteListReady] = useState(false);
   const [isResultSheetOpen, setIsResultSheetOpen] = useState(false);
+  const [isSavedJourneysOpen, setIsSavedJourneysOpen] = useState(false);
+  const savedJourneysRequested = useSyncExternalStore(subscribeSavedJourneysQuery, getSavedJourneysQuery, () => false);
+  const showSavedJourneys = isSavedJourneysOpen || savedJourneysRequested;
   const [journeyFocus, setJourneyFocus] = useState<{ request: number; coordinates: Coordinates[]; label: string; tripKey: string | null } | null>(null);
   const [namedOrigin, setNamedOrigin] = useState<{ point: Coordinates; label: string } | null>(null);
   const {
@@ -542,6 +557,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   }, [requestLocation, setManualOrigin, setManualOriginSource, setShowHint]);
 
   const handleMapPick = useCallback((point: Coordinates) => {
+    setAbExpanded(false);
     setIsResultSheetOpen(false);
     setShowHint(false);
     setSharedRouteSegment(null);
@@ -602,6 +618,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
 
   // El mismo buscador permite fijar origen o destino según el punto activo.
   const handlePlaceSearch = useCallback((result: PlaceResult) => {
+    setAbExpanded(false);
     setIsResultSheetOpen(false);
     setSharedRouteSegment(null);
     setSharedSegmentColor(null);
@@ -1147,7 +1164,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
     { label: "Baja aquí", onClick: () => focusJourneyPoint([bestSuggestion.segment[bestSuggestion.segment.length - 1]], "Bajada") },
   ] : [];
 
-  if (fetchError) {
+  if (fetchError && !showSavedJourneys) {
     const offline = !isOnline;
     return (
       <main className="map-brand relative flex h-dvh w-full flex-col items-center justify-center gap-4 overflow-hidden bg-ink-900 px-6 text-center">
@@ -1185,6 +1202,11 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
       <>
         {!onlyStep3 && (
         <>
+        {!isMobile && <button type="button" onClick={() => setIsSavedJourneysOpen(true)}
+          className="ov-text-muted inline-flex min-h-11 items-center gap-2 text-sm">
+          <Bookmark className="h-4 w-4" aria-hidden="true" /> Viajes sin conexión
+        </button>}
+        {(!isMobile || flowStep !== 3 || abExpanded || activePoint !== null) && (
         <RoutePlannerSearch
           activePoint={activePoint}
           destinationSelected={destinationPoint !== null}
@@ -1196,6 +1218,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
           onPlaceSelect={handlePlaceSearch}
           onRepeatTrip={repeatTrip}
         />
+        )}
 
         <RoutePlannerPoints
           originPlaceLabel={namedOrigin && manualOrigin?.join(",") === namedOrigin.point.join(",") ? namedOrigin.label : originPoint ? findNearestRouteLandmark(originPoint, polylineRoutes.map((route) => route.landmarks), 100)?.name : undefined}
@@ -1264,6 +1287,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
               </>
             ) : selectedTransfer ? (
               <SelectedTransferResult
+                directAlternative={suggestions[0]}
                 transferWalkMinutes={walkMinutes(selectedTransfer.walkMeters)}
                 transferLandmark={findNearestRouteLandmark(selectedTransfer.transferPoint, [polylineRoutesById.get(selectedTransfer.routeAId)?.landmarks, polylineRoutesById.get(selectedTransfer.routeBId)?.landmarks], 300)?.name ?? null}
                 onViewTransfer={() => {
@@ -1322,6 +1346,8 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
               />
             )}
             {plannedJourney && !isTripActive && !isCalculatingSuggestions && <JourneyTools journey={plannedJourney}
+              destinationLabel={requestedDestination}
+              onOpenSaved={() => { setIsResultSheetOpen(false); setIsSavedJourneysOpen(true); }}
               temporary={manualOriginSource === "mapbox" || destinationSource === "mapbox"}
               onReturn={() => {
                 if (!originPoint || !destinationPoint) return;
@@ -1685,12 +1711,16 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
         >
           {flowStep === 3 && (
             <div className="pointer-events-auto absolute inset-x-0 bottom-14">
-              <JourneyPreview route={bestSuggestion} transfer={selectedTransfer} pending={isCalculatingSuggestions} onOpen={() => setIsResultSheetOpen(true)} />
+              <JourneyPreview route={bestSuggestion} transfer={selectedTransfer} directAlternative={suggestions[0]} pending={isCalculatingSuggestions} onOpen={() => setIsResultSheetOpen(true)} />
             </div>
           )}
 
           {/* Chat + Rutas apilados verticalmente — pegados a la esquina inferior derecha */}
           <div className="flex shrink-0 flex-row items-end gap-2 self-end ml-auto">
+            <button type="button" onClick={() => setIsSavedJourneysOpen(true)} aria-label="Abrir viajes sin conexión"
+              className="ov-panel ov-border ov-text pointer-events-auto grid h-12 w-12 place-items-center rounded-xl border shadow-soft">
+              <Bookmark className="h-5 w-5" aria-hidden="true" />
+            </button>
             {/* Botón chat — se oculta cuando el sheet está abierto */}
             <div className="pointer-events-auto">
               <ChatBotLauncher />
@@ -1806,6 +1836,17 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
       </BottomSheet>
       )}
 
+      <BottomSheet desktop open={showSavedJourneys} title="Viajes sin conexión" onOpenChange={(open) => {
+        setIsSavedJourneysOpen(open);
+        if (!open) {
+          const url = new URL(window.location.href);
+          url.searchParams.delete("guardados");
+          window.history.replaceState(null, "", url);
+          window.dispatchEvent(new Event(SAVED_JOURNEYS_QUERY_EVENT));
+        }
+      }}>
+        {showSavedJourneys && <SavedJourneys />}
+      </BottomSheet>
       <OnboardingGate />
       <PendingJourneyReports />
       <FareUpdateNotice deferUntilOnboarding />

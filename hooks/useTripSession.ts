@@ -15,6 +15,7 @@ import {
   type TripConfirmation,
 } from "@/lib/trip-mode";
 import { clearSavedTrip, readSavedTrip, saveTrip, readTripAlerts, DEFAULT_TRIP_ALERTS, TRIP_ALERTS_KEY, type SavedTrip, type TripAlertSettings, type TripActivityIdentity } from "@/lib/trip-storage";
+import { setTripSessionInProgress } from "@/lib/trip-storage";
 import type { Coordinates } from "@/lib/types";
 import { LANDMARK_REACHED_RADIUS_M, type LandmarkCue } from "@/lib/landmark-guidance";
 
@@ -64,6 +65,7 @@ export function useTripSession() {
     window.addEventListener("pagehide", flush);
     document.addEventListener("visibilitychange", flush);
     return () => {
+      setTripSessionInProgress(false);
       cancelled = true;
       window.clearInterval(activityInterval);
       window.removeEventListener("online", retryActivity);
@@ -96,6 +98,7 @@ export function useTripSession() {
   const discardRecovery = useCallback(() => { setRecoverableTrip(null); clearSavedTrip(); }, []);
 
   const reset = useCallback(() => {
+    setTripSessionInProgress(false);
     activityRef.current = null;
     latestSaveRef.current = null;
     lastLocationRef.current = null;
@@ -112,6 +115,7 @@ export function useTripSession() {
   const start = useCallback((journey: TripJourney) => {
     const key = getTripJourneyKey(journey);
     if (activityRef.current?.key === key) return;
+    setTripSessionInProgress(true);
     const event: TripActivityEvent = {
       id: crypto.randomUUID(), startedAt: new Date().toISOString(), arrived: false,
       routes: journey.kind === "direct" ? [journey.routeName] : [journey.routeAName, journey.routeBName],
@@ -131,6 +135,7 @@ export function useTripSession() {
 
   const resume = useCallback((location: Coordinates) => {
     if (!recoverableTrip) return;
+    setTripSessionInProgress(true);
     const { journey, tracking: previous } = recoverableTrip;
     const key = getTripJourneyKey(journey);
     const event = recoverableTrip.activity ? {

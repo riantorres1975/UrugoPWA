@@ -4,7 +4,8 @@ import SiteBrand from "@/components/SiteBrand";
 import { ArrowRight, BusFront, CableCar, Clock3, Map, Plus } from "lucide-react";
 import LandingAtlas from "@/components/LandingAtlas";
 import LandingDestinations, { type LandingDestination } from "@/components/LandingDestinations";
-import { LandingJourneyDemo, LandingPersonalDay } from "@/components/LandingDeferred";
+import { LandingJourneyDemo } from "@/components/LandingDeferred";
+import LandingEveryday from "@/components/LandingEveryday";
 import PublicMobileMenu from "@/components/PublicMobileMenu";
 import LandingHeroPlanner from "@/components/LandingHeroPlanner";
 import LandingReports from "@/components/LandingReports";
@@ -196,10 +197,9 @@ export default async function LandingPage() {
           </div>
         </section>
 
-        <div className="wrap section everyday">
+        <LandingEveryday>
           <LandingDestinations places={featuredPlaces} />
-          <LandingPersonalDay />
-        </div>
+        </LandingEveryday>
 
         <section id="como-funciona" className="section trip night home-anchor" aria-labelledby="trip-title">
           <div className="wrap trip-grid">

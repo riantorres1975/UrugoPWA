@@ -45,7 +45,7 @@ export default function LandingDestinations({ places }: { places: LandingDestina
                 <MapPin className="icon" aria-hidden="true" />
                 <span>
                   <strong>{place.label}</strong>
-                  <small>{place.routeCount} {place.routeCount === 1 ? "ruta" : "rutas"} cerca · {place.nearestWalkMin} min a pie</small>
+                  <small>{place.routeCount} {place.routeCount === 1 ? "ruta" : "rutas"} cerca · Parada a {place.nearestWalkMin} min del destino</small>
                 </span>
               </span>
               <ArrowUpRight className="icon" aria-hidden="true" />

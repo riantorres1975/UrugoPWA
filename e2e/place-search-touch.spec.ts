@@ -44,15 +44,18 @@ for (const source of ["recientes", "casa", "búsqueda"] as const) {
       const events: string[] = [];
       input.addEventListener("blur", () => events.push("blur"));
       document.addEventListener("click", () => events.push("click"), { capture: true, once: true });
-      input.dataset.selectionEvents = "";
-      input.addEventListener("blur", () => { input.dataset.selectionEvents = JSON.stringify(events); });
+      document.documentElement.dataset.selectionEvents = "";
+      input.addEventListener("blur", () => { document.documentElement.dataset.selectionEvents = JSON.stringify(events); });
     });
     const box = (await option.boundingBox())!;
     await option.tap({ position: { x: box.width - 20, y: box.height / 2 } });
-    await expect(search).toHaveAttribute("data-selection-events", JSON.stringify(["click", "blur"]));
-    await expect(search).not.toBeFocused();
+    await expect(page.locator("html")).toHaveAttribute("data-selection-events", JSON.stringify(["click", "blur"]));
+    await expect.poll(() => page.evaluate(() => document.activeElement?.getAttribute("role"))).not.toBe("combobox");
     await expect(page.getByRole("listbox")).toBeHidden();
     await page.setViewportSize({ width: 412, height: 915 });
+    const dialog = page.getByRole("dialog").filter({ hasText: /TRANSBORDO|RUTA RECOMENDADA/ });
+    if (await dialog.isVisible()) await dialog.getByRole("button", { name: "Cerrar panel" }).click();
+    await page.getByRole("button", { name: "Ajustar origen y destino manualmente" }).click();
     await expect(page.getByRole("button", { name: "Destino marcado, toca para cambiar" }))
       .toContainText("Instituto Tecnológico");
   });

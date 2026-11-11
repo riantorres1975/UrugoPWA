@@ -49,7 +49,7 @@ export default function RoutePlannerPoints({
 }: RoutePlannerPointsProps) {
   return (
     <>
-      {isMobile && isShortScreen && !abExpanded ? (
+      {isMobile && !abExpanded && (isShortScreen || (flowStep === 3 && activePoint === null)) ? (
         <button
           type="button"
           onClick={onExpand}
@@ -64,7 +64,7 @@ export default function RoutePlannerPoints({
           </span>
           <span className="ov-text min-w-0 flex-1 truncate text-left text-[12px] font-semibold">
             {originPoint && destinationPoint
-              ? "Origen y destino listos"
+              ? `${originPlaceLabel ?? (manualOrigin ? "Origen" : "Mi ubicación")} → ${destinationPlaceLabel ?? requestedDestination ?? "Destino"}`
               : originPoint
                 ? "Ajustar destino manualmente"
                 : "Ajustar origen y destino"}
@@ -131,7 +131,7 @@ export default function RoutePlannerPoints({
               </button>
             )}
 
-            {isMobile && isShortScreen && abExpanded && (
+            {isMobile && (isShortScreen || flowStep === 3) && abExpanded && (
               <button
                 type="button"
                 onClick={onCollapse}

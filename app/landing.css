@@ -630,6 +630,24 @@
   align-items: start;
 }
 
+.premium-home .everyday[data-personalized="true"] {
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+}
+
+@media (max-width: 760px) {
+  .premium-home .everyday[data-personalized="true"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.premium-home .activity-weekly {
+  grid-template-columns: 1fr;
+}
+
+.premium-home .activity-daily {
+  color: var(--public-secondary);
+}
+
 .premium-home .intro {
   color: var(--muted);
   margin-top: 14px;

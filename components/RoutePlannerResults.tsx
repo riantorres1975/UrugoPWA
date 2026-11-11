@@ -4,6 +4,7 @@ import { getJourneyFareSummary } from "@/lib/journey-guidance";
 import type { RouteOption } from "@/lib/route-calculation";
 import { formatRouteLabel } from "@/lib/route-names";
 import type { TransferOption } from "@/lib/transfers";
+import TransferTradeoff from "@/components/TransferTradeoff";
 import JourneyWalkingSummary from "@/components/JourneyWalkingSummary";
 
 type DirectRouteResultProps = {
@@ -115,6 +116,7 @@ export function DirectRouteResult({
 }
 
 type SelectedTransferResultProps = {
+  directAlternative?: RouteOption | null;
   isTripActive: boolean;
   transfer: TransferOption;
   transferLandmark: string | null;
@@ -126,6 +128,7 @@ type SelectedTransferResultProps = {
 };
 
 export function SelectedTransferResult({
+  directAlternative,
   isTripActive,
   transfer,
   transferLandmark,
@@ -138,6 +141,7 @@ export function SelectedTransferResult({
   return (
     <div className="px-4 py-3">
       <p className="map-eyebrow">TRANSBORDO SELECCIONADO</p>
+      <TransferTradeoff transfer={transfer} direct={directAlternative} />
       <ol className="mt-3" aria-label="Tramos del viaje">
         <li className="flex gap-3">
           <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-blue-400 text-xs font-bold text-ink-900" aria-hidden="true">1</span>

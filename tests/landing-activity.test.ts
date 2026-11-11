@@ -14,6 +14,14 @@ function render(data: TripActivitySummary | null) {
   return renderToStaticMarkup(createElement(LandingRanking, { routes: fallback, basedOnUsage: true, activity: data }));
 }
 describe("actividad en portada", () => {
+  it("prioriza el total semanal cuando hay pocos viajes hoy y conserva el detalle diario", () => {
+    const weekly = render(activity);
+    expect(weekly).toContain('aria-label="Actividad de los últimos 7 días"');
+    expect(weekly).toContain("Ver actividad de hoy");
+    const daily = render({ ...activity, today: { ...activity.today, started: 20 } });
+    expect(daily).not.toContain('aria-label="Actividad de los últimos 7 días"');
+    expect(daily).toContain("Actividad de hoy");
+  });
   it("conserva consultas si falta conexión o una muestra suficiente", () => {
     expect(render(null)).toContain("Rutas más consultadas");
     expect(render({ ...activity, weeklyTrips: 3 })).toContain("Rutas más consultadas");

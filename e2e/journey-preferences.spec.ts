@@ -100,6 +100,7 @@ test("permite alternar entre un transbordo recomendado y una ruta directa", asyn
   await page.goto("/mapa?a=-102.060000,19.420000&b=-102.050000,19.439000");
   const panel = page.getByRole("dialog");
   await expect(panel.getByText("TRANSBORDO SELECCIONADO", { exact: true })).toBeVisible();
+  await expect(panel.getByText("Frente a la opción directa", { exact: true })).toBeVisible();
   await expect(panel.getByRole("button", { name: "Compartir transbordo" })).toHaveCount(1);
   await panel.locator("summary").click();
   await panel.getByRole("button", { name: "Usar Prueba 3 como ruta recomendada", exact: true }).click();

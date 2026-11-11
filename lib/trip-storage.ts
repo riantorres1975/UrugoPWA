@@ -2,12 +2,24 @@ import type { TripJourney, TripTrackingState } from "@/lib/trip-mode";
 
 
 export const ACTIVE_TRIP_KEY = "urugo-active-trip-v1";
+export const ACTIVE_TRIP_EVENT = "urugo-active-trip-changed";
 export const TRIP_ALERTS_KEY = "urugo-trip-alerts-v1";
 export const TRIP_EXPIRY_MS = 6 * 60 * 60 * 1000;
 export type TripActivityIdentity = { id: string; startedAt: string };
 export type SavedTrip = { version: 1; savedAt: number; journey: TripJourney; tracking: TripTrackingState; activity?: TripActivityIdentity };
 export type TripAlertSettings = { voice: boolean; vibration: boolean };
 export const DEFAULT_TRIP_ALERTS: TripAlertSettings = { voice: false, vibration: false };
+let sessionInProgress = false;
+
+export function isTripSessionInProgress(): boolean {
+  return sessionInProgress;
+}
+
+export function setTripSessionInProgress(active: boolean): void {
+  sessionInProgress = active;
+  window.dispatchEvent(new Event(ACTIVE_TRIP_EVENT));
+}
+
 export async function readSavedTrip(): Promise<SavedTrip | null> {
   try {
     const raw = localStorage.getItem(ACTIVE_TRIP_KEY);
@@ -20,7 +32,10 @@ export async function readSavedTrip(): Promise<SavedTrip | null> {
 }
 
 export function clearSavedTrip() {
-  try { localStorage.removeItem(ACTIVE_TRIP_KEY); } catch { /* Storage can be unavailable. */ }
+  try {
+    localStorage.removeItem(ACTIVE_TRIP_KEY);
+    window.dispatchEvent(new Event(ACTIVE_TRIP_EVENT));
+  } catch { /* Storage can be unavailable. */ }
 }
 
 export function saveTrip(journey: TripJourney, tracking: TripTrackingState, activity?: TripActivityIdentity) {
@@ -28,7 +43,11 @@ export function saveTrip(journey: TripJourney, tracking: TripTrackingState, acti
   // Provider walking responses stay session-only; retain the transit itinerary.
   const storedJourney = { ...journey, walking: undefined };
   const identity = activity ? { id: activity.id, startedAt: activity.startedAt } : undefined;
-  try { localStorage.setItem(ACTIVE_TRIP_KEY, JSON.stringify({ version: 1, savedAt: Date.now(), journey: storedJourney, tracking, activity: identity })); }
+  try {
+    const alreadySaved = localStorage.getItem(ACTIVE_TRIP_KEY) !== null;
+    localStorage.setItem(ACTIVE_TRIP_KEY, JSON.stringify({ version: 1, savedAt: Date.now(), journey: storedJourney, tracking, activity: identity }));
+    if (!alreadySaved) window.dispatchEvent(new Event(ACTIVE_TRIP_EVENT));
+  }
   catch { /* A storage limit must not interrupt navigation. */ }
 }
 

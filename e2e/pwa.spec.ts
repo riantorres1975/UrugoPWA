@@ -6,6 +6,44 @@ test.use({ serviceWorkers: "allow" });
 const STATIC_CACHE_PREFIX = "rutas-static-";
 const DATA_CACHE = "rutas-data-v1";
 
+test("pospone una actualización pendiente mientras hay un viaje y la activa al terminar", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 740 });
+  await page.addInitScript(() => {
+    localStorage.setItem("urugo-active-trip-v1", JSON.stringify({
+      version: 1, savedAt: Date.now(),
+      journey: { kind: "direct", routeId: 1, routeName: "Ruta 1", segment: [[-102.06, 19.42], [-102.04, 19.42]], destination: [-102.04, 19.42] },
+      tracking: { progress: null, offRouteReadings: 0, arrivalReadings: 0 },
+    }));
+    const worker = Object.assign(new EventTarget(), {
+      state: "installed",
+      postMessage: (message: unknown) => { document.documentElement.dataset.updateMessage = JSON.stringify(message); },
+    });
+    const registration = Object.assign(new EventTarget(), {
+      waiting: worker,
+      update: async () => undefined,
+    });
+    Object.defineProperty(navigator, "serviceWorker", {
+      configurable: true,
+      value: Object.assign(new EventTarget(), { controller: {}, register: async () => registration }),
+    });
+  });
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Programada", exact: true })).toBeVisible();
+  await page.getByRole("status").filter({ hasText: "Nueva versión disponible" })
+    .getByRole("button", { name: "Cerrar", exact: true }).click({ trial: true });
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect(page.locator("html")).not.toHaveAttribute("data-update-message");
+  await page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
+    localStorage.removeItem("urugo-active-trip-v1");
+    window.dispatchEvent(new Event("urugo-active-trip-changed"));
+  });
+  await expect(page.locator("html")).toHaveAttribute("data-update-message", JSON.stringify({ type: "SKIP_WAITING" }));
+});
+
 async function installServiceWorker(page: import("@playwright/test").Page) {
   await page.evaluate(async () => {
     const registration = await navigator.serviceWorker.register("/sw.js", {

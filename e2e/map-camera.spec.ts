@@ -69,7 +69,7 @@ test("elegir un destino reciente cierra el teclado y conserva la búsqueda", asy
   await expect(page.getByRole("option", { name: /Instituto Tecnológico/ })).toBeVisible();
   await page.setViewportSize({ width: 400, height: 421 });
   await search.press("Enter");
-  await expect(search).not.toBeFocused();
+  await expect.poll(() => page.evaluate(() => document.activeElement?.getAttribute("role"))).not.toBe("combobox");
   await expect(page.getByRole("listbox")).toBeHidden();
   await expect(page.getByRole("dialog", { name: /opciones con transbordo/ })).toBeVisible();
   // Let the fit finish at keyboard height before restoring the full viewport.
@@ -81,6 +81,7 @@ test("elegir un destino reciente cierra el teclado y conserva la búsqueda", asy
     const destination = await page.getByRole("img", { name: "Punto de destino", exact: true }).boundingBox();
     return origin && destination ? Math.hypot(origin.x - destination.x, origin.y - destination.y) : 0;
   }).toBeGreaterThan(100);
+  await page.getByRole("button", { name: "Ajustar origen y destino manualmente" }).click();
   await expect(page.getByRole("button", { name: "Destino marcado, toca para cambiar" }))
     .toContainText("Instituto Tecnológico");
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem("urugo-recent-places")!)[0].center))

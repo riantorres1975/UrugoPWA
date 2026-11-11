@@ -8,6 +8,7 @@ type RankedRoute = { slug: string; name: string; destination: string | null };
 
 export default function LandingRanking({ routes, basedOnUsage, activity }: { routes: RankedRoute[]; basedOnUsage: boolean; activity?: TripActivitySummary | null }) {
   const useTrips = !!activity && activity.weeklyTrips >= 10 && activity.routes.length >= 4;
+  const showWeeklySummary = !!activity && activity.today.started < 10;
   const displayedRoutes = useTrips ? activity.routes : routes;
   const maxTrips = Math.max(1, ...(activity?.routes.map((route) => route.started) ?? []));
   const updatedLabel = activity ? new Intl.DateTimeFormat("es-MX", {
@@ -26,6 +27,11 @@ export default function LandingRanking({ routes, basedOnUsage, activity }: { rou
       </div>
       {activity ? (
         <>
+          {showWeeklySummary && <dl className="activity-totals activity-weekly" aria-label="Actividad de los últimos 7 días">
+            <div><dt>Viajes iniciados en los últimos 7 días</dt><dd>{activity.weeklyTrips.toLocaleString("es-MX")}</dd></div>
+          </dl>}
+          <details className="activity-daily" open={!showWeeklySummary}>
+          <summary className="min-h-11 cursor-pointer py-3 text-sm">{showWeeklySummary ? "Ver actividad de hoy" : "Actividad de hoy"}</summary>
           <dl className="activity-totals" aria-label={`Actividad del ${activity.day}`}>
             {([
               ["Viajes iniciados", activity.today.started],
@@ -35,7 +41,8 @@ export default function LandingRanking({ routes, basedOnUsage, activity }: { rou
               <div key={label}><dt>{label}</dt><dd key={value}>{value.toLocaleString("es-MX")}</dd></div>
             ))}
           </dl>
-          <p className="activity-updated">Actividad del {activity.day} · Actualizado {updatedLabel} · Hora de Uruapan</p>
+          </details>
+          <p className="activity-updated">{showWeeklySummary ? "Últimos 7 días" : `Actividad del ${activity.day}`} · Actualizado {updatedLabel} · Hora de Uruapan</p>
         </>
       ) : null}
       <div className="ranking-heading">

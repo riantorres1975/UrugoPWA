@@ -18,6 +18,7 @@ type BottomSheetProps = {
   onSnapChange?: (snap: SnapPoint) => void;
   /** Conserva el contenido montado mientras la hoja está cerrada. */
   keepMounted?: boolean;
+  desktop?: boolean;
 };
 
 export default function BottomSheet({
@@ -30,6 +31,7 @@ export default function BottomSheet({
   snap: snapProp,
   onSnapChange,
   keepMounted = false,
+  desktop = false,
 }: BottomSheetProps) {
   const [internalSnap, setInternalSnap] = useState<SnapPoint>("mini");
   const titleId = useId();
@@ -56,11 +58,11 @@ export default function BottomSheet({
   // Bloquear scroll del body solo en full
   useEffect(() => {
     if (!open || (snapPoints && snap === "mini")) return;
-    if (window.matchMedia("(min-width: 768px)").matches) return;
+    if (!desktop && window.matchMedia("(min-width: 768px)").matches) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = prev; };
-  }, [open, snap, snapPoints]);
+  }, [desktop, open, snap, snapPoints]);
 
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (event.pointerType === "mouse" && event.button !== 0) return;
@@ -174,7 +176,7 @@ export default function BottomSheet({
       <div
         aria-hidden="true"
         onClick={() => (snapPoints && snap === "full" ? setSnap("mini") : onOpenChange(false))}
-        className={`map-sheet-backdrop fixed inset-0 z-30 transition-opacity duration-200 motion-reduce:transition-none lg:hidden ${
+        className={`map-sheet-backdrop fixed inset-0 z-30 transition-opacity duration-200 motion-reduce:transition-none ${desktop ? "" : "lg:hidden"} ${
           open && (!snapPoints || snap === "full")
             ? "pointer-events-auto opacity-100"
             : "pointer-events-none opacity-0"
@@ -191,7 +193,7 @@ export default function BottomSheet({
         aria-hidden={!open}
         inert={!open ? true : undefined}
         style={{ transform: baseTransform, height: sheetHeight }}
-        className={`map-sheet fixed inset-x-0 bottom-0 z-40 flex flex-col rounded-t-[24px] motion-reduce:transition-none lg:hidden ${
+        className={`map-sheet fixed inset-x-0 bottom-0 z-40 flex flex-col rounded-t-[24px] motion-reduce:transition-none ${desktop ? "lg:inset-x-[max(1rem,calc((100vw-720px)/2))]" : "lg:hidden"} ${
           isDragging ? "transition-none" : "transition-[transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
         }`}
       >
@@ -258,13 +260,15 @@ export default function BottomSheet({
       </section>
 
       {/* ── DESKTOP: backdrop fallback ── */}
-      <div
-        aria-hidden={!open}
-        className={`pointer-events-none fixed inset-0 z-30 hidden transition-opacity duration-300 lg:block ${
-          open ? "pointer-events-auto opacity-100" : "opacity-0"
-        }`}
-        onClick={() => onOpenChange(false)}
-      />
+      {!desktop && (
+        <div
+          aria-hidden={!open}
+          className={`pointer-events-none fixed inset-0 z-30 hidden transition-opacity duration-300 lg:block ${
+            open ? "pointer-events-auto opacity-100" : "opacity-0"
+          }`}
+          onClick={() => onOpenChange(false)}
+        />
+      )}
     </>
   );
 }

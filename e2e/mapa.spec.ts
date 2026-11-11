@@ -157,6 +157,7 @@ test("un enlace compartido hidrata origen y destino sin mostrar el paso inicial"
   await page.goto("/mapa?a=-102.063030,19.421010&b=-102.042340,19.426870");
 
   expect((await routeWorker).url()).toContain("urugo-route-calculation");
+  await page.getByRole("button", { name: "Ajustar origen y destino manualmente" }).click();
   await expect(page.locator('button[aria-label="Origen ajustado manualmente, toca para cambiar"]:visible')).toBeVisible();
   await expect(page.locator('button[aria-label="Destino marcado, toca para cambiar"]:visible')).toBeVisible();
   await expect(page.getByText("PASO 1 DE 3", { exact: true })).toHaveCount(0);

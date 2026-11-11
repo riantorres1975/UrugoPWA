@@ -5,10 +5,12 @@ import type { RouteOption } from "@/lib/route-calculation";
 import type { TransferOption } from "@/lib/transfers";
 import { getJourneyFareSummary, isTelefericoRouteName } from "@/lib/journey-guidance";
 import { formatRouteLabel } from "@/lib/route-names";
+import TransferTradeoff from "@/components/TransferTradeoff";
 
-export default function JourneyPreview({ route, transfer, pending, onOpen }: {
+export default function JourneyPreview({ route, transfer, directAlternative, pending, onOpen }: {
   route: RouteOption | null;
   transfer: TransferOption | null;
+  directAlternative?: RouteOption | null;
   pending: boolean;
   onOpen: () => void;
 }) {
@@ -38,6 +40,7 @@ export default function JourneyPreview({ route, transfer, pending, onOpen }: {
           </>}
           {!names.length && <span>Toca para ver los detalles</span>}
         </span>
+        {!pending && transfer && <TransferTradeoff transfer={transfer} direct={directAlternative} />}
       </span>
       <span className="map-ticket-action grid h-8 w-8 shrink-0 place-items-center rounded-lg" aria-hidden="true"><ArrowUpRight className="h-4 w-4" /></span>
     </button>
