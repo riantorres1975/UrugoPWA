@@ -53,6 +53,8 @@ const context = await browser.newContext({
   viewport: { width: 720, height: 700 },
   deviceScaleFactor: 1,
   colorScheme: "dark",
+  locale: "es-MX",
+  serviceWorkers: "block",
 });
 await context.addInitScript(() => {
   localStorage.setItem("rutas-uru-onboarded", "1");
@@ -62,6 +64,9 @@ await context.addInitScript(() => {
 });
 
 const page = await context.newPage();
+await page.route("**/api/**", (route) =>
+  ["GET", "HEAD"].includes(route.request().method()) ? route.continue() : route.abort(),
+);
 await page.route("**/api/community/reports", (route) => route.fulfill({
   status: 201,
   contentType: "application/json",
@@ -136,7 +141,7 @@ await page.addStyleTag({
   content: `
     nextjs-portal { display: none !important; }
     #readme-demo-step {
-      position: fixed; z-index: 10000; top: 18px; left: 50%; transform: translateX(-50%);
+      position: fixed; z-index: 10000; top: 76px; left: 50%; transform: translateX(-50%);
       max-width: calc(100vw - 40px); padding: 10px 16px; border: 1px solid rgba(184,232,64,.55);
       background: rgba(7,16,6,.94); color: #eef2ea; font: 700 14px/1.25 system-ui, sans-serif;
       box-shadow: 0 12px 36px rgba(0,0,0,.42); white-space: nowrap;
@@ -217,7 +222,7 @@ const submit = page.getByRole("button", { name: "Enviar reporte" });
 await setStep("5. Envía el reporte para revisión");
 await scrollToLocator(submit, 5);
 await click(submit);
-await page.getByRole("heading", { name: "Gracias, ya quedó en revisión." }).waitFor({ state: "visible" });
+await page.getByRole("heading", { name: "Gracias, recibimos tu reporte." }).waitFor({ state: "visible" });
 await page.evaluate(() => window.scrollTo(0, 0));
 await setStep("Listo: el reporte queda privado hasta revisarse");
 await hold(14);

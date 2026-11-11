@@ -11,7 +11,7 @@ UruGo is a web application for exploring public transport in Uruapan, Michoacán
 ## Preview
 
 <p align="center">
-  <img src="./public/readme/inicio-wide.webp" alt="UruGo home page with destination search and map preview" width="920">
+  <img src="./public/readme/inicio-wide.webp" alt="UruGo home page with the trip planner and a preview of the Uruapan map" width="920">
 </p>
 
 <p align="center"><sub>Search for a destination, compare alternatives, and open the journey directly on the map.</sub></p>
@@ -41,14 +41,24 @@ UruGo is a web application for exploring public transport in Uruapan, Michoacán
 
 <table>
   <tr>
+    <th>Route directory</th>
     <th>Schedules</th>
     <th>User guide</th>
   </tr>
   <tr>
+    <td align="center"><img src="./public/readme/directorio-rutas.webp" alt="Mobile directory with search and a list of Uruapan routes" width="260"></td>
     <td align="center"><img src="./public/readme/horarios.webp" alt="Uruapan route schedules" width="260"></td>
     <td align="center"><img src="./public/readme/guia-narrow.webp" alt="UruGo mobile feature guide" width="260"></td>
   </tr>
 </table>
+
+<details>
+  <summary>Admin dashboard and route editor</summary>
+
+  <p align="center"><img src="./public/readme/admin-reportes.webp" alt="Admin report inbox with filters and moderation actions" width="920"></p>
+  <p align="center"><img src="./public/readme/admin-editor.webp" alt="Route editor with direction selection and segment replacement" width="920"></p>
+  <p align="center"><sub>Screenshots from the test environment with sample reports. Editor basemap by <a href="https://openfreemap.org/">OpenFreeMap</a> and <a href="https://www.openmaptiles.org/">OpenMapTiles</a> with data from <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>.</sub></p>
+</details>
 
 ## Main features
 

@@ -11,7 +11,7 @@ UruGo es una aplicación web para consultar las rutas de transporte público de 
 ## Vista previa
 
 <p align="center">
-  <img src="./public/readme/inicio-wide.webp" alt="Página de inicio de UruGo con buscador de destinos y vista del mapa" width="920">
+  <img src="./public/readme/inicio-wide.webp" alt="Portada de UruGo con el planificador de viajes y una vista del mapa de Uruapan" width="920">
 </p>
 
 <p align="center"><sub>Busca un destino, compara alternativas y abre el recorrido directamente en el mapa.</sub></p>
@@ -41,14 +41,24 @@ UruGo es una aplicación web para consultar las rutas de transporte público de 
 
 <table>
   <tr>
+    <th>Directorio de rutas</th>
     <th>Horarios</th>
     <th>Guía de uso</th>
   </tr>
   <tr>
+    <td align="center"><img src="./public/readme/directorio-rutas.webp" alt="Directorio móvil con búsqueda y lista de rutas de Uruapan" width="260"></td>
     <td align="center"><img src="./public/readme/horarios.webp" alt="Horarios de las rutas de Uruapan" width="260"></td>
     <td align="center"><img src="./public/readme/guia-narrow.webp" alt="Guía móvil de funciones de UruGo" width="260"></td>
   </tr>
 </table>
+
+<details>
+  <summary>Panel de administración y editor de recorridos</summary>
+
+  <p align="center"><img src="./public/readme/admin-reportes.webp" alt="Bandeja administrativa de reportes con filtros y acciones de moderación" width="920"></p>
+  <p align="center"><img src="./public/readme/admin-editor.webp" alt="Editor de recorridos con selección de sentido y reemplazo de tramos" width="920"></p>
+  <p align="center"><sub>Capturas del entorno de pruebas con reportes de ejemplo. Mapa del editor por <a href="https://openfreemap.org/">OpenFreeMap</a> y <a href="https://www.openmaptiles.org/">OpenMapTiles</a> con datos de <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>.</sub></p>
+</details>
 
 ## Qué ofrece
 
