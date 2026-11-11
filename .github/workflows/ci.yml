@@ -75,9 +75,26 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Instalar Supabase CLI
+        id: supabase-cli
         uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3.2.0
         with:
           version: 3.1.0
+
+      - name: Elegir un puerto libre para PostgreSQL
+        run: |
+          node --input-type=module <<'NODE'
+          import { appendFileSync } from "node:fs";
+          import { createServer } from "node:net";
+
+          const server = createServer();
+          server.on("error", (error) => { throw error; });
+          server.listen(0, "0.0.0.0", () => {
+            const { port } = server.address();
+            appendFileSync(process.env.GITHUB_ENV, `SUPABASE_DB_PORT=${port}\n`);
+            console.log(`Puerto PostgreSQL de pruebas: ${port}`);
+            server.close();
+          });
+          NODE
 
       - name: Iniciar Supabase y aplicar migraciones
         run: supabase start -x realtime,storage-api,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector > /dev/null
@@ -93,3 +110,7 @@ jobs:
           echo "::add-mask::$TEST_SUPABASE_SECRET_KEY"
           export TEST_SUPABASE_URL TEST_SUPABASE_PUBLISHABLE_KEY TEST_SUPABASE_SECRET_KEY
           pnpm test:admin-integration
+
+      - name: Detener Supabase de pruebas
+        if: always() && steps.supabase-cli.outcome == 'success'
+        run: supabase stop --no-backup
