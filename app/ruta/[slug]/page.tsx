@@ -12,6 +12,10 @@ import { findRouteSeoItem, getRouteSeoItems } from "@/lib/route-seo";
 import { getSchedule } from "@/lib/schedules";
 import { SITE_URL } from "@/lib/site-url";
 import { buildRouteStaticMapUrl } from "@/lib/static-map";
+import RouteMapPreview from "@/components/RouteMapPreview";
+import TransportRouteBadge from "@/components/TransportRouteBadge";
+import RouteMobileAction from "@/components/RouteMobileAction";
+import "@/app/transport.css";
 
 type RoutePageProps = {
   params: Promise<{
@@ -64,13 +68,11 @@ export default async function RoutePage({ params }: RoutePageProps) {
     notFound();
   }
 
-  const title = route.destination ? `${route.name}: ${route.destination}` : route.name;
   const directions = route.hasIda && route.hasVuelta ? "Ida y vuelta" : route.hasIda ? "Solo ida" : "Solo vuelta";
-  const staticMapUrl = buildRouteStaticMapUrl(route.name, route.color, 400, 360, { padding: 30 });
+  const staticMapUrl = buildRouteStaticMapUrl(route.name, route.color, 400, 250, { padding: 30 });
   const tabletStaticMapUrl = buildRouteStaticMapUrl(route.name, route.color, 800, 500);
   const compactDesktopStaticMapUrl = buildRouteStaticMapUrl(route.name, route.color, 640, 560);
   const desktopStaticMapUrl = buildRouteStaticMapUrl(route.name, route.color, 900, 560);
-  const estimatedMinutes = route.distanceKm > 0 ? Math.round((route.distanceKm / 18) * 60) : null;
   const schedule = getSchedule(route.name);
   const frequencyLabel = schedule
     ? schedule.continuous
@@ -93,9 +95,7 @@ export default async function RoutePage({ params }: RoutePageProps) {
     },
     {
       question: `¿Cuánto tiempo tarda la ${route.name}?`,
-      answer: estimatedMinutes
-        ? `El recorrido completo de la ${route.name} es de aproximadamente ${route.distanceKm} km, lo que equivale a unos ${estimatedMinutes} minutos de viaje en condiciones normales de tráfico.`
-        : `El tiempo varía según el tráfico y la hora del día. Usa el mapa interactivo de UruGo para estimar el tiempo desde tu punto de origen.`
+      answer: `El tiempo depende de dónde subas, dónde bajes y del tráfico. ${route.distanceKm > 0 ? `El trazado registrado suma ${route.distanceKm} km${route.hasIda && route.hasVuelta ? " entre ida y vuelta" : ""}; no representa la distancia de todos los viajes. ` : ""}Marca tu origen y destino en el mapa para estimar tu trayecto.`
     },
     ...(schedule
       ? [
@@ -164,301 +164,82 @@ export default async function RoutePage({ params }: RoutePageProps) {
     ]
   };
 
+  const mapHref = "/mapa?r=" + encodeURIComponent(route.name);
+  const scheduleHref = "/horarios?buscar=" + encodeURIComponent(route.name);
   return (
-    <main className="public-page" style={{ background: "var(--public-bg)", color: "var(--public-ink)", minHeight: "100dvh" }}>
+    <main className="public-page transport-page transport-route-detail min-h-dvh">
       <RouteConsultationTracker routeKey={route.slug} />
-      <PublicHeader active="rutas" mapHref={`/mapa?r=${encodeURIComponent(route.name)}`} />
-
-      <div className="px-5 pb-28 pt-28 sm:px-8 lg:px-10 lg:pb-16 lg:pt-32">
+      <PublicHeader active="rutas" mapHref={mapHref} />
+      <div className="transport-shell">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-5">
-            <Link
-              href="/rutas"
-              className="text-xs font-semibold uppercase transition hover:opacity-80"
-              style={{ color: "var(--public-muted)" }}
-            >
-              ← Todas las rutas
-            </Link>
+        <Link href="/rutas" className="route-breadcrumb">← Todas las rutas</Link>
+        <article>
+          <div className="route-overview">
+            <div className="route-overview-copy">
+              <div className="route-overview-identity"><TransportRouteBadge name={route.name} color={route.color} />
+              <p className="transport-eyebrow">Ruta de camión · Uruapan</p></div>
+              <h1 className="public-page-title">{route.name}</h1>
+              <p className="transport-lead">{route.destination || "Consulta las referencias y abre el mapa para saber si pasa cerca de tu destino."}</p>
+              <div className="route-overview-actions">
+                <Link id="route-map-action" href={mapHref} className="transport-button transport-button-primary">Ver recorrido en mapa <ArrowUpRight className="h-4 w-4" aria-hidden="true" /></Link>
+                <Link href={scheduleHref} className="transport-button">Consultar horarios</Link>
+              </div>
+              <dl className="route-facts" aria-label="Información de la ruta">
+                <div><dt>Tarifa por camión</dt><dd>{FARES_2026.urbanBus.price}<small>Pago en efectivo</small></dd></div>
+                {schedule && <div><dt>Horario aproximado</dt><dd>{schedule.first} – {schedule.last}<small>Primer / último servicio</small></dd></div>}
+                {frequencyLabel && <div><dt>Frecuencia aproximada</dt><dd>{frequencyLabel}</dd></div>}
+                <div><dt>Sentidos disponibles</dt><dd>{directions}</dd></div>
+              </dl>
+            </div>
+            <div className="route-map-preview">
+              <RouteMapPreview key={route.slug} image={staticMapUrl} name={route.name} sources={[
+                { media: "(min-width: 1280px)", url: desktopStaticMapUrl },
+                { media: "(min-width: 901px)", url: compactDesktopStaticMapUrl },
+                { media: "(min-width: 640px)", url: tabletStaticMapUrl },
+              ]}>
+                <RoutePreviewFromData routeName={route.name} color={route.color} width={640} height={400} strokeWidth={4} className="h-auto w-full" />
+              </RouteMapPreview>
+              <div className="route-map-caption"><span>{route.distanceKm > 0 ? route.distanceKm + " km de trazado registrado" : "Vista general del recorrido"}</span>
+                <Link href={mapHref} className="inline-flex min-h-11 items-center gap-2"><Maximize2 className="h-4 w-4" aria-hidden="true" /> Abrir mapa interactivo</Link>
+              </div>
+            </div>
           </div>
-          <article className="overflow-hidden border-y border-[var(--public-border)]">
-            <div className="h-2" style={{ backgroundColor: route.color }} />
-
-            <div className="lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(390px,0.85fr)]">
-              {/* Route map preview */}
-              <Link
-                href={`/mapa?r=${encodeURIComponent(route.name)}`}
-                aria-label={`Abrir mapa interactivo de ${route.name}`}
-                className="route-detail-map group flex w-full flex-col overflow-hidden lg:min-h-[440px]"
-                style={{
-                  borderBottom: "1px solid rgba(140,200,80,0.08)",
-                  background: "var(--public-tint)",
-                  lineHeight: 0,
-                }}
-              >
-                {staticMapUrl ? (
-                  <picture className="block aspect-[10/9] w-full sm:aspect-[8/5] lg:aspect-auto lg:min-h-0 lg:flex-1">
-                    {desktopStaticMapUrl && <source media="(min-width: 1280px)" srcSet={desktopStaticMapUrl} />}
-                    {compactDesktopStaticMapUrl && <source media="(min-width: 1024px)" srcSet={compactDesktopStaticMapUrl} />}
-                    {tabletStaticMapUrl && <source media="(min-width: 640px)" srcSet={tabletStaticMapUrl} />}
-                    <img
-                      src={staticMapUrl}
-                      alt={`Mapa del recorrido de la ${route.name} en Uruapan`}
-                      width={400}
-                      height={360}
-                      className="block h-full w-full object-contain lg:min-h-[440px]"
-                    />
-                  </picture>
-                ) : (
-                  <div className="flex aspect-[10/9] w-full items-center sm:aspect-[8/5] lg:aspect-auto lg:min-h-[440px] lg:flex-1">
-                    <RoutePreviewFromData
-                      routeName={route.name}
-                      color={route.color}
-                      width={400}
-                      height={360}
-                      strokeWidth={3}
-                      className="h-auto w-full"
-                    />
-                  </div>
-                )}
-                <span className="flex min-h-12 shrink-0 items-center gap-2 border-t border-[var(--public-border)] bg-[var(--public-surface)] px-4 py-3 text-xs font-bold leading-5 text-[var(--public-ink)] transition group-hover:bg-[var(--public-hover)]">
-                  <Maximize2 className="h-4 w-4 text-[var(--public-accent)]" aria-hidden="true" />
-                  Abrir mapa interactivo
-                  <ArrowUpRight className="ml-auto h-4 w-4" aria-hidden="true" />
-                </span>
-              </Link>
-
-              <div className="flex flex-col justify-center p-6 md:p-8 lg:p-10 xl:p-12">
-                <p className="text-xs font-bold uppercase" style={{ color: "var(--public-accent)" }}>
-                  Ruta de camión · Uruapan
-                </p>
-                <h1
-                  className="mt-3 public-page-title"
-                  style={{ color: "var(--public-ink)" }}
-                >
-                  {title}
-                </h1>
-                <p className="mt-5 text-sm leading-7 lg:text-base" style={{ color: "var(--public-secondary)" }}>
-                  {route.destination
-                    ? `La ${route.name} conecta distintas zonas de Uruapan con ${route.destination}${route.distanceKm > 0 ? `, con un recorrido total de ${route.distanceKm} km` : ""}. Consulta el mapa para ver paradas y transbordos disponibles.`
-                    : `La ${route.name} recorre colonias de Uruapan${route.distanceKm > 0 ? ` en un trayecto de ${route.distanceKm} km` : ""}. Usa el mapa para encontrar la parada más cercana a tu origen y destino.`
-                  }
-                </p>
-                <div className="mt-8 hidden flex-wrap gap-3 lg:flex">
-                  <Link
-                    href={`/mapa?r=${encodeURIComponent(route.name)}`}
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-[var(--brand-lime)] px-6 text-sm font-bold text-[var(--brand-deep)] transition hover:bg-[#e7ffa7]"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                      <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      <circle cx="12" cy="10" r="2.2" fill="currentColor" />
-                    </svg>
-                    Ver esta ruta
-                  </Link>
-                  <Link
-                    href="/horarios"
-                    className="inline-flex h-12 items-center justify-center rounded-md border px-6 text-sm font-bold transition hover:bg-[var(--public-hover)]"
-                    style={{ borderColor: "var(--public-border)", color: "var(--public-ink)" }}
-                  >
-                    Consultar horarios
-                  </Link>
-                </div>
-              </div>
+          <div className="route-sections">
+            <section className="route-section">
+              <h2>¿Por dónde pasa?</h2>
+              <p>Estas referencias están cerca del recorrido. Consulta el mapa para elegir dónde subir y bajar; la lista no representa paradas fijas ni su orden.</p>
+              {route.landmarks.length > 0 ? <ul className="route-landmarks" aria-label="Referencias cercanas a la ruta">
+                {route.landmarks.map((landmark) => <li key={landmark}>{landmark}</li>)}
+              </ul> : <p>Aún no tenemos referencias suficientes. Puedes revisar el trazado completo en el mapa.</p>}
+              {route.name !== "Ruta 1 - San José" && <p className="text-xs">Referencias con datos de <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" className="underline">OpenStreetMap contributors</a>. Verifica el acceso antes de viajar.</p>}
+            </section>
+            <aside className="route-section" aria-label="Ayuda para viajar">
+              <h2>¿Te lleva a tu destino?</h2>
+              <ol className="route-steps">
+                <li>Abre el mapa y marca de dónde sales.</li>
+                <li>Elige tu destino para comparar rutas y caminatas.</li>
+                <li>Revisa dónde subir, bajar y hacer transbordo si lo necesitas.</li>
+              </ol>
+              <Link href={mapHref} className="transport-button mt-5">Planear mi viaje →</Link>
+              <p>Los horarios son aproximados y pueden variar por tráfico. Confirma con el conductor antes de subir.</p>
+              <Link href="/acerca-de" className="mt-3 inline-flex min-h-11 items-center text-xs font-bold text-[var(--public-accent)] underline">Cómo verificamos la información</Link>
+            </aside>
+          </div>
+          <RouteVerification routeKey={route.slug} routeName={route.name} />
+          <section className="transport-faq" aria-label="Preguntas frecuentes de la ruta">
+            <h2>Antes de viajar</h2>
+            <div className="transport-faq-list">
+              {faqs.map((faq) => <details key={faq.question}><summary>{faq.question}</summary><p>{faq.answer}</p></details>)}
             </div>
-
-            <dl
-              className="grid grid-cols-2 gap-2.5 border-t p-6 sm:grid-cols-3 sm:gap-3 md:p-8 lg:grid-cols-6 lg:gap-0 lg:p-0 lg:[&>div]:rounded-none lg:[&>div]:border-y-0 lg:[&>div]:border-l-0 lg:[&>div]:bg-transparent lg:[&>div]:px-6 lg:[&>div]:py-5 lg:[&>div:last-child]:border-r-0"
-              style={{ borderColor: "var(--public-border)" }}
-            >
-                <div
-                  className="rounded-lg border p-4 lg:border-r"
-                  style={{ borderColor: "var(--public-border)", background: "var(--public-surface)" }}
-                >
-                  <dt className="text-xs font-bold uppercase" style={{ color: "var(--public-secondary)" }}>Destino</dt>
-                  <dd className="mt-2 text-sm font-bold" style={{ color: "var(--public-ink)" }}>{route.destination ?? "Ruta local"}</dd>
-                </div>
-                <div
-                  className="rounded-lg border p-4 lg:border-r"
-                  style={{ borderColor: "var(--public-border)", background: "var(--public-surface)" }}
-                >
-                  <dt className="text-xs font-bold uppercase" style={{ color: "var(--public-secondary)" }}>Tarifa</dt>
-                  <dd className="mt-2 text-sm font-bold" style={{ color: "var(--public-ink)" }}>{FARES_2026.urbanBus.price}</dd>
-                </div>
-                {route.distanceKm > 0 && (
-                  <div
-                    className="rounded-lg border p-4 lg:border-r"
-                    style={{ borderColor: "var(--public-border)", background: "var(--public-surface)" }}
-                  >
-                    <dt className="text-xs font-bold uppercase" style={{ color: "var(--public-secondary)" }}>Recorrido</dt>
-                    <dd className="mt-2 text-sm font-bold" style={{ color: "var(--public-ink)" }}>{route.distanceKm} km</dd>
-                  </div>
-                )}
-                <div
-                  className="rounded-lg border p-4 lg:border-r"
-                  style={{ borderColor: "var(--public-border)", background: "var(--public-surface)" }}
-                >
-                  <dt className="text-xs font-bold uppercase" style={{ color: "var(--public-secondary)" }}>Sentido</dt>
-                  <dd className="mt-2 text-sm font-bold" style={{ color: "var(--public-ink)" }}>{directions}</dd>
-                </div>
-                {schedule && (
-                  <div
-                    className="rounded-lg border p-4 lg:border-r"
-                    style={{ borderColor: "var(--public-border)", background: "var(--public-surface)" }}
-                  >
-                    <dt className="text-xs font-bold uppercase" style={{ color: "var(--public-secondary)" }}>Horario</dt>
-                    <dd className="mt-2 text-sm font-bold" style={{ color: "var(--public-ink)" }}>{schedule.first} – {schedule.last}</dd>
-                  </div>
-                )}
-                {frequencyLabel && (
-                  <div
-                    className="rounded-lg border p-4 lg:border-r"
-                    style={{ borderColor: "var(--public-border)", background: "var(--public-surface)" }}
-                  >
-                    <dt className="text-xs font-bold uppercase" style={{ color: "var(--public-secondary)" }}>Frecuencia</dt>
-                    <dd className="mt-2 text-sm font-bold" style={{ color: "var(--public-ink)" }}>{frequencyLabel}</dd>
-                  </div>
-                )}
-            </dl>
-
-            <div className="p-6 md:p-8 lg:p-10 xl:p-12">
-              <div className="lg:grid lg:grid-cols-[minmax(0,1.2fr)_minmax(340px,0.8fr)] lg:gap-12">
-
-              {route.landmarks.length > 0 && (
-                <section>
-                  <h2 className="mb-4 public-section-title" style={{ color: "var(--public-ink)" }}>
-                    ¿Por dónde pasa la {route.name}?
-                  </h2>
-                  <p className="mb-5 text-sm leading-7" style={{ color: "var(--public-secondary)" }}>
-                    {route.destination
-                      ? `El recorrido hacia ${route.destination} pasa cerca de estos puntos de referencia en Uruapan.`
-                      : "Estos son algunos puntos de referencia ubicados cerca del recorrido en Uruapan."}
-                    {schedule && ` Su horario aproximado es de ${schedule.first} a ${schedule.last}.`}
-                  </p>
-                  <ul className="grid gap-2 sm:grid-cols-2 lg:gap-3">
-                    {route.landmarks.map((lm) => (
-                      <li
-                        key={lm}
-                        className="flex items-center gap-2 rounded-lg border px-4 py-3 text-sm lg:rounded-lg"
-                        style={{ borderColor: "var(--public-border)", background: "var(--public-surface)", color: "var(--public-ink)" }}
-                      >
-                        <span style={{ color: "var(--public-muted)" }}>▸</span> {lm}
-                      </li>
-                    ))}
-                  </ul>
-                  {route.name !== "Ruta 1 - San José" && (
-                    <p className="mt-3 text-[11px]" style={{ color: "var(--public-muted)" }}>
-                      Referencias con datos de{" "}
-                      <a
-                        href="https://www.openstreetmap.org/copyright"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="underline underline-offset-2 transition hover:opacity-80"
-                      >
-                        OpenStreetMap contributors
-                      </a>
-                      . Verifica el punto exacto antes de viajar.
-                    </p>
-                  )}
-                </section>
-              )}
-
-              <section
-                className="mt-8 rounded-lg border bg-[var(--public-tint)] p-5 lg:mt-0 lg:rounded-none lg:border-y-0 lg:border-r-0 lg:bg-transparent lg:pl-10"
-                style={{ borderColor: "var(--public-border)" }}
-              >
-                <h2 className="public-section-title" style={{ color: "var(--public-ink)" }}>Cómo planear tu viaje</h2>
-                <p className="mt-3 text-sm leading-7" style={{ color: "var(--public-secondary)" }}>
-                  Abre el mapa de UruGo y marca tu punto de origen y tu destino. El sistema calcula si la {route.name} cubre tu trayecto, qué tan lejos están las paradas y si necesitas caminar o hacer transbordo con otra ruta o el Teleférico de Uruapan.
-                  {estimatedMinutes && ` El recorrido completo toma aproximadamente ${estimatedMinutes} minutos.`}
-                </p>
-                <Link href="/acerca-de" className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold transition hover:text-[var(--public-ink)]" style={{ color: "var(--public-secondary)" }}>
-                  <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0" style={{ color: "var(--public-accent)" }} aria-hidden="true">
-                    <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
-                  </svg>
-                  Recorrido verificado en campo · conoce la metodología
-                </Link>
-              </section>
-              </div>
-
-              <RouteVerification routeKey={route.slug} routeName={route.name} />
-
-              <section className="mt-10 border-t pt-9" style={{ borderColor: "var(--public-border)" }}>
-                <h2 className="mb-5 public-section-title" style={{ color: "var(--public-ink)" }}>
-                  Preguntas frecuentes
-                </h2>
-                <div className="grid gap-4 lg:grid-cols-2">
-                  {faqs.map((faq) => (
-                    <div
-                      key={faq.question}
-                      className="rounded-lg border p-5 lg:rounded-lg"
-                      style={{ borderColor: "var(--public-border)", background: "var(--public-surface)" }}
-                    >
-                      <h3 className="text-sm font-bold mb-2" style={{ color: "var(--public-accent)" }}>{faq.question}</h3>
-                      <p className="text-sm leading-6" style={{ color: "var(--public-secondary)" }}>{faq.answer}</p>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              <div className="mt-10 flex flex-col gap-3 border-t pt-8 sm:flex-row lg:justify-end" style={{ borderColor: "var(--public-border)" }}>
-                <Link
-                  href={`/mapa?r=${encodeURIComponent(route.name)}`}
-                  className="inline-flex h-12 items-center justify-center rounded-md bg-[var(--brand-lime)] px-6 text-sm font-bold text-[var(--brand-deep)] transition hover:bg-[#e7ffa7]"
-                >
-                  Ver en el mapa
-                </Link>
-                <Link
-                  href="/horarios"
-                  className="inline-flex h-12 items-center justify-center rounded-md border px-6 text-sm font-bold transition"
-                  style={{
-                    borderColor: "var(--public-border)",
-                    background: "var(--public-surface)",
-                    color: "var(--public-ink)",
-                  }}
-                >
-                  Horarios de todas las rutas
-                </Link>
-                <Link
-                  href="/rutas"
-                  className="inline-flex h-12 items-center justify-center rounded-md border px-6 text-sm font-bold transition"
-                  style={{
-                    borderColor: "var(--public-border)",
-                    background: "var(--public-surface)",
-                    color: "var(--public-ink)",
-                  }}
-                >
-                  Ver todas las rutas
-                </Link>
-              </div>
-            </div>
-          </article>
-        </div>
+          </section>
+          <div className="transport-help">
+            <div><h2>¿Hay algún dato incorrecto?</h2><p>Avísanos si cambió el recorrido, el horario o alguna referencia de esta ruta.</p></div>
+            <Link href={"/reportar-error?ruta=" + encodeURIComponent(route.name) + "&clave=" + route.slug} className="transport-button">Reportar un problema</Link>
+          </div>
+        </article>
       </div>
-
       <PublicFooter />
-
-      {/* CTA fijo inferior — acceso rápido al mapa en móvil/tablet */}
-      <div
-        className="fixed inset-x-0 bottom-0 z-40 border-t px-4 py-3 backdrop-blur-xl lg:hidden"
-        style={{
-          borderColor: "var(--public-border)",
-          background: "var(--public-bg)",
-          paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))",
-        }}
-      >
-        <Link
-          href={`/mapa?r=${encodeURIComponent(route.name)}`}
-          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-[var(--brand-lime)] px-3 py-2 text-center text-sm font-bold text-[var(--brand-deep)] transition hover:bg-[#e7ffa7]"
-        >
-          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-            <path d="M12 21s6-5.7 6-11a6 6 0 1 0-12 0c0 5.3 6 11 6 11Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            <circle cx="12" cy="10" r="2.2" fill="currentColor" />
-          </svg>
-          Ver {route.name} en el mapa
-        </Link>
-      </div>
+      <RouteMobileAction key={route.slug} href={mapHref} name={route.name} />
     </main>
   );
 }

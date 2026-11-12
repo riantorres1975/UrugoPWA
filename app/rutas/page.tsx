@@ -4,6 +4,9 @@ import ForceDark from "@/components/ForceDark";
 import PublicFooter from "@/components/PublicFooter";
 import PublicHeader from "@/components/PublicHeader";
 import RutasFilter from "@/components/RutasFilter";
+import TransportRouteBadge from "@/components/TransportRouteBadge";
+import { ArrowRight, Map } from "lucide-react";
+import "@/app/transport.css";
 import { getRouteSeoItems } from "@/lib/route-seo";
 import { getRouteSearchTerms } from "@/lib/route-names";
 import { DATA_LAST_UPDATED, FARES_2026 } from "@/lib/mobility-config";
@@ -60,59 +63,58 @@ export default function RutasPage() {
   };
 
   return (
-    <main className="public-page" style={{ background: "var(--public-bg)", color: "var(--public-ink)", minHeight: "100dvh" }}>
+    <main className="public-page transport-page" style={{ background: "var(--public-bg)", color: "var(--public-ink)", minHeight: "100dvh" }}>
       <ForceDark />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       <PublicHeader active="rutas" />
 
-      <div className="px-5 pt-24 pb-12 sm:px-8 lg:px-10">
-        <div className="mx-auto max-w-5xl">
+      <div className="transport-shell">
+        <div>
 
-          <header className="public-intro">
-            <p className="text-xs font-bold uppercase tracking-widest text-[var(--public-accent)]">Muévete por Uruapan</p>
-            <h1 className="public-page-title mt-2 text-3xl sm:text-4xl">Directorio de <em>rutas</em></h1>
-            <p className="mt-2 text-sm text-[var(--public-secondary)]">Busca tu camión por número, colonia o destino.</p>
-            <nav aria-label="Más opciones de transporte" className="mt-3 flex flex-wrap gap-x-5 text-sm font-bold text-[var(--public-accent)]">
-              <Link href="/horarios" className="inline-flex min-h-11 items-center hover:underline">Horarios →</Link>
-              <Link href="/como-llegar" className="inline-flex min-h-11 items-center hover:underline">Cómo llegar →</Link>
+          <header className="transport-heading">
+            <div><p className="transport-eyebrow">Rutas de camión · Uruapan</p>
+            <h1 className="public-page-title">Encuentra tu <em>ruta</em></h1>
+            <p className="transport-lead">Busca por número o lugar. Abre su ficha para conocerla, o ve directo al mapa.</p></div>
+            <nav aria-label="Más opciones de transporte" className="transport-shortcuts">
+              <Link href="/horarios" className="transport-button">Consultar horarios</Link>
+              <Link href="/mapa" className="transport-button transport-button-primary">Planear un viaje <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
             </nav>
           </header>
 
-          <div className="public-directory -mx-5 mt-3 px-5 py-4 sm:mx-0 sm:rounded-xl sm:px-5">
-            <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--public-secondary)]">
-              <span className="font-bold text-[var(--public-ink)]">{busRoutes.length} rutas</span>
-              <span aria-hidden="true">·</span>
-              <span>{FARES_2026.urbanBus.price} por abordaje · Efectivo</span>
+          <div className="transport-directory">
+            <div className="transport-meta">
+              <span><strong>{busRoutes.length} rutas</strong> para explorar</span>
+              <span><strong>{FARES_2026.urbanBus.price}</strong> por camión · Efectivo</span>
             </div>
             <RutasFilter total={busRoutes.length} />
-            <ul id="rutas-grid" aria-label="Rutas de camión" className="grid gap-1.5 md:grid-cols-2">
+            <ul id="rutas-grid" aria-label="Rutas de camión" className="transport-route-grid">
               {busRoutes.map((route) => (
                 <li
                   key={route.slug}
                   data-search={buildSearchText(route.name, route.destination, route.landmarks)}
-                  className="flex min-w-0 items-center rounded-lg border border-[var(--public-border)] bg-[var(--public-surface)] transition-colors hover:border-[#6aab48]"
+                  data-route-name={route.name}
+                  className="transport-route-card"
                 >
                   <Link
                     href={`/ruta/${route.slug}`}
                     prefetch={false}
-                    className="flex min-h-[76px] min-w-0 flex-1 items-center gap-3 rounded-lg px-3 py-3 hover:bg-[var(--public-hover)]"
+                    className="transport-route-link"
                   >
-                    <span className="h-8 w-1 shrink-0 rounded-full" style={{ backgroundColor: route.color }} aria-hidden="true" />
-                    <span className="min-w-0">
-                      <span className="block text-sm font-bold leading-5">{route.name}</span>
-                      {route.destination && <span className="mt-0.5 block text-xs leading-4 text-[var(--public-secondary)]">{route.destination}</span>}
+                    <TransportRouteBadge name={route.name} color={route.color} />
+                    <span className="transport-route-copy">
+                      <strong>{route.name}</strong>
+                      {route.destination && <small>{route.destination}</small>}
+                      <span className="block transport-route-action">Ver ficha <span aria-hidden="true">→</span></span>
                     </span>
                   </Link>
                   <Link
                     href={`/mapa?r=${encodeURIComponent(route.name)}`}
                     prefetch={false}
-                    className="mr-2 inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-md px-2 text-xs font-bold text-[var(--public-accent)] transition-colors hover:bg-[var(--public-hover)]"
+                    className="transport-map-link"
                     aria-label={`Ver ${route.name} en el mapa interactivo`}
                   >
-                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                      <path d="m9 18-6 3V6l6-3 6 3 6-3v15l-6 3-6-3ZM9 3v15m6-12v15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
+                    <Map aria-hidden="true" />
                     Mapa
                   </Link>
                 </li>
@@ -123,10 +125,10 @@ export default function RutasPage() {
           <div
             id="rutas-empty"
             style={{ display: "none", borderColor: "var(--public-border)", background: "var(--public-surface)" }}
-            className="mt-4 flex flex-col items-center gap-2 rounded-lg border px-4 py-10 text-center"
+            className="transport-empty"
           >
             <p className="text-sm font-semibold" style={{ color: "var(--public-ink)" }}>Sin resultados</p>
-            <p className="text-xs" style={{ color: "var(--public-muted)" }}>Prueba con otro número, colonia o destino.</p>
+            <p>Prueba otro número o lugar, o selecciona «Ver todas las rutas».</p>
           </div>
 
           </div>

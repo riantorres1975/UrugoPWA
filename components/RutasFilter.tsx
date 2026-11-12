@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { track } from "@vercel/analytics";
+import { Search, X } from "lucide-react";
+import { matchesPublicRoute, normalizeRouteSearch } from "@/lib/public-route-search";
+import { useDirectoryUrl } from "@/lib/use-directory-url";
 
 type RutasFilterProps = {
   total: number;
@@ -10,15 +13,6 @@ type RutasFilterProps = {
   /** id del elemento "sin resultados" a mostrar/ocultar */
   emptyId?: string;
 };
-
-function normalize(value: string): string {
-  return value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
 
 export default function RutasFilter({ total, gridId = "rutas-grid", emptyId = "rutas-empty" }: RutasFilterProps) {
   const [query, setQuery] = useState("");
@@ -50,16 +44,12 @@ export default function RutasFilter({ total, gridId = "rutas-grid", emptyId = "r
     const grid = document.getElementById(gridId);
     if (!grid) return total;
 
-    const q = normalize(value);
-    // Multi-token AND: "hospital ruta 5" encuentra tarjetas que contengan
-    // todas las palabras, sin importar el orden.
-    const tokens = q.split(" ").filter(Boolean);
     const cards = grid.querySelectorAll<HTMLElement>("[data-search]");
     let visible = 0;
 
     cards.forEach((el) => {
       const hay = el.getAttribute("data-search") ?? "";
-      const match = tokens.length === 0 || tokens.every((token) => hay.includes(token));
+      const match = matchesPublicRoute(value, el.dataset.routeName ?? "", hay);
       el.style.display = match ? "" : "none";
       if (match) visible += 1;
     });
@@ -76,34 +66,23 @@ export default function RutasFilter({ total, gridId = "rutas-grid", emptyId = "r
     setCount(applyFilter(value));
   }, [applyFilter]);
 
+  useDirectoryUrl(query, updateQuery);
+
   return (
-    <div
-      className="sticky top-[72px] z-30 mb-2 border-b pb-2 pt-2"
-      style={{ borderColor: "var(--public-border)", background: "var(--public-tint)" }}
-    >
-      <label className="block">
-        <span className="sr-only">Buscar ruta por número, colonia o destino</span>
-        <div className="relative">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2"
-            style={{ color: "var(--public-muted)" }}
-            aria-hidden="true"
-          >
-            <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" />
-            <path d="m20 20-3.8-3.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-          </svg>
+    <div className="public-directory transport-toolbar">
+        <div className="transport-search">
+          <Search aria-hidden="true" />
           <input
             ref={inputRef}
             type="text"
             inputMode="search"
+            maxLength={120}
             value={query}
             onChange={(event) => updateQuery(event.target.value)}
-            placeholder="Busca por número, colonia o destino…"
+            placeholder="Ruta, colonia o lugar…"
             aria-label="Filtrar rutas"
-            className="h-11 w-full rounded-lg border pl-11 pr-11 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-[var(--public-accent)] transition placeholder:text-[var(--public-muted)]"
-            style={{ background: "var(--public-surface)", borderColor: "var(--public-border)", color: "var(--public-ink)" }}
+            autoComplete="off"
+            aria-controls={gridId}
           />
           {query && (
             <button
@@ -112,39 +91,31 @@ export default function RutasFilter({ total, gridId = "rutas-grid", emptyId = "r
                 updateQuery("");
                 inputRef.current?.focus();
               }}
-              className="absolute right-0 top-0 grid h-11 w-11 place-items-center rounded-full transition hover:opacity-80"
-              style={{ background: "var(--public-surface)", color: "var(--public-secondary)" }}
               aria-label="Limpiar búsqueda"
             >
-              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
+              <X className="h-4 w-4" aria-hidden="true" />
             </button>
           )}
         </div>
-      </label>
-      {!query && (
-        <div className="mt-1.5 flex gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Búsquedas rápidas">
+        <div className="transport-chips" aria-label="Búsquedas rápidas">
           {["Centro", "Central", "Hospital Regional", "Jucutacato", "Pemex", "Balcones"].map((chip) => (
             <button
               key={chip}
               type="button"
               onClick={() => {
-                updateQuery(chip);
-                inputRef.current?.focus();
+                updateQuery(normalizeRouteSearch(query) === normalizeRouteSearch(chip) ? "" : chip);
               }}
-              className="min-h-11 shrink-0 rounded-md border px-3 text-xs font-semibold transition hover:opacity-80 active:scale-[0.97]"
-              style={{ borderColor: "var(--public-border)", background: "var(--public-surface)", color: "var(--public-secondary)" }}
+              className="transport-chip"
+              aria-pressed={normalizeRouteSearch(query) === normalizeRouteSearch(chip)}
             >
               {chip}
             </button>
           ))}
         </div>
-      )}
-      <p className="mt-2 px-1 text-[12px] font-semibold" style={{ color: "var(--public-muted)" }} aria-live="polite">
+      <div className="transport-results"><p aria-live="polite" aria-atomic="true">
         {count} {count === 1 ? "ruta" : "rutas"}
         {query && ` para “${query.trim()}”`}
-      </p>
+      </p>{query && <button type="button" onClick={() => updateQuery("")}>Ver todas las rutas</button>}</div>
     </div>
   );
 }

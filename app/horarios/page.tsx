@@ -9,6 +9,7 @@ import { DATA_LAST_UPDATED, FARES_2026 } from "@/lib/mobility-config";
 import { getRouteSeoItems } from "@/lib/route-seo";
 import { getSchedule } from "@/lib/schedules";
 import { SITE_URL } from "@/lib/site-url";
+import "@/app/transport.css";
 
 export const metadata: Metadata = {
   title: "Horarios de camiones en Uruapan 2026 — Todas las rutas",
@@ -100,27 +101,27 @@ export default function HorariosPage() {
   };
 
   return (
-    <main className="public-page min-h-dvh bg-[var(--public-bg)] text-[var(--public-ink)]">
+    <main className="public-page transport-page min-h-dvh bg-[var(--public-bg)] text-[var(--public-ink)]">
       <ForceDark />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <PublicHeader active="horarios" />
 
-      <div className="px-5 pb-12 pt-24 sm:px-8 lg:px-10">
-        <div className="mx-auto max-w-5xl">
-          <header className="public-intro">
-            <p className="text-xs font-bold uppercase tracking-widest text-[var(--public-accent)]">Muévete por Uruapan</p>
-            <h1 className="public-page-title mt-2 text-3xl sm:text-4xl">Horarios de <em>transporte</em></h1>
-            <p className="mt-2 text-sm leading-5 text-[var(--public-secondary)]">Consulta el inicio, cierre y frecuencia de tu ruta.</p>
-            <nav aria-label="Más opciones de transporte" className="mt-3 flex flex-wrap gap-x-5 text-sm font-bold text-[var(--public-accent)]">
-              <Link href="/rutas" className="inline-flex min-h-11 items-center hover:underline">Todas las rutas →</Link>
-              <a href="#salidas-escolares" className="inline-flex min-h-11 items-center hover:underline">Salidas escolares ↓</a>
+      <div className="transport-shell">
+        <div>
+          <header className="transport-heading">
+            <div><p className="transport-eyebrow">Planea tu salida · Uruapan</p>
+            <h1 className="public-page-title">Horarios de <em>rutas</em></h1>
+            <p className="transport-lead">Revisa a qué hora empieza, a qué hora termina y cada cuánto pasa tu transporte.</p></div>
+            <nav aria-label="Más opciones de transporte" className="transport-shortcuts">
+              <Link href="/rutas" className="transport-button">Ver rutas</Link>
+              <a href="#salidas-escolares" className="transport-button">Salidas escolares ↓</a>
             </nav>
           </header>
 
           <ScheduleDirectory services={services} />
 
-          <p className="mt-3 text-[11px] text-[var(--public-muted)]">
-            Actualizado {DATA_LAST_UPDATED}. Tarifa base: {FARES_2026.urbanBus.price} por abordaje. “En servicio” indica que la hora actual está dentro del rango general de operación; no representa seguimiento en tiempo real de las unidades.
+          <p className="schedule-caption">
+            Datos actualizados en {DATA_LAST_UPDATED}. Tarifa de camión: {FARES_2026.urbanBus.price} por abordaje, en efectivo.
           </p>
 
           <div className="mt-8">
