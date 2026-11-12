@@ -52,6 +52,7 @@ export default defineConfig({
       ADMIN_AUTH_REDIRECT_URL: `${BASE_URL}/auth/callback`,
       ADMIN_EMAILS: "",
       NEXT_E2E: "1",
+      ADMIN_OSRM_URL: "http://127.0.0.1:3299",
       NEXT_PUBLIC_MAPBOX_TOKEN: process.env.NEXT_PUBLIC_MAPBOX_TOKEN?.trim() || "pk.e2e.placeholder",
       NEXT_PUBLIC_SITE_URL: BASE_URL,
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: publishableKey,

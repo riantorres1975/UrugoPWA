@@ -28,8 +28,12 @@ describe("seguimiento privado de reportes", () => {
   it("solo consulta el estado de identificadores con firma válida", async () => {
     const response = await POST(request([createReportReceipt(id)]));
     expect(response.status).toBe(200); expect(response.headers.get("cache-control")).toContain("no-store");
-    expect(mocks.select).toHaveBeenCalledWith("id,status,updated_at");
+    expect(mocks.select).toHaveBeenCalledWith("id,status,updated_at,resolved_at");
     expect(mocks.in).toHaveBeenCalledWith("id", [id]);
+  });
+  it("muestra la resolución sin revelar la nota interna ni el administrador", async () => {
+    mocks.in.mockResolvedValue({ data: [{ id, status: "approved", updated_at: "2026-11-12", resolved_at: "2026-11-12" }], error: null });
+    expect(await (await POST(request([createReportReceipt(id)]))).json()).toEqual([{ id, status: "resolved", updated_at: "2026-11-12" }]);
   });
   it("rechaza IDs solos, firmas modificadas, origen externo y exceso de recibos", async () => {
     expect((await POST(request([id]))).status).toBe(403);

@@ -19,6 +19,9 @@ import {
   type RouteSegmentDraft,
 } from "@/lib/admin-route";
 import type { Coordinates } from "@/lib/types";
+import CloudRouteDraft from "@/components/admin/CloudRouteDraft";
+import { DraftJourneyTest, EditorPlaceSearch, RoadAlignmentProposal, type EditorOverlay, type JourneyTestPoints } from "@/components/admin/RouteEditorTools";
+import { routeDiff } from "@/lib/admin-route-diff";
 
 type RouteSnapshot = {
   id: number;
@@ -68,6 +71,13 @@ export default function RoutePathEditor({ route, directionLabel, relatedDirectio
   const [selected, setSelected] = useState<number | null>(null);
   const [pointError, setPointError] = useState("");
   const [confirming, setConfirming] = useState(false);
+  const [focus, setFocus] = useState<Coordinates | null>(null);
+  const [comparison, setComparison] = useState(false);
+  const [testPoints, setTestPoints] = useState<JourneyTestPoints>({ origin: null, destination: null });
+  const [testTarget, setTestTarget] = useState<"origin" | "destination" | null>(null);
+  const [testOverlay, setTestOverlay] = useState<(EditorOverlay & { testKey: string }) | null>(null);
+  const testKey = JSON.stringify([path, testPoints]);
+  const diff = useMemo(() => routeDiff(parseRoutePath(original) ?? [], parseRoutePath(path) ?? []), [original, path]);
   const published = useMemo(() => parseRoutePath(original), [original]);
   const draft = useMemo(() => parseRoutePath(path), [path]);
   const joinedDraft = useMemo(() => (
@@ -151,6 +161,13 @@ export default function RoutePathEditor({ route, directionLabel, relatedDirectio
     setRecovery(null); setConfirming(false); setDraftNotice("Borrador recuperado. Revisa el recorrido antes de publicar.");
   }
 
+  function restoreCloud(saved: EditorDraft) {
+    if (saved.baseVersion !== route.dataVersion) return;
+    setPath(saved.path); setName(saved.name); setDirection(saved.direction); setColor(saved.color); setWidth(saved.width);
+    setOperationalStatus(saved.operationalStatus); setSummary(saved.summary); setSegment(saved.segment);
+    setRecovery(null); setUndo([]); setRedo([]); setSelected(null); setMode("select"); setMapOpen(true); setConfirming(false);
+  }
+
   function travelHistory(forward: boolean) {
     const source = forward ? redo : undo;
     if (!source.length || pending || segment) return;
@@ -162,6 +179,7 @@ export default function RoutePathEditor({ route, directionLabel, relatedDirectio
 
   function startSegment() {
     if (!draft || pending) return;
+    setTestTarget(null); setTestOverlay(null);
     setMapOpen(true); setSegment({ start: null, end: null, points: [] });
     setMode("select"); setPointError(""); setConfirming(false);
   }
@@ -223,6 +241,7 @@ export default function RoutePathEditor({ route, directionLabel, relatedDirectio
 
   function pickPoint(point: Coordinates, index: number | null) {
     if (pending || !draft) return;
+    if (testTarget) { setTestPoints((previous) => ({ ...previous, [testTarget]: point })); setTestTarget(null); setTestOverlay(null); return; }
     if (segment) {
       if (drawingSegment) addSegmentPoint(point);
       else if (index !== null) chooseConnection(index);
@@ -285,6 +304,7 @@ export default function RoutePathEditor({ route, directionLabel, relatedDirectio
       <input type="hidden" name="expectedVersion" value={route.dataVersion} />
       <input type="hidden" name="path" value={path} />
       {linkedReport && <input type="hidden" name="reportId" value={linkedReport.id} />}
+      <CloudRouteDraft snapshot={editorSnapshot} dirty={hasUnsavedChanges} disabled={pending || !!recovery} onRestore={restoreCloud} />
 
       {recovery && <section className="admin-draft-recovery xl:col-span-2" aria-label="Borrador recuperable">
         <div><h3 className="font-bold">Tienes un borrador en este dispositivo</h3>
@@ -345,6 +365,7 @@ export default function RoutePathEditor({ route, directionLabel, relatedDirectio
 
         {mapOpen ? (
           <>
+            <EditorPlaceSearch onLocate={setFocus} />
             <div className="admin-map-toolbar">
               <div><p className="text-xs font-bold text-[var(--brand-lime)]">{segment ? segment.start === null ? "1 / 3 · Elige dónde empieza" : segment.end === null ? "2 / 3 · Elige dónde termina" : "3 / 3 · Traza y une el cambio" : "Edita el recorrido en orden"}</p>
                 <p className="mt-1 text-sm text-[var(--admin-muted)]">{segment ? "Solo cambia el tramo entre A y B. El resto del recorrido se conserva." : "Elige un punto para moverlo, quitarlo o agregar otros a su lado."}</p></div>
@@ -373,7 +394,8 @@ export default function RoutePathEditor({ route, directionLabel, relatedDirectio
               published={published ?? []} draft={draft ?? []} relatedPaths={relatedPaths}
               directionLabel={directionLabel} showPublished={showPublished} showRelated={showRelated}
               selected={selected} insertionSegment={insertionSegment} segment={segment}
-              placing={mode !== "select" || drawingSegment} onPick={pickPoint}
+              placing={mode !== "select" || drawingSegment || !!testTarget} onPick={pickPoint}
+              focus={focus} comparison={comparison} overlay={testOverlay?.testKey === testKey ? testOverlay : null} testPoints={testPoints}
             />
             <div className="admin-map-tools space-y-3 border-t border-[var(--admin-line)] p-4">
               <div className="flex flex-wrap gap-3 text-xs font-semibold">
@@ -398,6 +420,7 @@ export default function RoutePathEditor({ route, directionLabel, relatedDirectio
                         : `A está en el punto ${segment.start + 1}. Toca otro punto del recorrido para marcar dónde termina el cambio.`}
                   </p>
                   {drawingSegment && <p className="text-xs text-violet-200">{Math.abs(segment.start! - segment.end!) === 2 ? "Se reemplaza 1 punto intermedio" : `Se reemplazan ${Math.abs(segment.start! - segment.end!) - 1} puntos intermedios`} por {segment.points.length} nuevos. Las conexiones A y B se conservan.</p>}
+                  {drawingSegment && draft && <RoadAlignmentProposal draft={draft} segment={segment} onApply={(points) => setSegment({ ...segment, points })} />}
                   <div className="flex flex-wrap gap-2">
                     {drawingSegment ? (
                       <>
@@ -456,6 +479,17 @@ export default function RoutePathEditor({ route, directionLabel, relatedDirectio
               : <p className="text-sm text-amber-200">Corrige las coordenadas o recupera el trazado publicado.</p>}
           </div>
         )}
+
+        {pathChanged && <div className="space-y-2 border-t border-[var(--admin-line)] p-4">
+          <h4 className="text-sm font-bold">Qué cambia en el recorrido</h4>
+          <p className="text-xs text-[var(--admin-muted)]">{diff.removed.length} segmentos retirados · {diff.added.length} agregados · {diff.deltaM >= 0 ? "+" : ""}{Math.round(diff.deltaM)} m de diferencia.</p>
+          <button type="button" className={buttonClass} aria-pressed={comparison} onClick={() => { setMapOpen(true); setComparison(!comparison); setTestOverlay(null); }}>Resaltar tramos que cambian</button>
+          {comparison && <p className="text-xs">Rojo: se retira · Verde: se agrega. Se comparan segmentos en el sentido de circulación.</p>}
+        </div>}
+        <DraftJourneyTest routeId={route.id} path={path} points={testPoints} target={testTarget} disabled={pending || !!segment || !draft}
+          onTarget={(target) => { setTestTarget(target); setMapOpen(true); setMode("select"); setComparison(false); }}
+          onReset={() => { setTestPoints({ origin: null, destination: null }); setTestTarget(null); setTestOverlay(null); }}
+          onOverlay={(overlay) => { setTestOverlay(overlay ? { ...overlay, testKey } : null); setMapOpen(true); }} />
 
         {!segment && <><div className="flex flex-wrap gap-2 px-4 py-3">
           {proposedPath && (
@@ -517,7 +551,7 @@ export default function RoutePathEditor({ route, directionLabel, relatedDirectio
         </details>
         <label className="block text-xs font-bold text-[var(--admin-muted)]">
           Resumen del cambio
-          <textarea name="changeSummary" value={summary} onChange={(event) => setSummary(event.target.value)} required minLength={10} maxLength={1000} rows={3} placeholder="Qué cambió y cómo lo comprobaste" className="admin-field mt-1 w-full resize-y" />
+          <textarea aria-label="Resumen del cambio" name="changeSummary" value={summary} onChange={(event) => setSummary(event.target.value)} required minLength={10} maxLength={1000} rows={3} placeholder="Qué cambió y cómo lo comprobaste" className="admin-field mt-1 w-full resize-y" />
         </label>
         {route.verified && pathChanged && <p className="text-xs text-amber-200">El nuevo recorrido quedará pendiente de verificación de campo.</p>}
         {state.status === "error" && <p role="alert" className="rounded-lg bg-red-400/10 p-3 text-sm text-[#f2b7af]">{state.message}</p>}

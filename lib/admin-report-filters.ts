@@ -4,11 +4,11 @@ export const REPORT_LABELS: Record<string, string> = {
   route_changed: "Cambio de recorrido", schedule_changed: "Cambio de horario", landmark_changed: "Referencia incorrecta",
   map_error: "Error de mapa", location_problem: "Problema de ubicación", usability_problem: "Error de uso", other: "Otro",
 };
-export type ReportFilters = { status: "pending" | "reviewing" | "approved" | "rejected"; search: string; type: string; oldest: boolean; page: number; reportId?: string };
+export type ReportFilters = { status: "pending" | "reviewing" | "approved" | "rejected" | "resolved"; search: string; type: string; oldest: boolean; page: number; reportId?: string };
 export type ReportFilterParams = { estado?: string; buscar?: string; tipo?: string; orden?: string; pagina?: string; reporte?: string };
 
 export function parseReportFilters(params: ReportFilterParams): ReportFilters {
-  const status = ["reviewing", "approved", "rejected"].includes(params.estado ?? "") ? params.estado as ReportFilters["status"] : "pending";
+  const status = ["reviewing", "approved", "rejected", "resolved"].includes(params.estado ?? "") ? params.estado as ReportFilters["status"] : "pending";
   const page = Number(params.pagina);
   return { status,
     ...(/^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(params.reporte ?? "") ? { reportId: params.reporte } : {}),

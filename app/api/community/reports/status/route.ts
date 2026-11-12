@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
   const supabase = createSupabaseAdminClient();
   if (!supabase) return new Response(null, { status: 503, headers });
   // Possession of a signed receipt authorizes status only, never private report content.
-  const { data, error } = await supabase.from("community_reports").select("id,status,updated_at").in("id", ids as string[]);
+  const { data, error } = await supabase.from("community_reports").select("id,status,updated_at,resolved_at").in("id", ids as string[]);
   if (error) return new Response(null, { status: 503, headers });
-  return Response.json(data ?? [], { headers });
+  return Response.json((data ?? []).map(({ resolved_at, ...report }) => ({ ...report, status: resolved_at ? "resolved" : report.status })), { headers });
 }

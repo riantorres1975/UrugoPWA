@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Flag } from "lucide-react";
 import { useEffect, useState } from "react";
 import { forgetReportReceipt, readReportHistory, REPORT_HISTORY_EVENT, type ReportReceipt } from "@/lib/report-history";
-const labels: Record<string, string> = { pending: "Recibido", reviewing: "En revisión", approved: "Aprobado", rejected: "Cerrado sin aprobación" };
+const labels: Record<string, string> = { pending: "Recibido", reviewing: "En revisión", approved: "Aprobado", resolved: "Resuelto", rejected: "Cerrado sin aprobación" };
 export default function ReportHistory() {
   const [receipts, setReceipts] = useState<ReportReceipt[]>([]);
   const [statuses, setStatuses] = useState<Record<string, string>>({});

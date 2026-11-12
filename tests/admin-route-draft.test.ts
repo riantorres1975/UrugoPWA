@@ -30,6 +30,10 @@ describe("borradores administrativos", () => {
     expect(sameEditorRoute({ ...draft, path: JSON.stringify(JSON.parse(draft.path), null, 2) }, draft)).toBe(true);
     expect(sameEditorRoute({ ...draft, name: "Ruta diferente" }, draft)).toBe(false);
   });
+  it("rechaza IDs de ruta y referencias de reporte manipuladas", () => {
+    expect(parseEditorDraft(JSON.stringify({ ...draft, routeId: -1, savedAt: Date.now() }), -1, null)).toBeNull();
+    expect(parseEditorDraft(JSON.stringify({ ...draft, reportId: "invalido", savedAt: Date.now() }), draft.routeId, "invalido")).toBeNull();
+  });
   it("rechaza datos vencidos, mezclados o con conexiones fuera del recorrido", () => {
     const now = Date.parse("2026-11-12T12:00:00Z");
     for (const bad of [{ ...draft, savedAt: now - 8 * 86_400_000 }, { ...draft, savedAt: now + 120_000 },

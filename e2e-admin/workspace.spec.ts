@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { createServer, type Server } from "node:http";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
@@ -14,8 +15,16 @@ const adminEmail = `workspace-${run}@example.com`;
 const path: [number, number][] = [[-102.075, 19.41], [-102.073, 19.41], [-102.071, 19.41], [-102.069, 19.41], [-102.067, 19.41]];
 let db: SupabaseClient;
 let userId: string | null = null;
+let streets: Server;
 
 test.beforeAll(async () => {
+  streets = createServer((request, response) => {
+    const coordinates = request.url?.split("/driving/")[1]?.split("?")[0]?.split(";").map((p) => p.split(",").map(Number)) ?? [];
+    const [a, b] = [coordinates[0], coordinates.at(-1)];
+    response.setHeader("Content-Type", "application/json");
+    response.end(JSON.stringify(a && b ? { code: "Ok", routes: [{ geometry: { type: "LineString", coordinates: [a, [(a[0] + b[0]) / 2, a[1] + .001], b] } }] } : { code: "NoRoute" }));
+  });
+  await new Promise<void>((resolve) => streets.listen(3299, "127.0.0.1", resolve));
   db = createClient(process.env.TEST_SUPABASE_URL!, process.env.TEST_SUPABASE_SECRET_KEY!, { auth: { persistSession: false, autoRefreshToken: false } });
   const user = await db.auth.admin.createUser({ email: adminEmail, email_confirm: true });
   if (user.error || !user.data.user) throw user.error ?? new Error("No se creó el administrador de prueba.");
@@ -53,6 +62,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.afterAll(async () => {
+  if (streets) await new Promise<void>((resolve, reject) => streets.close((error) => error ? reject(error) : resolve()));
   if (!db) return;
   const container = process.env.TEST_SUPABASE_CONTAINER || "supabase_db_rutas-uruapan";
   if (!/^supabase_db_[a-z0-9_-]+$/.test(container)) throw new Error("Contenedor de pruebas no válido.");
@@ -67,6 +77,101 @@ test.afterAll(async () => {
   execFileSync("docker", ["exec", container, "psql", "-U", "postgres", "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-c", sql], { stdio: "pipe" });
   await db.from("admin_members").delete().eq("email", adminEmail);
   if (userId) await db.auth.admin.deleteUser(userId);
+});
+
+test("revisa la propuesta de calles antes de unirla y marca los segmentos sustituidos", async ({ page }) => {
+  await page.goto(`/admin/routes/${routeId}`);
+  const editor = page.getByRole("region", { name: "Editor del recorrido" });
+  await editor.getByRole("button", { name: "Cambiar un tramo", exact: true }).click();
+  for (const [number, label] of [[2, "A"], [4, "B"]] as const) {
+    await editor.getByLabel("Número de punto").fill(String(number));
+    await editor.getByRole("button", { name: "Seleccionar punto", exact: true }).click();
+    await editor.getByRole("button", { name: `Usar punto ${number} como ${label}` }).click();
+  }
+  await editor.getByRole("button", { name: "Proponer trazado por calles" }).click();
+  await expect(editor.getByRole("button", { name: "Usar propuesta y revisar en mapa" })).toBeVisible();
+  expect(JSON.parse(await page.locator('input[name="path"]').inputValue())).toEqual(path);
+  await editor.getByRole("button", { name: "Usar propuesta y revisar en mapa" }).click();
+  await editor.getByRole("button", { name: "Unir al recorrido" }).click();
+  const changed = JSON.parse(await page.locator('input[name="path"]').inputValue());
+  expect(changed.slice(0, 2)).toEqual(path.slice(0, 2)); expect(changed.slice(-2)).toEqual(path.slice(-2));
+  expect(changed[2][1]).toBeCloseTo(19.411);
+  await editor.getByRole("button", { name: "Resaltar tramos que cambian" }).click();
+  await expect(editor).toContainText("2 segmentos retirados · 2 agregados");
+});
+
+test("busca referencias y prueba subidas y bajadas sobre el borrador", async ({ page }) => {
+  await page.goto(`/admin/routes/${routeId}`);
+  const editor = page.getByRole("region", { name: "Editor del recorrido" });
+  await editor.getByRole("button", { name: "Editar en el mapa", exact: true }).click();
+  await expect(editor.getByRole("button", { name: "Ver recorrido completo" })).toBeVisible();
+  await editor.getByLabel("Buscar calle, colonia o referencia").fill("Centro");
+  await editor.getByRole("button", { name: "Buscar en mapa" }).click();
+  await editor.getByRole("button", { name: "Centro", exact: true }).click();
+  await expect(editor.getByRole("status").filter({ hasText: "Mapa centrado en Centro" })).toBeVisible();
+  await editor.getByRole("button", { name: "Ver recorrido completo" }).click();
+  await page.waitForTimeout(450);
+  await editor.getByText("Probar un viaje antes de publicar", { exact: true }).click();
+  for (const [target, x] of [["origen", .25], ["destino", .75]] as const) {
+    await editor.getByRole("button", { name: `Marcar ${target} de prueba` }).click();
+    const canvas = editor.getByLabel("Mapa del recorrido"); await canvas.scrollIntoViewIfNeeded();
+    const box = (await canvas.boundingBox())!;
+    await page.mouse.click(box.x + box.width * x, box.y + box.height * .5);
+  }
+  await editor.getByRole("button", { name: "Calcular prueba" }).click();
+  await expect(editor.getByText("Incluye el borrador", { exact: false })).toBeVisible();
+  await editor.getByRole("button", { name: "Ver subidas, bajadas y cambio" }).first().click();
+  await expect(page.locator('input[name="path"]')).toHaveValue(JSON.stringify(path));
+});
+
+test("sincroniza el borrador entre dispositivos y rechaza sobrescrituras concurrentes", async ({ page, browser }) => {
+  await page.goto(`/admin/routes/${routeId + 1}`);
+  await expect(page.getByRole("button", { name: "Guardar en mi cuenta", exact: true })).toBeEnabled();
+  await page.getByLabel("Resumen del cambio", { exact: true }).fill("Cambio guardado desde el primer dispositivo");
+  await page.getByRole("button", { name: "Guardar en mi cuenta", exact: true }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Borrador guardado en tu cuenta" })).toBeVisible();
+  const stored = await db.from("route_editor_drafts").select("snapshot,revision").eq("route_id", routeId + 1).eq("user_id", userId!).single();
+  expect(stored.error).toBeNull(); expect(stored.data?.snapshot.summary).toContain("primer dispositivo");
+  const storage = await page.context().storageState();
+  const context = await browser.newContext({ storageState: { cookies: storage.cookies, origins: [] } });
+  try {
+    const second = await context.newPage();
+    await second.goto(`http://localhost:3200/admin/routes/${routeId + 1}`);
+    await expect(second.getByText(/otra\(s\) sesión/)).toBeVisible();
+    await second.getByRole("button", { name: "Continuar borrador de mi cuenta" }).click();
+    await expect(second.getByLabel("Resumen del cambio", { exact: true })).toHaveValue("Cambio guardado desde el primer dispositivo");
+    await second.getByLabel("Resumen del cambio", { exact: true }).fill("Actualización automática desde el segundo dispositivo");
+    await expect.poll(async () => (await db.from("route_editor_drafts").select("snapshot").eq("route_id", routeId + 1).eq("user_id", userId!).single()).data?.snapshot.summary)
+      .toBe("Actualización automática desde el segundo dispositivo");
+    const updated = await db.from("route_editor_drafts").select("snapshot,revision").eq("route_id", routeId + 1).eq("user_id", userId!).single();
+    const input = { p_route_id: routeId + 1, p_user_id: userId!, p_base_version: 2, p_revision: updated.data!.revision, p_snapshot: updated.data!.snapshot };
+    const first = await db.rpc("save_route_editor_draft", input);
+    expect(first.error).toBeNull();
+    const conflict = await db.rpc("save_route_editor_draft", input);
+    expect(conflict.error?.code).toBe("40001");
+    const stale = await db.rpc("save_route_editor_draft", { ...input, p_base_version: 1, p_revision: first.data });
+    expect(stale.error?.code).toBe("40001");
+    const anon = createClient(process.env.TEST_SUPABASE_URL!, process.env.TEST_SUPABASE_PUBLISHABLE_KEY!, { auth: { persistSession: false } });
+    expect((await anon.from("route_editor_drafts").select("snapshot")).error).not.toBeNull();
+    expect((await anon.rpc("save_route_editor_draft", input)).error).not.toBeNull();
+  } finally { await context.close(); await db.from("route_editor_drafts").delete().eq("route_id", routeId + 1); }
+});
+
+test("cierra un reporte con solución, fecha y responsable sin publicar geometría", async ({ page }) => {
+  const report = await db.from("community_reports").select("id").eq("route_id", routeId).order("created_at").limit(1).single();
+  const note = "Comprobamos el horario correcto y se actualizó la información pública.";
+  await page.goto(`/admin?reporte=${report.data!.id}`);
+  await page.getByText("Marcar como resuelto", { exact: true }).click();
+  await page.getByLabel("Cómo se solucionó", { exact: true }).fill(note);
+  await page.getByRole("button", { name: "Confirmar solución" }).click();
+  await page.goto(`/admin?estado=resolved&reporte=${report.data!.id}`);
+  await expect(page.locator("article")).toContainText(note);
+  const resolved = await db.from("community_reports").select("status,resolution_note,resolved_by,resolved_at").eq("id", report.data!.id).single();
+  expect(resolved.data).toMatchObject({ status: "approved", resolution_note: note, resolved_by: userId });
+  expect(resolved.data?.resolved_at).toBeTruthy();
+  expect((await db.from("routes").select("data_version").eq("id", routeId).single()).data?.data_version).toBe(1);
+  // Leave the shared inbox fixture unchanged for the pagination test below.
+  await db.from("community_reports").update({ status: "pending", resolution_note: null, resolved_at: null, resolved_by: null }).eq("id", report.data!.id);
 });
 
 test("cambia solo un tramo, deshace, rehace y recupera el borrador al recargar", async ({ page }, testInfo) => {

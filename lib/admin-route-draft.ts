@@ -14,7 +14,9 @@ export function parseEditorDraft(raw: string | null, routeId: number, reportId: 
   if (!raw || raw.length > 1_600_000) return null;
   try {
     const v = JSON.parse(raw) as EditorDraft;
-    if (!v || v.routeId !== routeId || v.reportId !== reportId || !Number.isSafeInteger(v.baseVersion) || v.baseVersion < 1
+    if (!v || !Number.isSafeInteger(v.routeId) || v.routeId < 1 || v.routeId !== routeId || v.reportId !== reportId
+      || (v.reportId !== null && (typeof v.reportId !== "string" || !/^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(v.reportId)))
+      || !Number.isSafeInteger(v.baseVersion) || v.baseVersion < 1
       || !Number.isFinite(v.savedAt) || v.savedAt > now + 60_000 || now - v.savedAt > DRAFT_LIFETIME
       || typeof v.path !== "string" || v.path.length > 750_000
       || typeof v.name !== "string" || v.name.length > 120 || typeof v.direction !== "string" || v.direction.length > 160

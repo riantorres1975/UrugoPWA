@@ -5,6 +5,7 @@ import AdminHeader from "@/components/admin/AdminHeader";
 import AdminStatusNav from "@/components/admin/AdminStatusNav";
 import AdminPagination from "@/components/admin/AdminPagination";
 import AdminSubmitButton from "@/components/admin/AdminSubmitButton";
+import ReportResolution from "@/components/admin/ReportResolution";
 import { REPORT_LABELS, REPORT_PAGE_SIZE, isAgedReport, parseReportFilters, reportSearchExpression, reportsHref, type ReportFilterParams } from "@/lib/admin-report-filters";
 import { getAdminPendingCounts } from "@/lib/admin-workload";
 import ContributorHistory from "@/components/admin/ContributorHistory";
@@ -17,7 +18,7 @@ import { reviewCommunityReport, signOutAdmin } from "@/app/admin/actions";
 
 export const dynamic = "force-dynamic";
 
-type ReportStatus = "pending" | "reviewing" | "approved" | "rejected";
+type ReportStatus = "pending" | "reviewing" | "approved" | "rejected" | "resolved";
 
 type CommunityReportRow = {
   id: string;
@@ -38,12 +39,16 @@ type CommunityReportRow = {
   status: ReportStatus;
   moderator_note: string | null;
   created_at: string;
+  resolution_note?: string | null;
+  resolved_at?: string | null;
+  resolved_by?: string | null;
 };
 
 const filters: ReadonlyArray<{ value: ReportStatus; label: string }> = [
   { value: "pending", label: "Pendientes" },
   { value: "reviewing", label: "En revisión" },
   { value: "approved", label: "Aprobados" },
+  { value: "resolved", label: "Resueltos" },
   { value: "rejected", label: "Descartados" },
 ];
 
@@ -86,7 +91,9 @@ export default async function AdminPage({ searchParams }: Props) {
   if (!supabase) redirect("/admin/login");
 
   const loadReports = (columns: string) => {
-    let query = supabase.from("community_reports").select(columns, { count: "exact" }).eq("status", status);
+    let query = supabase.from("community_reports").select(columns, { count: "exact" }).eq("status", status === "resolved" ? "approved" : status);
+    if (status === "resolved") query = query.not("resolved_at", "is", null);
+    else if (status === "approved") query = query.is("resolved_at", null);
     if (search) query = query.or(reportSearchExpression(search));
     if (type) query = query.eq("report_type", type);
     if (reportId) query = query.eq("id", reportId);
@@ -95,10 +102,11 @@ export default async function AdminPage({ searchParams }: Props) {
   };
   const countRequests = filters.map((filter) => filter.value === "pending"
     ? getAdminPendingCounts().then((counts) => ({ count: counts.reports }))
-    : supabase.from("community_reports").select("id", { count: "exact", head: true }).eq("status", filter.value));
+    : (() => { const query = supabase.from("community_reports").select("id", { count: "exact", head: true }).eq("status", filter.value === "resolved" ? "approved" : filter.value);
+      return filter.value === "resolved" ? query.not("resolved_at", "is", null) : filter.value === "approved" ? query.is("resolved_at", null) : query; })());
   const [counts, initialReportResult] = await Promise.all([
     Promise.all(countRequests),
-    loadReports("id,api_client_id,route_id,route_key,report_type,route_name,place,description,expected_result,contact,evidence_url,proposed_path,source_path,submission_source,submitted_by_hash,status,moderator_note,created_at"),
+    loadReports("id,api_client_id,route_id,route_key,report_type,route_name,place,description,expected_result,contact,evidence_url,proposed_path,source_path,submission_source,submitted_by_hash,status,moderator_note,created_at,resolution_note,resolved_at,resolved_by"),
   ]);
   let reportError = initialReportResult.error;
   let reports = (initialReportResult.data ?? []) as unknown as CommunityReportRow[];
@@ -219,7 +227,8 @@ export default async function AdminPage({ searchParams }: Props) {
                     <ContributorHistory reputation={report.submitted_by_hash ? contributorHistory.get(report.submitted_by_hash) ?? null : null} />
                   </div>
 
-                  <form action={reviewCommunityReport} className="min-w-0 space-y-3 border-t border-[var(--admin-line)] pt-4 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
+                  <div className="min-w-0 space-y-3 border-t border-[var(--admin-line)] pt-4 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
+                  {!report.resolved_at && <form action={reviewCommunityReport} className="space-y-3">
                     <input type="hidden" name="reportId" value={report.id} />
                     <label className="block"><span className="text-xs font-bold text-[var(--admin-muted)]">Nota interna</span><textarea name="note" maxLength={1000} defaultValue={report.moderator_note ?? ""} rows={2} placeholder="Qué se comprobó" className="mt-1 w-full border border-[var(--admin-line)] bg-[var(--brand-header)] px-3 py-2 text-sm text-[var(--brand-white)] placeholder:text-[var(--admin-muted)] focus:border-[var(--brand-lime)]" /></label>
                     <div className="flex flex-wrap gap-1.5 text-xs font-semibold">
@@ -240,7 +249,9 @@ export default async function AdminPage({ searchParams }: Props) {
                         Aprobar y editar ruta <ArrowRight className="h-4 w-4" aria-hidden="true" />
                       </AdminSubmitButton>
                     ) : null}
-                  </form>
+                  </form>}
+                  <ReportResolution id={report.id} note={report.resolution_note} at={report.resolved_at} by={report.resolved_by} />
+                  </div>
                 </article>
               ))}
             </div>

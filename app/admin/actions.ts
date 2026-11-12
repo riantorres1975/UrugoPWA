@@ -59,6 +59,7 @@ export async function reviewCommunityReport(formData: FormData) {
       reviewed_at: new Date().toISOString(),
     })
     .eq("id", reportId)
+    .is("resolved_at", null)
     .select("id,route_id,route_name,route_key")
     .single();
 
@@ -247,6 +248,8 @@ export async function publishRouteRevision(
   }
 
   refreshRouteViews(input.routeId);
+  // Remove only this administrator's draft based on the version just published.
+  await supabase.from("route_editor_drafts").delete().eq("route_id", input.routeId).eq("user_id", access.userId).eq("base_version", input.expectedVersion);
   const query = new URLSearchParams({ publicada: String(Number(nextVersion)) });
   if (input.reportId) query.set("reporte", input.reportId);
   redirect(`/admin/routes/${input.routeId}?${query}`);

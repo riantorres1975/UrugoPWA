@@ -17,6 +17,18 @@ un tramo se puede quitar el último punto nuevo o cancelar el cambio.
 
 ## Borradores y publicación
 
+«Guardar en mi cuenta» inicia la sincronización con Supabase tras 1.4 segundos
+sin cambios. Cada administrador tiene una copia por sentido y puede continuarla
+en otro dispositivo. El primer guardado es explícito; recuperar la copia también
+activa la sincronización. Consultar la copia no reemplaza el trabajo local.
+Si otro dispositivo cambia esa copia, el servidor rechaza la revisión antigua.
+Si cambia la versión publicada, también bloquea el guardado hasta revisar la nueva
+versión. Una copia vinculada a otro reporte se abre en su contexto original.
+Las sesiones recientes se muestran mediante un aviso y se actualizan cada 30 segundos.
+La presencia caduca a los 90 segundos sin actividad; no bloquea la edición.
+Las tablas y el RPC solo están disponibles para el servidor, después de validar
+la sesión administrativa. No se exponen correos ni borradores de otros administradores.
+
 El borrador se guarda en el navegador tras 600 ms sin cambios y también al salir
 de la pantalla. Se separa por registro de ruta y reporte vinculado. Conserva los
 campos y un tramo sin terminar, pero no cambia la ruta pública ni se comparte
@@ -32,7 +44,35 @@ Antes de publicar se revisan el sentido, el nombre, el estado y el número de
 puntos. El resumen es obligatorio y cada publicación conserva su historial.
 Una modificación del recorrido queda pendiente de verificación de campo.
 
+## Buscar, revisar y probar
+
+El buscador centra el mapa en calles, colonias y referencias. Usa el catálogo
+local y Search Box; sus resultados temporales no se guardan en los borradores.
+La comparación identifica segmentos dirigidos retirados (rojo) y agregados
+(verde), con la diferencia de longitud. Conserva la multiplicidad al repetir calles.
+
+«Probar un viaje antes de publicar» permite marcar origen y destino sobre el mapa.
+El servidor usa el cálculo habitual de la PWA, con este sentido sustituido por
+el borrador y los demás recorridos publicados. Muestra rutas directas, transbordos,
+caminata aproximada, subidas y bajadas. Al cambiar la geometría o los puntos, el
+resultado anterior deja de ser válido. No publica ni modifica el mapa público.
+
+Entre A y B, «Proponer trazado por calles» consulta OSRM y respeta el orden de
+circulación, incluso al seleccionar B antes de A. Admite hasta 23 puntos intermedios.
+La propuesta primero se revisa, después se carga en el mapa y finalmente se une.
+No sustituye automáticamente el trazado. El perfil es para automóvil y no garantiza
+restricciones de autobús; el administrador debe comprobar el paso. Se conserva
+atribución a OpenStreetMap y OSRM. `ADMIN_OSRM_URL` permite usar un servicio propio;
+por defecto se consulta `https://router.project-osrm.org` solo a petición manual.
+Referencia del proveedor: https://project-osrm.org/docs/v26.5.0/http
+
 ## Revisar reportes y señales
+
+«Marcar como resuelto» exige una explicación de 10–1000 caracteres y registra
+fecha y administrador. El estado de aprobación se conserva para compatibilidad
+con el historial; la bandeja separa Aprobados (sin solución) y Resueltos mediante
+`resolved_at`. Los controles de moderación ya no permiten editar reportes cerrados.
+El seguimiento público muestra «Resuelto» sin revelar la nota ni el administrador.
 
 Los reportes admiten búsqueda por ruta, lugar o descripción, filtros por tipo y
 orden por antigüedad, y páginas de 20 filas. Las señales usan páginas de 30.
@@ -58,4 +98,6 @@ o falla, se informa y no se etiqueta una ruta como «Sin alertas» por falta de 
 - La suite de espacio de trabajo se ejecuta solo contra `127.0.0.1:54321`. Su
   limpieza elimina únicamente los registros de prueba mediante una transacción
   local, habilitando de nuevo el bloqueo de revisiones inmutables antes de terminar.
-- No se requieren migraciones ni cambios de permisos para estas funciones.
+- Se requiere `20261112183128_admin_editor_workspace.sql` para borradores,
+  presencia y resoluciones. Las nuevas tablas tienen RLS, sin permisos para anon
+  ni authenticated; el RPC usa SECURITY INVOKER y solo permite service_role.
