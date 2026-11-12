@@ -2,6 +2,56 @@
   --admin-field: #101a12;
   --admin-tint: #243729;
   --admin-accent: var(--brand-lime);
+  min-height: 100dvh;
+  color: var(--brand-white);
+  background: var(--admin-bg);
+}
+
+.admin-brand h1 { max-width: 30ch; font-size: clamp(1.8rem, 3.2vw, 2.75rem); line-height: 1.12; letter-spacing: -.035em; }
+.admin-brand h2, .admin-brand h3 { letter-spacing: -.015em; }
+.admin-brand input, .admin-brand textarea, .admin-brand select { max-width: 100%; }
+.admin-brand select { color-scheme: dark; }
+.admin-brand header { background-image: linear-gradient(105deg, #23452d55, transparent 60%); }
+.admin-brand button:disabled { cursor: not-allowed; opacity: .55; }
+
+.admin-workload { display: grid; grid-template-columns: 140px 140px minmax(0, 1fr); gap: 1px; overflow: hidden; border: 1px solid var(--admin-line); border-radius: 16px; background: var(--admin-line); }
+.admin-workload > * { padding: 16px 20px; background: var(--admin-surface); }
+.admin-workload span { display: block; color: var(--admin-muted); font-size: 12px; }
+.admin-workload strong { display: block; margin-top: 5px; color: var(--brand-white); font-size: 30px; font-variant-numeric: tabular-nums; line-height: 1.15; }
+.admin-workload > p { align-content: center; color: var(--admin-muted); font-size: 13px; line-height: 1.7; }
+.admin-filterbar { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(140px, 220px) minmax(140px, 200px) auto; gap: 12px; align-items: end; padding: 16px; border: 1px solid var(--admin-line); border-radius: 14px; background: var(--admin-surface); }
+.admin-pagination { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--admin-line); }
+.admin-badge { display: inline-flex; align-items: center; border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 700; line-height: 1.5; }
+.admin-badge-warning { background: #c5a4371a; color: #f4df98; }
+.admin-badge-success { background: #91c4551c; color: #c4ef9a; }
+.admin-draft-recovery { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 18px; border: 1px solid #b0d98b66; border-radius: 14px; background: #1b2d1f; }
+.admin-draft-recovery > div:first-child { flex: 1 1 360px; }
+.admin-editor-status { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; color: var(--admin-muted); font-size: 12px; line-height: 1.6; }
+.admin-map-toolbar { position: sticky; top: 8px; z-index: 10; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-block: 1px solid var(--admin-line); border-radius: 12px 12px 0 0; background: var(--admin-surface); box-shadow: 0 6px 18px #0002; }
+.admin-map-toolbar > div:last-child { flex-wrap: wrap; }
+.admin-map-workspace { overflow: hidden; }
+.admin-map-tools { background: var(--admin-surface); }
+.admin-point-label { padding: 6px 9px; border: 1px solid #b5d88f; border-radius: 7px; background: #122118; color: #e2f4bd; font-size: 12px; font-weight: 700; box-shadow: 0 4px 12px #0003; }
+.admin-publication-review { padding: 12px; border: 1px solid var(--admin-line); border-radius: 10px; font-size: 12px; }
+.admin-publication-review > div + div { margin-top: 10px; }
+.admin-publication-review dt { color: var(--admin-muted); }
+.admin-publication-review dd { margin-top: 3px; overflow-wrap: anywhere; font-weight: 600; }
+@media (min-width: 1280px) {
+  .admin-map-workspace { display: grid; grid-template-columns: minmax(0, 1fr) 240px; grid-template-areas: "layers layers" "canvas tools"; }
+  .admin-map-layers { grid-area: layers; }
+  .admin-map-canvas { grid-area: canvas; height: 520px; }
+  .admin-map-tools { grid-area: tools; max-height: 520px; overflow-y: auto; border-left: 1px solid var(--admin-line); }
+}
+@media (max-width: 1000px) {
+  .admin-filterbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-filterbar > label:first-of-type { grid-column: 1 / -1; }
+}
+@media (max-width: 600px) {
+  .admin-workload { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-workload > p { grid-column: 1 / -1; }
+  .admin-filterbar { grid-template-columns: minmax(0, 1fr); }
+  .admin-pagination { align-items: flex-start; flex-direction: column; }
+  .admin-map-toolbar { position: relative; top: auto; }
 }
 
 .admin-card {

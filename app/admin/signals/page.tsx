@@ -12,6 +12,9 @@ import { redirect } from "next/navigation";
 import { reviewRouteConfirmation } from "@/app/admin/actions";
 import AdminHeader from "@/components/admin/AdminHeader";
 import AdminStatusNav from "@/components/admin/AdminStatusNav";
+import AdminPagination from "@/components/admin/AdminPagination";
+import AdminSubmitButton from "@/components/admin/AdminSubmitButton";
+import { getAdminPendingCounts } from "@/lib/admin-workload";
 import ContributorHistory from "@/components/admin/ContributorHistory";
 import { getAdminAccess } from "@/lib/admin-auth";
 import { getContributorReputations } from "@/lib/community-reputation";
@@ -59,7 +62,7 @@ function formatDate(value: string): string {
   }).format(new Date(value));
 }
 
-type Props = { searchParams: Promise<{ estado?: string; ruta?: string }> };
+type Props = { searchParams: Promise<{ estado?: string; ruta?: string; pagina?: string }> };
 
 export default async function AdminSignalsPage({ searchParams }: Props) {
   const [access, params] = await Promise.all([getAdminAccess(), searchParams]);
@@ -70,17 +73,22 @@ export default async function AdminSignalsPage({ searchParams }: Props) {
 
   const status = safeStatus(params.estado);
   const routeName = params.ruta?.trim().slice(0, 140) ?? "";
-  const countRequests = filters.map((filter) => supabase
+  const requestedPage = Number(params.pagina);
+  const page = Number.isSafeInteger(requestedPage) && requestedPage > 0 && requestedPage <= 100_000 ? requestedPage : 1;
+  const pageSize = 30;
+  const countRequests = filters.map((filter) => filter.value === "pending"
+    ? getAdminPendingCounts().then((counts) => ({ count: counts.signals })) : supabase
     .from("route_confirmations")
     .select("id", { count: "exact", head: true })
     .eq("status", filter.value));
 
   let confirmationQuery = supabase
     .from("route_confirmations")
-    .select("id,route_key,route_name,confirmation_type,note,source_path,submitted_by_hash,status,moderator_note,observed_at")
+    .select("id,route_key,route_name,confirmation_type,note,source_path,submitted_by_hash,status,moderator_note,observed_at", { count: "exact" })
     .eq("status", status)
     .order("observed_at", { ascending: false })
-    .limit(100);
+    .order("id", { ascending: false })
+    .range((page - 1) * pageSize, page * pageSize - 1);
   if (routeName) confirmationQuery = confirmationQuery.eq("route_name", routeName);
 
   const [counts, confirmationResult] = await Promise.all([
@@ -90,11 +98,14 @@ export default async function AdminSignalsPage({ searchParams }: Props) {
   const confirmations = (confirmationResult.data ?? []) as ConfirmationRow[];
   const contributorHistory = await getContributorReputations(confirmations.map((confirmation) => confirmation.submitted_by_hash));
 
-  const filterHref = (nextStatus: ConfirmationStatus) => {
+  const filterHref = (nextStatus: ConfirmationStatus, nextPage = 1) => {
     const query = new URLSearchParams({ estado: nextStatus });
     if (routeName) query.set("ruta", routeName);
+    if (nextPage > 1) query.set("pagina", String(nextPage));
     return `/admin/signals?${query}`;
   };
+  const total = confirmationResult.count ?? 0;
+  if (!confirmationResult.error && page > Math.max(1, Math.ceil(total / pageSize))) redirect(filterHref(status, Math.max(1, Math.ceil(total / pageSize))));
 
   return (
     <main className="min-h-dvh bg-[var(--admin-bg)] text-[var(--brand-white)]">
@@ -122,7 +133,7 @@ export default async function AdminSignalsPage({ searchParams }: Props) {
         }))} />
 
         <section className="py-6" aria-labelledby="signals-title">
-          <div className="mb-5 flex items-center justify-between"><h2 id="signals-title" className="text-sm font-black uppercase text-[var(--admin-muted)]">{filters.find((filter) => filter.value === status)?.label}</h2><span className="text-xs text-[var(--admin-muted)]">Máximo 100 por vista</span></div>
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-2"><h2 id="signals-title" className="text-sm font-black uppercase text-[var(--admin-muted)]">{filters.find((filter) => filter.value === status)?.label}</h2><span className="text-xs text-[var(--admin-muted)]">{confirmationResult.error ? "—" : total} señales · {pageSize} por página</span></div>
 
           {confirmationResult.error ? (
             <p className="border-l-2 border-[#f4c84a] px-4 py-3 text-sm text-[#f4df98]">No se pudo cargar la bandeja: {confirmationResult.error.message}</p>
@@ -156,11 +167,11 @@ export default async function AdminSignalsPage({ searchParams }: Props) {
                       <div className="mt-3 grid grid-cols-2 gap-2">
                         {confirmation.status === "pending" ? (
                           <>
-                            <button name="status" value="accepted" className="admin-button admin-primary inline-flex min-h-11 items-center justify-center gap-2 text-xs font-bold"><CheckCircle2 className="h-4 w-4" aria-hidden="true" /> Aceptar</button>
-                            <button name="status" value="dismissed" className="admin-button inline-flex min-h-11 items-center justify-center gap-2 text-xs font-bold"><XCircle className="h-4 w-4" aria-hidden="true" /> Descartar</button>
+                            <AdminSubmitButton name="status" value="accepted" className="admin-button admin-primary inline-flex min-h-11 items-center justify-center gap-2 text-xs font-bold"><CheckCircle2 className="h-4 w-4" aria-hidden="true" /> Aceptar</AdminSubmitButton>
+                            <AdminSubmitButton name="status" value="dismissed" className="admin-button inline-flex min-h-11 items-center justify-center gap-2 text-xs font-bold"><XCircle className="h-4 w-4" aria-hidden="true" /> Descartar</AdminSubmitButton>
                           </>
                         ) : (
-                          <button name="status" value="pending" className="col-span-2 inline-flex h-10 items-center justify-center gap-2 border border-white/15 text-xs font-bold text-[var(--admin-muted)] transition hover:border-[#6aab48]/50 hover:text-[var(--brand-white)]"><RotateCcw className="h-4 w-4" /> Volver a revisión</button>
+                          <AdminSubmitButton name="status" value="pending" className="col-span-2 inline-flex h-10 items-center justify-center gap-2 border border-white/15 text-xs font-bold text-[var(--admin-muted)] transition hover:border-[#6aab48]/50 hover:text-[var(--brand-white)]"><RotateCcw className="h-4 w-4" /> Volver a revisión</AdminSubmitButton>
                         )}
                       </div>
                     </form>
@@ -170,6 +181,7 @@ export default async function AdminSignalsPage({ searchParams }: Props) {
             </div>
           )}
         </section>
+        {!confirmationResult.error && <AdminPagination itemLabel="señales" page={page} total={total} pageSize={pageSize} href={(nextPage) => filterHref(status, nextPage)} />}
 
         <aside className="flex gap-3 border-t border-[var(--admin-line)] pt-5 text-xs leading-5 text-[var(--admin-muted)]"><Clock3 className="mt-0.5 h-4 w-4 shrink-0 text-[var(--brand-lime)]" /><p>Cada cambio de estado queda registrado con fecha y administrador. Los datos técnicos del dispositivo nunca se muestran en esta pantalla.</p></aside>
       </div>

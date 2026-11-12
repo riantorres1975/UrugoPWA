@@ -3,6 +3,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import AdminHeader from "@/components/admin/AdminHeader";
 import AdminStatusNav from "@/components/admin/AdminStatusNav";
+import AdminPagination from "@/components/admin/AdminPagination";
+import AdminSubmitButton from "@/components/admin/AdminSubmitButton";
+import { REPORT_LABELS, REPORT_PAGE_SIZE, isAgedReport, parseReportFilters, reportSearchExpression, reportsHref, type ReportFilterParams } from "@/lib/admin-report-filters";
+import { getAdminPendingCounts } from "@/lib/admin-workload";
 import ContributorHistory from "@/components/admin/ContributorHistory";
 import ReportPathComparison from "@/components/admin/ReportPathComparison";
 import { getAdminAccess } from "@/lib/admin-auth";
@@ -43,23 +47,6 @@ const filters: ReadonlyArray<{ value: ReportStatus; label: string }> = [
   { value: "rejected", label: "Descartados" },
 ];
 
-const reportLabels: Record<string, string> = {
-  route_incorrect: "Ruta incorrecta",
-  route_missing: "Ruta faltante",
-  route_inactive: "Posiblemente inactiva",
-  route_changed: "Cambio de recorrido",
-  schedule_changed: "Cambio de horario",
-  landmark_changed: "Referencia incorrecta",
-  map_error: "Error de mapa",
-  location_problem: "Problema de ubicación",
-  usability_problem: "Error de uso",
-  other: "Otro",
-};
-
-function safeStatus(value: string | undefined): ReportStatus {
-  return filters.some((filter) => filter.value === value) ? value as ReportStatus : "pending";
-}
-
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat("es-MX", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Mexico_City" }).format(new Date(value));
 }
@@ -73,7 +60,7 @@ function isMissingCommunityApiSchema(error: { code?: string; message?: string } 
     || error.message?.includes("submission_source") === true;
 }
 
-type Props = { searchParams: Promise<{ estado?: string }> };
+type Props = { searchParams: Promise<ReportFilterParams> };
 
 export default async function AdminPage({ searchParams }: Props) {
   const [access, params] = await Promise.all([getAdminAccess(), searchParams]);
@@ -93,47 +80,61 @@ export default async function AdminPage({ searchParams }: Props) {
     );
   }
 
-  const status = safeStatus(params.estado);
+  const selectedFilters = parseReportFilters(params);
+  const { status, search, type, page, oldest, reportId } = selectedFilters;
   const supabase = createSupabaseAdminClient();
   if (!supabase) redirect("/admin/login");
 
-  const countRequests = filters.map((filter) => supabase.from("community_reports").select("id", { count: "exact", head: true }).eq("status", filter.value));
+  const loadReports = (columns: string) => {
+    let query = supabase.from("community_reports").select(columns, { count: "exact" }).eq("status", status);
+    if (search) query = query.or(reportSearchExpression(search));
+    if (type) query = query.eq("report_type", type);
+    if (reportId) query = query.eq("id", reportId);
+    return query.order("created_at", { ascending: oldest }).order("id", { ascending: oldest })
+      .range((page - 1) * REPORT_PAGE_SIZE, page * REPORT_PAGE_SIZE - 1);
+  };
+  const countRequests = filters.map((filter) => filter.value === "pending"
+    ? getAdminPendingCounts().then((counts) => ({ count: counts.reports }))
+    : supabase.from("community_reports").select("id", { count: "exact", head: true }).eq("status", filter.value));
   const [counts, initialReportResult] = await Promise.all([
     Promise.all(countRequests),
-    supabase
-      .from("community_reports")
-      .select("id,api_client_id,route_id,route_key,report_type,route_name,place,description,expected_result,contact,evidence_url,proposed_path,source_path,submission_source,submitted_by_hash,status,moderator_note,created_at")
-      .eq("status", status)
-      .order("created_at", { ascending: false })
-      .limit(50),
+    loadReports("id,api_client_id,route_id,route_key,report_type,route_name,place,description,expected_result,contact,evidence_url,proposed_path,source_path,submission_source,submitted_by_hash,status,moderator_note,created_at"),
   ]);
   let reportError = initialReportResult.error;
-  let reports = (initialReportResult.data ?? []) as CommunityReportRow[];
+  let reports = (initialReportResult.data ?? []) as unknown as CommunityReportRow[];
+  let totalReports = initialReportResult.count ?? 0;
 
   // Keep moderation available while the API migration is being rolled out.
   if (isMissingCommunityApiSchema(initialReportResult.error)) {
-    const legacyResult = await supabase
-      .from("community_reports")
-      .select("id,route_id,route_key,report_type,route_name,place,description,expected_result,contact,evidence_url,proposed_path,source_path,submitted_by_hash,status,moderator_note,created_at")
-      .eq("status", status)
-      .order("created_at", { ascending: false })
-      .limit(50);
+    const legacyResult = await loadReports("id,route_id,route_key,report_type,route_name,place,description,expected_result,contact,evidence_url,proposed_path,source_path,submitted_by_hash,status,moderator_note,created_at");
 
     reportError = legacyResult.error;
-    reports = (legacyResult.data ?? []).map((report) => ({
+    totalReports = legacyResult.count ?? 0;
+    reports = ((legacyResult.data ?? []) as unknown as CommunityReportRow[]).map((report) => ({
       ...report,
       api_client_id: null,
       submission_source: "web" as const,
-    })) as CommunityReportRow[];
+    })) as unknown as CommunityReportRow[];
+  }
+  if (!reportError && page > Math.max(1, Math.ceil(totalReports / REPORT_PAGE_SIZE))) {
+    redirect(reportsHref(selectedFilters, { page: Math.max(1, Math.ceil(totalReports / REPORT_PAGE_SIZE)) }));
   }
   const apiClientIds = [...new Set(reports.map((report) => report.api_client_id).filter((id): id is string => Boolean(id)))];
-  const [contributorHistory, apiClientResult] = await Promise.all([
+  const [contributorHistory, apiClientResult, publicationsResult] = await Promise.all([
     getContributorReputations(reports.map((report) => report.submitted_by_hash)),
     apiClientIds.length > 0
       ? supabase.from("community_api_clients").select("id,name").in("id", apiClientIds)
       : Promise.resolve({ data: [], error: null }),
+    reports.length ? supabase.from("route_revisions").select("report_id,route_id,version,published_at")
+      .in("report_id", reports.map((report) => report.id)).not("published_at", "is", null)
+      .order("published_at", { ascending: false }).limit(500)
+      : Promise.resolve({ data: [], error: null }),
   ]);
   const apiClientNames = new Map((apiClientResult.data ?? []).map((client) => [client.id, client.name]));
+  const publications = new Map<string, { route_id: number; version: number }>();
+  for (const revision of publicationsResult.data ?? []) {
+    if (revision.report_id && !publications.has(revision.report_id)) publications.set(revision.report_id, revision);
+  }
 
   return (
     <main className="min-h-dvh bg-[var(--admin-bg)] text-[var(--brand-white)]">
@@ -152,15 +153,36 @@ export default async function AdminPage({ searchParams }: Props) {
           </div>
         </div>
 
+        <section className="admin-workload mb-6" aria-label="Trabajo pendiente">
+          <div><span>Por revisar</span><strong>{counts[0].count ?? "—"}</strong></div>
+          <div><span>En seguimiento</span><strong>{counts[1].count ?? "—"}</strong></div>
+          <p>Revisa el aviso, comprueba el sentido y publica la corrección desde el editor. Cada publicación conserva su historial.</p>
+        </section>
         <AdminStatusNav label="Filtrar reportes por estado" items={filters.map((filter, index) => ({
-          href: `/admin?estado=${filter.value}`, label: filter.label, selected: status === filter.value, count: counts[index].count,
+          href: reportsHref(selectedFilters, { status: filter.value, page: 1, reportId: undefined }), label: filter.label, selected: status === filter.value, count: counts[index].count,
         }))} />
 
+        <form className="admin-filterbar mt-4" aria-label="Buscar y filtrar reportes">
+          <input type="hidden" name="estado" value={status} />
+          {reportId && <input type="hidden" name="reporte" value={reportId} />}
+          <label className="min-w-0 text-xs font-semibold text-[var(--admin-muted)]">Buscar por ruta, lugar o descripción
+            <input name="buscar" defaultValue={search} maxLength={120} placeholder="Ej. Ruta 26, Centro, cambio de recorrido" className="admin-field mt-1 w-full" />
+          </label>
+          <label className="text-xs font-semibold text-[var(--admin-muted)]">Tipo de aviso
+            <select aria-label="Tipo de aviso" name="tipo" defaultValue={type} className="admin-field mt-1 w-full"><option value="">Todos los tipos</option>{Object.entries(REPORT_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+          </label>
+          <label className="text-xs font-semibold text-[var(--admin-muted)]">Orden
+            <select aria-label="Orden" name="orden" defaultValue={oldest ? "antiguos" : "recientes"} className="admin-field mt-1 w-full"><option value="antiguos">Más antiguos primero</option><option value="recientes">Más recientes primero</option></select>
+          </label>
+          <button className="admin-button admin-primary min-h-11 px-4 text-sm font-bold">Aplicar filtros</button>
+          {(search || type || reportId) && <Link href={reportsHref(selectedFilters, { search: "", type: "", page: 1, reportId: undefined })} className="inline-flex min-h-11 items-center text-xs font-semibold text-[var(--brand-lime)] underline">{reportId ? "Ver todos los reportes" : "Limpiar filtros"}</Link>}
+        </form>
+
         <section className="py-6" aria-labelledby="reports-title">
-          <div className="mb-5 flex items-center justify-between"><h2 id="reports-title" className="text-sm font-black uppercase text-[var(--admin-muted)]">{filters.find((filter) => filter.value === status)?.label}</h2><span className="text-xs text-[var(--admin-muted)]">Máximo 50 por vista</span></div>
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-2"><h2 id="reports-title" className="text-sm font-black uppercase text-[var(--admin-muted)]">{filters.find((filter) => filter.value === status)?.label}</h2><span className="text-xs text-[var(--admin-muted)]">{reportError ? "—" : totalReports} resultados · {REPORT_PAGE_SIZE} por página</span></div>
 
           {reportError ? (
-            <p className="border-l-2 border-[#f4c84a] px-4 py-3 text-sm text-[#f4df98]">No se pudo cargar la bandeja: {reportError.message}</p>
+            <p role="alert" className="admin-card px-4 py-4 text-sm text-[#f4df98]">No se pudo cargar la bandeja. Vuelve a intentarlo conservando los filtros.</p>
           ) : reports.length === 0 ? (
             <div className="grid min-h-56 place-items-center border border-dashed border-white/10 text-center"><div><Search className="mx-auto h-7 w-7 text-[var(--admin-muted)]" /><p className="mt-4 font-serif text-2xl font-black">Nada por aquí.</p><p className="mt-2 text-sm text-[var(--admin-muted)]">No hay reportes en este estado.</p></div></div>
           ) : (
@@ -168,7 +190,11 @@ export default async function AdminPage({ searchParams }: Props) {
               {reports.map((report) => (
                 <article key={report.id} id={`reporte-${report.id}`} className="grid min-w-0 gap-5 rounded-2xl border border-[var(--admin-line)] bg-[var(--admin-surface)] p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_300px]">
                   <div className="min-w-0 [overflow-wrap:anywhere]">
-                    <p className="text-xs font-black uppercase text-[var(--brand-lime)]">{reportLabels[report.report_type] ?? report.report_type}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-xs font-black uppercase text-[var(--brand-lime)]">{REPORT_LABELS[report.report_type] ?? report.report_type}</p>
+                      {(status === "pending" || status === "reviewing") && isAgedReport(report.created_at) && <span className="admin-badge admin-badge-warning">Más de 7 días pendiente</span>}
+                      {publications.get(report.id) && <Link href={`/admin/routes/${publications.get(report.id)!.route_id}#historial`} className="admin-badge admin-badge-success">Corrección publicada · v{publications.get(report.id)!.version}</Link>}
+                    </div>
                     <h3 className="mt-1 text-lg font-bold text-[var(--brand-white)]">{report.route_name || "Sin ruta indicada"}</h3>
                     <p className="mt-1 text-xs leading-5 text-[var(--admin-muted)]">
                       {report.place && <>{report.place} · </>}
@@ -185,7 +211,7 @@ export default async function AdminPage({ searchParams }: Props) {
                       {report.source_path && <Link href={report.source_path} target="_blank" className="hover:text-[var(--brand-lime)]">Abrir página relacionada</Link>}
                       {report.route_key && <Link href={`/ruta/${report.route_key}`} target="_blank" className="hover:text-[var(--brand-lime)]">Ver ficha de la ruta</Link>}
                       {report.evidence_url?.startsWith("https://") && <a href={report.evidence_url} target="_blank" rel="noreferrer" className="font-bold text-[#f4c84a] hover:underline">Abrir evidencia</a>}
-                      {report.contact && <span>Contacto: <span className="text-[var(--admin-muted)]">{report.contact}</span></span>}
+                      {report.contact && <details><summary className="cursor-pointer font-semibold">Ver contacto</summary><p className="mt-2">{report.contact}</p></details>}
                     </div>
                     {report.route_key && Array.isArray(report.proposed_path) && (
                       <ReportPathComparison routeKey={report.route_key} proposedPath={report.proposed_path} />
@@ -197,24 +223,30 @@ export default async function AdminPage({ searchParams }: Props) {
                     <input type="hidden" name="reportId" value={report.id} />
                     <label className="block"><span className="text-xs font-bold text-[var(--admin-muted)]">Nota interna</span><textarea name="note" maxLength={1000} defaultValue={report.moderator_note ?? ""} rows={2} placeholder="Qué se comprobó" className="mt-1 w-full border border-[var(--admin-line)] bg-[var(--brand-header)] px-3 py-2 text-sm text-[var(--brand-white)] placeholder:text-[var(--admin-muted)] focus:border-[var(--brand-lime)]" /></label>
                     <div className="flex flex-wrap gap-1.5 text-xs font-semibold">
-                      <button name="status" value="reviewing" title="Marcar en revisión" className="min-h-11 border border-[var(--admin-line)] px-2.5 hover:border-[var(--brand-lime)]">{report.status === "reviewing" ? "Guardar nota" : "En revisión"}</button>
-                      <button name="status" value="approved" className="min-h-11 border border-[var(--admin-line)] px-2.5 hover:border-[var(--brand-lime)]">{report.status === "approved" ? "Guardar nota" : "Aprobar"}</button>
-                      <button name="status" value="rejected" className="min-h-11 border border-[var(--admin-line)] px-2.5 text-[#f2b7af] hover:border-[#f2b7af]">{report.status === "rejected" ? "Guardar nota" : "Descartar"}</button>
+                      <AdminSubmitButton name="status" value="reviewing" title="Marcar en revisión" className="admin-button min-h-11 px-2.5">{report.status === "reviewing" ? "Guardar nota" : "En revisión"}</AdminSubmitButton>
+                      <AdminSubmitButton name="status" value="approved" className="admin-button min-h-11 px-2.5">{report.status === "approved" ? "Guardar nota" : "Aprobar"}</AdminSubmitButton>
+                      {report.status !== "rejected" ? <details className="basis-full rounded-lg border border-[var(--admin-line)] px-3 py-2">
+                        <summary className="min-h-9 cursor-pointer py-2 text-[#f2b7af]">Descartar reporte</summary>
+                        <p className="my-2 text-xs leading-5 text-[var(--admin-muted)]">Puedes anotar el motivo en la nota interna antes de confirmar.</p>
+                        <AdminSubmitButton name="status" value="rejected" className="admin-button min-h-11 px-3 text-[#f2b7af]">Confirmar descarte</AdminSubmitButton>
+                      </details> : <AdminSubmitButton name="status" value="rejected" className="admin-button min-h-11 px-3">Guardar nota</AdminSubmitButton>}
                     </div>
                     {report.status === "approved" ? (
                       <Link href={getReportRouteEditorHref(report)} className="flex min-h-11 items-center justify-between gap-2 rounded-lg bg-[var(--brand-lime)] px-3 text-sm font-bold text-[var(--brand-deep)]">
                         Editar ruta <ArrowRight className="h-4 w-4" aria-hidden="true" />
                       </Link>
                     ) : report.status !== "rejected" && (report.route_id || report.route_key || report.route_name) ? (
-                      <button name="status" value="approve_edit" className="flex min-h-11 w-full items-center justify-between gap-2 rounded-lg bg-[var(--brand-lime)] px-3 text-left text-sm font-bold text-[var(--brand-deep)]">
+                      <AdminSubmitButton name="status" value="approve_edit" className="flex min-h-11 w-full items-center justify-between gap-2 rounded-lg bg-[var(--brand-lime)] px-3 text-left text-sm font-bold text-[var(--brand-deep)]">
                         Aprobar y editar ruta <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                      </button>
+                      </AdminSubmitButton>
                     ) : null}
                   </form>
                 </article>
               ))}
             </div>
           )}
+          {publicationsResult.error && <p className="mt-3 text-xs text-amber-200">No se pudo comprobar qué reportes tienen una publicación asociada.</p>}
+          {!reportError && <AdminPagination page={page} total={totalReports} pageSize={REPORT_PAGE_SIZE} href={(page) => reportsHref(selectedFilters, { page })} />}
         </section>
 
         <aside className="mt-4 flex gap-3 border-t border-[var(--admin-line)] pt-5 text-xs leading-5 text-[var(--admin-muted)]"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--brand-lime)]" /><p>Aprobar un reporte reconoce que la información es válida; publicar una nueva geometría será un paso separado y versionado.</p></aside>

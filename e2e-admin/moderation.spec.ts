@@ -157,7 +157,7 @@ test.describe("moderación con Supabase aislado", () => {
     await page.getByLabel("Qué comprobaste y cómo").fill(verificationNote);
     await page.getByRole("button", { name: "Confirmar verificación" }).click();
     await expect(page).toHaveURL(new RegExp(`/admin/routes/${routeId}\\?verificada=1$`));
-    await expect(page.getByRole("status")).toContainText("Verificación de campo registrada");
+    await expect(page.getByRole("status").filter({ hasText: "Verificación de campo registrada" })).toBeVisible();
     await expect(page.getByText(verificationNote, { exact: true })).toBeVisible();
 
     const { data: verifiedRoute, error: verifiedRouteError } = await adminClient

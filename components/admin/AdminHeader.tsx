@@ -2,7 +2,7 @@ import { ClipboardList, KeyRound, LogOut, RadioTower, Route, ThumbsUp } from "lu
 import Link from "next/link";
 import { signOutAdmin } from "@/app/admin/actions";
 import SiteBrand from "@/components/SiteBrand";
-import { createSupabaseAdminClient } from "@/lib/supabase/server";
+import { getAdminPendingCounts } from "@/lib/admin-workload";
 
 type Props = {
   email: string;
@@ -19,15 +19,9 @@ function PendingCount({ count }: { count: number }) {
 }
 
 export default async function AdminHeader({ email, active }: Props) {
-  const supabase = createSupabaseAdminClient();
-  const [reportsResult, signalsResult] = supabase
-    ? await Promise.all([
-        supabase.from("community_reports").select("id", { count: "exact", head: true }).eq("status", "pending"),
-        supabase.from("route_confirmations").select("id", { count: "exact", head: true }).eq("status", "pending"),
-      ])
-    : [{ count: 0 }, { count: 0 }];
-  const pendingReports = reportsResult.count ?? 0;
-  const pendingSignals = signalsResult.count ?? 0;
+  const pending = await getAdminPendingCounts();
+  const pendingReports = pending.reports ?? 0;
+  const pendingSignals = pending.signals ?? 0;
 
   const links = [
     { href: "/admin", id: "reports", label: "Reportes", icon: ClipboardList, count: pendingReports },

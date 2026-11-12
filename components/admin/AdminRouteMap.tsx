@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Feature, FeatureCollection, LineString, Point } from "geojson";
-import type { GeoJSONSource, Map } from "mapbox-gl";
+import type { GeoJSONSource, Map, Marker } from "mapbox-gl";
 import type { RouteSegmentDraft } from "@/lib/admin-route";
 import { getBoundsFromCoordinates, getMapStyle, URUAPAN_CENTER } from "@/lib/map";
 import type { Coordinates } from "@/lib/types";
@@ -72,8 +72,25 @@ function relatedGeometry(paths: Coordinates[][]): FeatureCollection<LineString> 
 export default function AdminRouteMap(props: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Map | null>(null);
+  const markerRef = useRef<Marker | null>(null);
   const latest = useRef(props);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const { selected, draft: draftPath } = props;
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const marker = markerRef.current;
+    const point = selected === null ? null : draftPath[selected];
+    if (!map || !marker || status !== "ready") return;
+    if (!point) { marker.remove(); return; }
+    marker.getElement().textContent = `Punto ${selected! + 1}`;
+    marker.setLngLat(point).addTo(map);
+    const screen = map.project(point);
+    const container = map.getContainer();
+    if (screen.x < 45 || screen.y < 65 || screen.x > container.clientWidth - 45 || screen.y > container.clientHeight - 45) {
+      map.easeTo({ center: point, zoom: Math.max(14, map.getZoom()), duration: 350 });
+    }
+  }, [selected, draftPath, status]);
 
   useEffect(() => {
     latest.current = props;
@@ -96,6 +113,7 @@ export default function AdminRouteMap(props: Props) {
 
   useEffect(() => {
     let disposed = false;
+    let resizeObserver: ResizeObserver | null = null;
     const timeout = window.setTimeout(() => setStatus("error"), 15000);
 
     async function initialize() {
@@ -110,6 +128,19 @@ export default function AdminRouteMap(props: Props) {
           projection: "mercator",
         });
         mapRef.current = map;
+        resizeObserver = new ResizeObserver(() => {
+          if (disposed) return;
+          map.resize();
+          const path = latest.current.draft;
+          if (map.isStyleLoaded() && path.length > 1) {
+            map.fitBounds(getBoundsFromCoordinates(path), { padding: 40, maxZoom: 16, duration: 0 });
+          }
+        });
+        resizeObserver.observe(containerRef.current);
+        const label = document.createElement("div");
+        label.className = "admin-point-label";
+        label.style.pointerEvents = "none";
+        markerRef.current = new mapbox.Marker({ element: label, anchor: "bottom", offset: [0, -14] });
         map.addControl(new mapbox.NavigationControl({ showCompass: false }));
         map.on("load", () => {
           const { published, draft, relatedPaths, showPublished, showRelated } = latest.current;
@@ -187,14 +218,29 @@ export default function AdminRouteMap(props: Props) {
     return () => {
       disposed = true;
       window.clearTimeout(timeout);
+      resizeObserver?.disconnect();
       mapRef.current?.remove();
+      markerRef.current?.remove();
+      markerRef.current = null;
       mapRef.current = null;
     };
   }, []);
 
   return (
-    <div className="relative h-[340px] bg-[var(--brand-header)] sm:h-[460px]">
+    <div className="admin-map-canvas relative h-[340px] bg-[var(--brand-header)] sm:h-[460px]">
       <div ref={containerRef} aria-label="Mapa del recorrido" className="absolute inset-0" />
+      {status === "ready" && <div className="absolute bottom-3 right-3 flex flex-wrap gap-2">
+        {props.segment?.start != null && props.segment.end != null && <button type="button" className="admin-button min-h-11 px-3 text-xs font-bold" onClick={() => {
+          const segment = latest.current.segment;
+          if (segment?.start == null || segment.end == null) return;
+          const path = latest.current.draft;
+          mapRef.current?.fitBounds(getBoundsFromCoordinates([path[segment.start], ...segment.points, path[segment.end]]), { padding: 48, maxZoom: 17, duration: 400 });
+        }}>Ver tramo A–B</button>}
+        <button type="button" className="admin-button min-h-11 px-3 text-xs font-bold" onClick={() => {
+          const path = latest.current.draft;
+          if (path.length) mapRef.current?.fitBounds(getBoundsFromCoordinates(path), { padding: 40, maxZoom: 16, duration: 400 });
+        }}>Ver recorrido completo</button>
+      </div>}
       {status === "ready" && (
         <span className="pointer-events-none absolute left-3 top-3 max-w-[calc(100%-80px)] rounded-lg bg-[var(--brand-header)] px-2.5 py-1.5 text-xs font-bold text-[var(--brand-lime)] [overflow-wrap:anywhere]">
           Editando {props.directionLabel}

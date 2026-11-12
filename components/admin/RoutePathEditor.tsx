@@ -1,8 +1,10 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, MapPinned, PencilLine, Plus, RotateCcw, Route, Save, Trash2, Undo2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, MapPinned, PencilLine, Plus, Redo2, RotateCcw, Route, Save, Trash2, Undo2 } from "lucide-react";
 import Link from "next/link";
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { readEditorDraft, removeEditorDraft, sameEditorRoute, saveEditorDraft, type EditorDraft } from "@/lib/admin-route-draft";
+import { haversineMeters } from "@/lib/geo";
 import { publishRouteRevision } from "@/app/admin/actions";
 import AdminRouteMap from "@/components/admin/AdminRouteMap";
 import RoutePreviewSVG from "@/components/RoutePreviewSVG";
@@ -47,6 +49,11 @@ export default function RoutePathEditor({ route, directionLabel, relatedDirectio
   const original = JSON.stringify(route.path);
   const [path, setPath] = useState(original);
   const [undo, setUndo] = useState<string[]>([]);
+  const [redo, setRedo] = useState<string[]>([]);
+  const [recovery, setRecovery] = useState<EditorDraft | null>(null);
+  const [draftReady, setDraftReady] = useState(false);
+  const [draftNotice, setDraftNotice] = useState("");
+  const [pointNumber, setPointNumber] = useState("");
   const [color, setColor] = useState(route.color);
   const [name, setName] = useState(route.name);
   const [direction, setDirection] = useState(route.originalName);
@@ -80,7 +87,84 @@ export default function RoutePathEditor({ route, directionLabel, relatedDirectio
   const pathChanged = !!draft && JSON.stringify(draft) !== JSON.stringify(published);
   const hasUnsavedChanges = path !== original || name !== route.name || direction !== route.originalName
     || operationalStatus !== route.operationalStatus || width !== String(route.corridorWidthM)
-    || color !== route.color || summary !== "" || !!segment?.points.length;
+    || color !== route.color || summary !== "" || !!segment;
+  const reportId = linkedReport?.id ?? null;
+  const editorSnapshot = useMemo(() => ({ routeId: route.id, baseVersion: route.dataVersion, reportId,
+    path, name, direction, color, width, operationalStatus, summary, segment }),
+  [route.id, route.dataVersion, reportId, path, name, direction, color, width, operationalStatus, summary, segment]);
+  const originalSnapshot = useMemo(() => ({ path: original, name: route.name, direction: route.originalName,
+    color: route.color, width: String(route.corridorWidthM), operationalStatus: route.operationalStatus }),
+    [original, route.name, route.originalName, route.color, route.corridorWidthM, route.operationalStatus]);
+  const distanceM = useMemo(() => draft?.reduce((total, point, i) => total + (i ? haversineMeters(draft[i - 1], point) : 0), 0) ?? 0, [draft]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const saved = readEditorDraft(route.id, reportId);
+      if (saved?.submitted && saved.baseVersion < route.dataVersion && sameEditorRoute(saved, originalSnapshot)) {
+        try { removeEditorDraft(route.id, reportId); } catch { /* Keep editing if storage is unavailable. */ }
+      } else if (saved) setRecovery(saved);
+      setDraftReady(true);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [route.id, route.dataVersion, reportId, originalSnapshot]);
+
+  useEffect(() => {
+    if (!draftReady || recovery || pending) return;
+    const timer = window.setTimeout(() => {
+      try {
+        if (hasUnsavedChanges) {
+          saveEditorDraft(editorSnapshot);
+          setDraftNotice("Borrador guardado en este dispositivo durante 7 días. Todavía no está publicado.");
+        } else {
+          removeEditorDraft(route.id, reportId);
+          setDraftNotice("");
+        }
+      } catch { setDraftNotice("No pudimos guardar el borrador en este dispositivo. Mantén la página abierta hasta publicar."); }
+    }, 600);
+    return () => window.clearTimeout(timer);
+  }, [draftReady, recovery, pending, hasUnsavedChanges, editorSnapshot, route.id, reportId]);
+
+  const latestDraft = useRef({ editorSnapshot, save: false });
+  useEffect(() => { latestDraft.current = { editorSnapshot, save: draftReady && !recovery && !pending && hasUnsavedChanges }; },
+    [editorSnapshot, draftReady, recovery, pending, hasUnsavedChanges]);
+  useEffect(() => () => {
+    if (latestDraft.current.save) {
+      try { saveEditorDraft(latestDraft.current.editorSnapshot); } catch { /* The visible save notice already explains storage errors. */ }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hasUnsavedChanges || pending) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      if (latestDraft.current.save) { try { saveEditorDraft(latestDraft.current.editorSnapshot); } catch { /* The browser warning still protects unsaved work. */ } }
+      event.preventDefault(); event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [hasUnsavedChanges, pending]);
+
+  function restoreDraft() {
+    if (!recovery || recovery.baseVersion !== route.dataVersion) return;
+    setPath(recovery.path); setName(recovery.name); setDirection(recovery.direction); setColor(recovery.color);
+    setWidth(recovery.width); setOperationalStatus(recovery.operationalStatus); setSummary(recovery.summary);
+    setSegment(recovery.segment); setMapOpen(true); setUndo([]); setRedo([]); setSelected(null); setMode("select");
+    setRecovery(null); setConfirming(false); setDraftNotice("Borrador recuperado. Revisa el recorrido antes de publicar.");
+  }
+
+  function travelHistory(forward: boolean) {
+    const source = forward ? redo : undo;
+    if (!source.length || pending || segment) return;
+    const next = source[source.length - 1];
+    if (forward) { setUndo((items) => [...items.slice(-19), path]); setRedo(source.slice(0, -1)); }
+    else { setRedo((items) => [...items.slice(-19), path]); setUndo(source.slice(0, -1)); }
+    setPath(next); clearSelection(); setConfirming(false);
+  }
+
+  function startSegment() {
+    if (!draft || pending) return;
+    setMapOpen(true); setSegment({ start: null, end: null, points: [] });
+    setMode("select"); setPointError(""); setConfirming(false);
+  }
 
   function clearSelection() {
     setMode("select");
@@ -91,7 +175,10 @@ export default function RoutePathEditor({ route, directionLabel, relatedDirectio
 
   function setDraft(next: Coordinates[], nextSelection: number | null = null, nextMode: MapMode = "select") {
     const serialized = JSON.stringify(next);
-    if (serialized !== path) setUndo((history) => [...history.slice(-7), path]);
+    if (serialized !== path) {
+      setUndo((history) => [...history.slice(-19), path]);
+      setRedo([]);
+    }
     setPath(serialized);
     setMode(nextMode);
     setSegment(null);
@@ -180,7 +267,15 @@ export default function RoutePathEditor({ route, directionLabel, relatedDirectio
 
   return (
     <form action={action} className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_370px]"
-      onSubmit={(event) => { if (segment) event.preventDefault(); }}
+      onSubmit={(event) => {
+        if (segment) event.preventDefault();
+        else { try { saveEditorDraft({ ...editorSnapshot, submitted: true }); } catch { /* Publication can continue without local storage. */ } }
+      }}
+      onKeyDown={(event) => {
+        if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "z") return;
+        if ((event.target as HTMLElement).closest("input,textarea,select,[contenteditable=true]")) return;
+        event.preventDefault(); travelHistory(event.shiftKey);
+      }}
       onChange={() => setConfirming(false)}
       onInvalid={(event) => {
         const details = (event.target as HTMLElement).closest("details");
@@ -191,16 +286,45 @@ export default function RoutePathEditor({ route, directionLabel, relatedDirectio
       <input type="hidden" name="path" value={path} />
       {linkedReport && <input type="hidden" name="reportId" value={linkedReport.id} />}
 
-      <section className="admin-card min-w-0 overflow-hidden" aria-label="Editor del recorrido">
+      {recovery && <section className="admin-draft-recovery xl:col-span-2" aria-label="Borrador recuperable">
+        <div><h3 className="font-bold">Tienes un borrador en este dispositivo</h3>
+          <p className="mt-1 text-sm leading-6 text-[var(--admin-muted)]">Guardado el {new Date(recovery.savedAt).toLocaleString("es-MX", { timeZone: "America/Mexico_City" })}. {recovery.baseVersion === route.dataVersion
+            ? "Puedes continuar donde te quedaste o descartarlo antes de empezar otro cambio."
+            : `Se hizo sobre la versión ${recovery.baseVersion}; la ruta ya está en la versión ${route.dataVersion}. Descárgalo para comparar antes de editar la versión actual.`}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {recovery.baseVersion === route.dataVersion && <button type="button" onClick={restoreDraft} className={`${buttonClass} admin-primary`}>Recuperar borrador</button>}
+          <button type="button" className={buttonClass} onClick={() => {
+            const url = URL.createObjectURL(new Blob([JSON.stringify(recovery, null, 2)], { type: "application/json" }));
+            const link = document.createElement("a"); link.href = url; link.download = `urugo-ruta-${route.id}-borrador.json`;
+            link.click(); window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
+          }}><Download className="h-4 w-4" aria-hidden="true" /> Descargar borrador</button>
+          <button type="button" className={buttonClass} onClick={() => {
+            try { removeEditorDraft(route.id, reportId); setRecovery(null); }
+            catch { setDraftNotice("No pudimos quitar el borrador. Comprueba el espacio disponible."); }
+          }}>Descartar borrador guardado</button>
+        </div>
+      </section>}
+
+      <div className="admin-editor-status xl:col-span-2" role="status">
+        <span className={hasUnsavedChanges ? "admin-badge admin-badge-warning" : "admin-badge admin-badge-success"}>{hasUnsavedChanges ? "Cambios sin publicar" : `Versión ${route.dataVersion} publicada`}</span>
+        <span>{draftNotice || "El borrador se guarda automáticamente en este dispositivo mientras editas."}</span>
+      </div>
+
+      <section className="admin-card min-w-0" aria-label="Editor del recorrido">
         <div className="flex flex-wrap items-center justify-between gap-3 p-4">
           <div>
             <h3 className="text-base font-bold">Recorrido</h3>
             <p className="mt-0.5 text-xs text-[var(--admin-muted)]">{draft ? `${draft.length} puntos · ${pathChanged ? "Borrador modificado" : "Trazado actual"}` : "Coordenadas inválidas"}</p>
+            {draft && <p className="mt-1 text-xs text-[var(--admin-muted)]">{(distanceM / 1000).toFixed(2)} km de trazado · {directionLabel}</p>}
           </div>
-          <button type="button" disabled={!!segment} onClick={() => { setMapOpen(!mapOpen); clearSelection(); }}
+          <div className="flex flex-wrap gap-2">
+          <button type="button" disabled={pending || !!segment || !draft} onClick={startSegment} className={`${buttonClass} admin-primary`}><Route className="h-4 w-4" aria-hidden="true" /> Cambiar un tramo</button>
+          <button type="button" disabled={!!segment || pending} onClick={() => { setMapOpen(!mapOpen); clearSelection(); }}
             aria-expanded={mapOpen} className={buttonClass}>
             <MapPinned className="h-4 w-4" aria-hidden="true" /> {mapOpen ? "Cerrar mapa" : "Editar en el mapa"}
           </button>
+          </div>
         </div>
 
         <div className="space-y-2 border-t border-[var(--admin-line)] px-4 py-3">
@@ -221,8 +345,21 @@ export default function RoutePathEditor({ route, directionLabel, relatedDirectio
 
         {mapOpen ? (
           <>
+            <div className="admin-map-toolbar">
+              <div><p className="text-xs font-bold text-[var(--brand-lime)]">{segment ? segment.start === null ? "1 / 3 · Elige dónde empieza" : segment.end === null ? "2 / 3 · Elige dónde termina" : "3 / 3 · Traza y une el cambio" : "Edita el recorrido en orden"}</p>
+                <p className="mt-1 text-sm text-[var(--admin-muted)]">{segment ? "Solo cambia el tramo entre A y B. El resto del recorrido se conserva." : "Elige un punto para moverlo, quitarlo o agregar otros a su lado."}</p></div>
+              <div className="flex gap-2">
+                {segment && <>
+                  {drawingSegment && <button type="button" disabled={!joinedDraft || pending} className={`${buttonClass} admin-primary`} onClick={() => { if (joinedDraft) setDraft(joinedDraft); }}>Unir al recorrido</button>}
+                  <button type="button" disabled={pending} className={buttonClass} onClick={clearSelection}>Cancelar tramo</button>
+                </>}
+                <button type="button" disabled={!undo.length || pending || !!segment} onClick={() => travelHistory(false)} className={buttonClass} title="Deshacer · Ctrl+Z"><Undo2 className="h-4 w-4" aria-hidden="true" /> Deshacer</button>
+                <button type="button" disabled={!redo.length || pending || !!segment} onClick={() => travelHistory(true)} className={buttonClass} title="Rehacer · Ctrl+Mayús+Z"><Redo2 className="h-4 w-4" aria-hidden="true" /> Rehacer</button>
+              </div>
+            </div>
+            <div className="admin-map-workspace">
             {(published || relatedPaths.length > 0) && (
-              <details className="border-t border-[var(--admin-line)] px-4 py-3">
+              <details className="admin-map-layers border-t border-[var(--admin-line)] px-4 py-3">
                 <summary className="cursor-pointer text-sm font-semibold">Capas de referencia</summary>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {published && <button type="button" aria-pressed={showPublished} onClick={() => setShowPublished(!showPublished)}
@@ -238,7 +375,7 @@ export default function RoutePathEditor({ route, directionLabel, relatedDirectio
               selected={selected} insertionSegment={insertionSegment} segment={segment}
               placing={mode !== "select" || drawingSegment} onPick={pickPoint}
             />
-            <div className="space-y-3 border-t border-[var(--admin-line)] p-4">
+            <div className="admin-map-tools space-y-3 border-t border-[var(--admin-line)] p-4">
               <div className="flex flex-wrap gap-3 text-xs font-semibold">
                 <span className="text-amber-200">Dorado · borrador de {directionLabel}</span>
                 {showPublished && <span className="text-blue-300">Azul discontinuo · publicado de {directionLabel}</span>}
@@ -249,12 +386,7 @@ export default function RoutePathEditor({ route, directionLabel, relatedDirectio
                 {!!segment?.points.length && <span className="text-violet-300">Morado · tramo nuevo</span>}
               </div>
               {draft && !segment && (
-                <button type="button" disabled={pending} className={`${buttonClass} admin-primary`} onClick={() => {
-                  setSegment({ start: null, end: null, points: [] });
-                  setMode("select");
-                  setPointError("");
-                  setConfirming(false);
-                }}><Route className="h-4 w-4" aria-hidden="true" /> Reemplazar tramo</button>
+                <button type="button" disabled={pending} className={buttonClass} onClick={startSegment}><Route className="h-4 w-4" aria-hidden="true" /> Reemplazar tramo</button>
               )}
               {segment && (
                 <div className="space-y-2 rounded-xl border border-violet-300/40 bg-violet-300/10 p-3">
@@ -265,11 +397,10 @@ export default function RoutePathEditor({ route, directionLabel, relatedDirectio
                       : segment.start === null ? "Toca un punto del recorrido para marcar dónde comienza el cambio."
                         : `A está en el punto ${segment.start + 1}. Toca otro punto del recorrido para marcar dónde termina el cambio.`}
                   </p>
+                  {drawingSegment && <p className="text-xs text-violet-200">{Math.abs(segment.start! - segment.end!) === 2 ? "Se reemplaza 1 punto intermedio" : `Se reemplazan ${Math.abs(segment.start! - segment.end!) - 1} puntos intermedios`} por {segment.points.length} nuevos. Las conexiones A y B se conservan.</p>}
                   <div className="flex flex-wrap gap-2">
                     {drawingSegment ? (
                       <>
-                        <button type="button" disabled={!joinedDraft} className={`${buttonClass} admin-primary`}
-                          onClick={() => { if (joinedDraft) setDraft(joinedDraft); }}>Unir al recorrido</button>
                         <button type="button" disabled={!segment.points.length} className={buttonClass}
                           onClick={() => { setSegment({ ...segment, points: segment.points.slice(0, -1) }); setPointError(""); }}>Quitar último punto nuevo</button>
                       </>
@@ -277,7 +408,6 @@ export default function RoutePathEditor({ route, directionLabel, relatedDirectio
                       <button type="button" disabled={selected === segment.start} className={buttonClass}
                         onClick={() => chooseConnection(selected)}>Usar punto {selected + 1} como {segment.start === null ? "A" : "B"}</button>
                     )}
-                    <button type="button" className={buttonClass} onClick={clearSelection}>Cancelar tramo</button>
                   </div>
                 </div>
               )}
@@ -293,6 +423,12 @@ export default function RoutePathEditor({ route, directionLabel, relatedDirectio
                     className={`${buttonClass} w-11 px-0`} aria-label={selected === null ? "Seleccionar primer punto" : "Seleccionar punto siguiente"}><ChevronRight className="h-4 w-4" aria-hidden="true" /></button>
                 </div>
               )}
+              {draft && !drawingSegment && <div className="flex flex-wrap items-end gap-2">
+                <label className="text-xs font-semibold text-[var(--admin-muted)]">Ir al punto
+                  <input type="text" inputMode="numeric" value={pointNumber} onChange={(event) => setPointNumber(event.target.value.slice(0, 6))} className="admin-field ml-2 w-24" aria-label="Número de punto" />
+                </label>
+                <button type="button" className={buttonClass} disabled={pending || !Number.isInteger(Number(pointNumber)) || Number(pointNumber) < 1 || Number(pointNumber) > draft.length} onClick={() => selectPoint(Number(pointNumber) - 1)}>Seleccionar punto</button>
+              </div>}
               {!segment && <p className="text-sm text-[var(--admin-muted)]" role="status">{draft ? mapHint : "Corrige las coordenadas para seguir editando en el mapa."}</p>}
               {selected !== null && draft && !segment && (
                 <div className="flex flex-wrap gap-2">
@@ -312,6 +448,7 @@ export default function RoutePathEditor({ route, directionLabel, relatedDirectio
               )}
               {pointError && <p role="alert" className="text-xs text-amber-200">{pointError}</p>}
             </div>
+            </div>
           </>
         ) : (
           <div className="admin-route-preview grid min-h-48 place-items-center border-y border-[var(--admin-line)] px-4" role="img" aria-label="Vista previa del recorrido">
@@ -324,17 +461,16 @@ export default function RoutePathEditor({ route, directionLabel, relatedDirectio
           {proposedPath && (
             <button type="button" disabled={pending} onClick={() => setDraft(proposedPath)} className={buttonClass}>Cargar propuesta como borrador</button>
           )}
-          <button type="button" disabled={!undo.length || pending} onClick={() => {
-            setPath(undo[undo.length - 1]);
-            setUndo(undo.slice(0, -1));
-            clearSelection();
-            setConfirming(false);
+          {!mapOpen && <><button type="button" disabled={!undo.length || pending} onClick={() => {
+            travelHistory(false);
           }} className={buttonClass}><Undo2 className="h-4 w-4" aria-hidden="true" /> Deshacer</button>
+          <button type="button" disabled={!redo.length || pending} onClick={() => travelHistory(true)} className={buttonClass}><Redo2 className="h-4 w-4" aria-hidden="true" /> Rehacer</button>
+          </>}
           <button type="button" disabled={path === original || !published || pending} onClick={() => { if (published) setDraft(published); }} className={buttonClass}>
             <RotateCcw className="h-4 w-4" aria-hidden="true" /> Recuperar trazado
           </button>
         </div>
-        {proposedPath && <p className="px-4 pb-3 text-xs text-[var(--admin-muted)]">La propuesta sustituye el trazado del borrador. Comprueba que cubra el recorrido completo.</p>}
+        {proposedPath && <p className="px-4 pb-3 text-xs text-[var(--admin-muted)]">La propuesta sustituye todo el trazado. Para corregir solo una parte, usa «Cambiar un tramo».</p>}
         <details className="border-t border-[var(--admin-line)] p-4">
           <summary className="cursor-pointer text-sm font-bold">Coordenadas avanzadas</summary>
           <label className="mt-3 block text-xs font-bold text-[var(--admin-muted)]">
@@ -354,7 +490,7 @@ export default function RoutePathEditor({ route, directionLabel, relatedDirectio
         </label>
         <label className="block text-xs font-bold text-[var(--admin-muted)]">
           Estado operativo
-          <select name="operationalStatus" value={operationalStatus} onChange={(event) => setOperationalStatus(event.target.value)} className={fieldClass}>
+          <select aria-label="Estado operativo" name="operationalStatus" value={operationalStatus} onChange={(event) => setOperationalStatus(event.target.value)} className={fieldClass}>
             <option value="active">Activa</option>
             <option value="under_review">En revisión</option>
             <option value="inactive">Inactiva</option>
@@ -390,6 +526,7 @@ export default function RoutePathEditor({ route, directionLabel, relatedDirectio
           {confirming ? (
             <>
               <p className="text-sm text-[var(--admin-muted)]">La versión {route.dataVersion + 1} se publicará para {directionLabel} (#{route.id}). Las versiones guardadas se pueden restaurar desde el historial.</p>
+              <dl className="admin-publication-review"><div><dt>Recorrido</dt><dd>{pathChanged ? "Modificado" : "Sin cambios"} · {draft?.length} puntos</dd></div><div><dt>Nombre</dt><dd>{name}</dd></div><div><dt>Sentido</dt><dd>{direction}</dd></div><div><dt>Estado</dt><dd>{({ active: "Activa", under_review: "En revisión", inactive: "Inactiva", historical: "Histórica" } as Record<string, string>)[operationalStatus]}</dd></div></dl>
               <button type="submit" disabled={pending || !draft} className="admin-button admin-primary min-h-11 w-full px-3 text-sm font-bold">{pending ? "Publicando…" : `Confirmar publicación de versión ${route.dataVersion + 1}`}</button>
               <button type="button" disabled={pending} onClick={() => setConfirming(false)} className={`${buttonClass} w-full`}>Volver a editar</button>
             </>

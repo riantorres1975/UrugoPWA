@@ -96,7 +96,7 @@ export default async function AdminRoutePage({ params, searchParams }: Props) {
     <main className="min-h-dvh bg-[var(--admin-bg)] text-[var(--brand-white)]">
       <AdminHeader email={access.email} active="routes" />
       <div className="mx-auto max-w-[1500px] px-5 py-8 sm:px-8 lg:py-10">
-        <Link href={linkedReport ? `/admin?estado=approved#reporte-${linkedReport.id}` : "/admin/routes"} className="inline-flex min-h-11 items-center gap-2 text-xs font-bold text-[var(--admin-muted)] transition hover:text-[var(--brand-lime)]"><ArrowLeft className="h-4 w-4" aria-hidden="true" /> {linkedReport ? "Volver al reporte" : "Volver a rutas"}</Link>
+        <Link href={linkedReport ? `/admin?estado=approved&reporte=${linkedReport.id}#reporte-${linkedReport.id}` : "/admin/routes"} className="inline-flex min-h-11 items-center gap-2 text-xs font-bold text-[var(--admin-muted)] transition hover:text-[var(--brand-lime)]"><ArrowLeft className="h-4 w-4" aria-hidden="true" /> {linkedReport ? "Volver al reporte" : "Volver a rutas"}</Link>
 
         <div className="mt-6 flex flex-col gap-5 border-b border-[var(--admin-line)] pb-8 md:flex-row md:items-end md:justify-between">
           <div>
