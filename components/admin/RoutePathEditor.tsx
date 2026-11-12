@@ -370,6 +370,11 @@ export default function RoutePathEditor({ route, directionLabel, relatedDirectio
               <div><p className="text-xs font-bold text-[var(--brand-lime)]">{segment ? segment.start === null ? "1 / 3 · Elige dónde empieza" : segment.end === null ? "2 / 3 · Elige dónde termina" : "3 / 3 · Traza y une el cambio" : "Edita el recorrido en orden"}</p>
                 <p className="mt-1 text-sm text-[var(--admin-muted)]">{segment ? "Solo cambia el tramo entre A y B. El resto del recorrido se conserva." : "Elige un punto para moverlo, quitarlo o agregar otros a su lado."}</p></div>
               <div className="flex gap-2">
+                {relatedPaths.length > 0 && <button type="button" disabled={pending} aria-pressed={showRelated}
+                  onClick={() => setShowRelated(!showRelated)} className={buttonClass}>
+                  <span aria-hidden="true" className="h-2 w-5 border-t-2 border-dashed border-teal-300" />
+                  {showRelated ? "Ocultar" : "Mostrar"} {relatedDirections.length === 1 ? "sentido opuesto" : "otros sentidos"}
+                </button>}
                 {segment && <>
                   {drawingSegment && <button type="button" disabled={!joinedDraft || pending} className={`${buttonClass} admin-primary`} onClick={() => { if (joinedDraft) setDraft(joinedDraft); }}>Unir al recorrido</button>}
                   <button type="button" disabled={pending} className={buttonClass} onClick={clearSelection}>Cancelar tramo</button>
@@ -379,14 +384,12 @@ export default function RoutePathEditor({ route, directionLabel, relatedDirectio
               </div>
             </div>
             <div className="admin-map-workspace">
-            {(published || relatedPaths.length > 0) && (
+            {published && (
               <details className="admin-map-layers border-t border-[var(--admin-line)] px-4 py-3">
                 <summary className="cursor-pointer text-sm font-semibold">Capas de referencia</summary>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {published && <button type="button" aria-pressed={showPublished} onClick={() => setShowPublished(!showPublished)}
                     className={buttonClass}>Comparar con publicado</button>}
-                  {relatedPaths.length > 0 && <button type="button" aria-pressed={showRelated} onClick={() => setShowRelated(!showRelated)}
-                    className={buttonClass}>Mostrar {otherDirectionsLabel}</button>}
                 </div>
               </details>
             )}
@@ -400,8 +403,9 @@ export default function RoutePathEditor({ route, directionLabel, relatedDirectio
             <div className="admin-map-tools space-y-3 border-t border-[var(--admin-line)] p-4">
               <div className="flex flex-wrap gap-3 text-xs font-semibold">
                 <span className="text-amber-200">Dorado · borrador de {directionLabel}</span>
+                <span className="text-amber-200"><span aria-hidden="true">›</span> Flechas · sentido del recorrido</span>
                 {showPublished && <span className="text-blue-300">Azul discontinuo · publicado de {directionLabel}</span>}
-                {showRelated && <span className="text-teal-300">Verde discontinuo · {otherDirectionsLabel}</span>}
+                {showRelated && <span className="text-teal-300">Turquesa discontinuo · {otherDirectionsLabel} · solo referencia</span>}
                 {insertionSegment !== null && draft?.[insertionSegment] && draft[insertionSegment + 1] && <span className="text-violet-300">Morado · tramo de inserción</span>}
                 {segment?.start != null && <span className="text-lime-200">Verde claro · conexión A</span>}
                 {drawingSegment && <span className="text-orange-200">Naranja · conexión B</span>}

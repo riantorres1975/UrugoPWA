@@ -70,10 +70,13 @@ function geometry(points: Coordinates[], edit?: Pick<Props, "selected" | "insert
     });
   }
   if (drawing && segment?.points.length) {
+    const replacement = [points[start], ...segment.points, points[end]];
+    // A/B describe the edit gesture; circulation still follows the point order.
+    if (start > end) replacement.reverse();
     features.push({
       type: "Feature",
       properties: { kind: "replacement" },
-      geometry: { type: "LineString", coordinates: [points[start], ...segment.points, points[end]] },
+      geometry: { type: "LineString", coordinates: replacement },
     });
   }
   if (edit) {
@@ -99,6 +102,20 @@ function relatedGeometry(paths: Coordinates[][]): FeatureCollection<LineString> 
       geometry: { type: "LineString", coordinates: path },
     })),
   };
+}
+
+function addDirectionIcon(map: Map, id: string, color: string) {
+  const arrow = document.createElement("canvas");
+  arrow.width = arrow.height = 48;
+  const context = arrow.getContext("2d");
+  if (!context) return false;
+  context.lineCap = context.lineJoin = "round";
+  context.beginPath();
+  context.moveTo(16, 13); context.lineTo(30, 24); context.lineTo(16, 35);
+  context.strokeStyle = "#ffffff"; context.lineWidth = 8; context.stroke();
+  context.strokeStyle = color; context.lineWidth = 4; context.stroke();
+  map.addImage(id, context.getImageData(0, 0, 48, 48), { pixelRatio: 2 });
+  return true;
 }
 
 export default function AdminRouteMap(props: Props) {
@@ -150,7 +167,9 @@ export default function AdminRouteMap(props: Props) {
   useEffect(() => {
     const map = mapRef.current;
     if (map?.getLayer("published")) map.setLayoutProperty("published", "visibility", showPublished ? "visible" : "none");
-    if (map?.getLayer("related-directions")) map.setLayoutProperty("related-directions", "visibility", showRelated ? "visible" : "none");
+    for (const id of ["related-directions", "related-directions-casing", "related-directions-arrows"]) {
+      if (map?.getLayer(id)) map.setLayoutProperty(id, "visibility", showRelated ? "visible" : "none");
+    }
   }, [showPublished, showRelated]);
 
   useEffect(() => {
@@ -190,10 +209,26 @@ export default function AdminRouteMap(props: Props) {
           map.addSource("related-directions", { type: "geojson", data: relatedGeometry(relatedPaths) });
           map.addSource("draft", { type: "geojson", data: geometry(draft, latest.current) });
           map.addSource("review", { type: "geojson", data: reviewGeometry(latest.current) });
+          const hasDraftArrow = addDirectionIcon(map, "admin-route-direction", "#473306");
+          const hasRelatedArrow = addDirectionIcon(map, "admin-related-direction", "#0f766e");
+          map.addLayer({
+            id: "related-directions-casing", type: "line", source: "related-directions",
+            paint: { "line-color": "#ffffff", "line-width": 9, "line-opacity": 0.9 },
+            layout: { visibility: showRelated ? "visible" : "none", "line-join": "round", "line-cap": "round" },
+          });
           map.addLayer({
             id: "related-directions", type: "line", source: "related-directions",
-            paint: { "line-color": "#0f766e", "line-width": 4, "line-dasharray": [2, 1.5] },
+            paint: { "line-color": "#0f766e", "line-width": 7, "line-dasharray": [2, 1.5] },
             layout: { "visibility": showRelated ? "visible" : "none", "line-join": "round", "line-cap": "round" },
+          });
+          if (hasRelatedArrow) map.addLayer({
+            id: "related-directions-arrows", type: "symbol", source: "related-directions",
+            layout: {
+              visibility: showRelated ? "visible" : "none", "symbol-placement": "line", "symbol-spacing": 140,
+              "icon-image": "admin-related-direction", "icon-offset": [0, 9],
+              "icon-rotation-alignment": "map", "icon-pitch-alignment": "map",
+              "icon-keep-upright": false, "icon-allow-overlap": true, "icon-ignore-placement": true,
+            },
           });
           map.addLayer({
             id: "published", type: "line", source: "published",
@@ -229,6 +264,17 @@ export default function AdminRouteMap(props: Props) {
             paint: { "line-color": "#334155", "line-width": 3, "line-dasharray": [1, 2] } });
           map.addLayer({ id: "review-points", type: "circle", source: "review", filter: ["==", ["geometry-type"], "Point"],
             paint: { "circle-color": ["get", "color"], "circle-radius": 7, "circle-stroke-width": 2, "circle-stroke-color": "#ffffff" } });
+          if (hasDraftArrow) map.addLayer({
+            id: "draft-direction", type: "symbol", source: "draft",
+            filter: ["all", ["==", ["geometry-type"], "LineString"], ["in", ["get", "kind"], ["literal", ["route", "replacement"]]]],
+            layout: {
+              "symbol-placement": "line", "symbol-spacing": 100,
+              "icon-image": "admin-route-direction",
+              "icon-size": ["interpolate", ["linear"], ["zoom"], 11, 0.85, 16, 1, 19, 1.1],
+              "icon-rotation-alignment": "map", "icon-pitch-alignment": "map",
+              "icon-keep-upright": false, "icon-allow-overlap": true, "icon-ignore-placement": true,
+            },
+          }, "review-points");
           const points = [...published, ...draft];
           if (points.length) map.fitBounds(getBoundsFromCoordinates(points), { padding: 34, maxZoom: 16, duration: 0 });
           map.getCanvas().style.cursor = latest.current.placing ? "crosshair" : "grab";
@@ -279,6 +325,10 @@ export default function AdminRouteMap(props: Props) {
     <div className="admin-map-canvas relative h-[340px] bg-[var(--brand-header)] sm:h-[460px]">
       <div ref={containerRef} aria-label="Mapa del recorrido" className="absolute inset-0" />
       {status === "ready" && <div className="absolute bottom-3 right-3 flex flex-wrap gap-2">
+        {props.showRelated && props.relatedPaths.length > 0 && <button type="button" className="admin-button min-h-11 px-3 text-xs font-bold" onClick={() => {
+          const points = [...latest.current.draft, ...latest.current.relatedPaths.flat()];
+          if (points.length > 1) mapRef.current?.fitBounds(getBoundsFromCoordinates(points), { padding: 40, maxZoom: 16, duration: 400 });
+        }}>{props.relatedPaths.length === 1 ? "Ver ambos sentidos" : "Ver todos los sentidos"}</button>}
         {props.segment?.start != null && props.segment.end != null && <button type="button" className="admin-button min-h-11 px-3 text-xs font-bold" onClick={() => {
           const segment = latest.current.segment;
           if (segment?.start == null || segment.end == null) return;

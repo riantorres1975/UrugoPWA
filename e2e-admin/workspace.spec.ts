@@ -187,6 +187,15 @@ test("cambia solo un tramo, deshace, rehace y recupera el borrador al recargar",
   const editor = page.getByRole("region", { name: "Editor del recorrido" });
   await editor.getByRole("button", { name: "Cambiar un tramo" }).click();
   await expect(editor.getByRole("button", { name: "Ver recorrido completo" })).toBeVisible();
+  await editor.getByRole("button", { name: "Mostrar sentido opuesto" }).click();
+  await expect(editor.getByRole("button", { name: "Ocultar sentido opuesto" })).toHaveAttribute("aria-pressed", "true");
+  await expect(editor.getByRole("button", { name: "Ver ambos sentidos" })).toBeVisible();
+  expect(JSON.parse(await page.locator('input[name="path"]').inputValue())).toEqual(path);
+  await page.waitForTimeout(350); // Allow Mapbox's newly visible symbols to finish appearing.
+  await editor.screenshot({ path: testInfo.outputPath("sentido-opuesto.png") });
+  await editor.getByRole("button", { name: "Ocultar sentido opuesto" }).click();
+  await expect(editor.getByRole("button", { name: "Mostrar sentido opuesto" })).toHaveAttribute("aria-pressed", "false");
+  await expect(editor.getByRole("button", { name: "Ver ambos sentidos" })).not.toBeVisible();
   await editor.getByLabel("Número de punto").fill("2");
   await editor.getByRole("button", { name: "Seleccionar punto", exact: true }).click();
   await editor.getByRole("button", { name: "Usar punto 2 como A" }).click();
