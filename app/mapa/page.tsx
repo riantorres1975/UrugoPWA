@@ -16,6 +16,7 @@ import FareUpdateNotice from "@/components/FareUpdateNotice";
 import ActiveRouteSummary from "@/components/ActiveRouteSummary";
 import JourneyPreview from "@/components/JourneyPreview";
 const JourneyFeedback = dynamic(() => import("@/components/JourneyFeedback"), { ssr: false });
+const SupportReminder = dynamic(() => import("@/components/SupportReminder"), { ssr: false });
 import RouteFreshness from "@/components/RouteFreshness";
 import NearbyToast from "@/components/NearbyToast";
 import OnboardingGate from "@/components/OnboardingGate";
@@ -1868,6 +1869,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
         {showSavedJourneys && <SavedJourneys />}
       </BottomSheet>
       <OnboardingGate />
+      <SupportReminder blocked={isTripActive || !!recoverableTrip || isSheetOpen || resultSheetOpen || showSavedJourneys || isCalculatingSuggestions || isLoadingData || flowStep === 3} />
       <PendingJourneyReports />
       <FareUpdateNotice deferUntilOnboarding />
     </main>

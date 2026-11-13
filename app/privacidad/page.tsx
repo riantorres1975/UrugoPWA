@@ -23,6 +23,10 @@ export const metadata: Metadata = {
 
 const SECTIONS = [
   {
+    title: "Apoyos voluntarios",
+    body: "Los pagos se realizan en PayPal o en el medio externo que elijas; UruGo no recibe datos de tarjetas ni contraseñas bancarias. Si envías un aviso de apoyo, guardamos en Supabase el medio, monto, identificador privado del pago y tu elección de privacidad para comprobarlo. El equipo revisa el pago antes de publicar un agradecimiento. Puedes aparecer con nombre o seudónimo, como anónimo o no aparecer. El monto solo se publica si lo autorizas; los avisos pendientes y las referencias de pago nunca son públicos. Para solicitar una corrección o retirar tu reconocimiento, contáctanos desde la página Acerca de e indica la referencia en privado. El recordatorio del mapa guarda únicamente visitas aproximadas y la fecha para volver a mostrarlo en tu dispositivo; se puede cerrar durante 30 días y no se envía esa información al servidor."
+  },
+  {
     title: "Uso de ubicación",
     body: `Si autorizas la ubicación, el navegador la usa para encontrar rutas cercanas. ${APP_BRAND.name} no la guarda en una base de datos. Al planear un viaje con conexión, envía a Mapbox las coordenadas de los accesos a pie de las opciones finalistas, incluido el origen y destino elegidos, para calcular caminatas por calles. Estos resultados se conservan temporalmente en la memoria del navegador durante la sesión. Al usar el asistente, la posición se redondea y se procesa temporalmente en el servidor para identificar rutas cercanas; las coordenadas exactas no se envían al proveedor de inteligencia artificial.`
   },

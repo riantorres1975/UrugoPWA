@@ -170,6 +170,8 @@ El token público de Mapbox debe restringirse por dominio desde el panel de Mapb
 
 Los enlaces de apoyo, la CLABE y el nombre del destinatario se renderizan en la página pública `/apoyar`. Configura únicamente datos destinados a compartirse y nunca contraseñas, tokens bancarios u otras credenciales.
 
+Los avisos de aportaciones se guardan pendientes en Supabase y se verifican en `/admin/apoyos` contra el pago recibido. Inicio y `/apoyar` reconocen únicamente apoyos confirmados con la privacidad autorizada: nombre, anónimo o sin publicación, y monto opcional. El recordatorio de la PWA se puede cerrar por 30 días y se oculta durante búsquedas y viajes. Consulta la [configuración y el flujo de verificación](docs/support-contributions.md).
+
 El resumen administrativo se programa una vez al día y sólo se envía cuando existen reportes o señales por revisar. Requiere `CRON_SECRET`, `RESEND_API_KEY` y un remitente de un dominio verificado en Resend.
 
 En producción conviene configurar Upstash para que los límites de solicitudes se compartan entre todas las instancias. El webhook operativo es opcional: recibe únicamente errores críticos de React, deduplicados por huella durante 15 minutos, sin mensajes, trazas ni ubicación del usuario.

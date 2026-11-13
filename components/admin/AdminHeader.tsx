@@ -1,4 +1,4 @@
-import { ClipboardList, KeyRound, LogOut, RadioTower, Route, ThumbsUp } from "lucide-react";
+import { ClipboardList, Heart, KeyRound, LogOut, RadioTower, Route, ThumbsUp } from "lucide-react";
 import Link from "next/link";
 import { signOutAdmin } from "@/app/admin/actions";
 import SiteBrand from "@/components/SiteBrand";
@@ -6,7 +6,7 @@ import { getAdminPendingCounts } from "@/lib/admin-workload";
 
 type Props = {
   email: string;
-  active: "integrations" | "reports" | "routes" | "signals" | "feedback";
+  active: "integrations" | "reports" | "routes" | "signals" | "feedback" | "support";
 };
 
 function PendingCount({ count }: { count: number }) {
@@ -28,6 +28,7 @@ export default async function AdminHeader({ email, active }: Props) {
     { href: "/admin/routes", id: "routes", label: "Rutas", icon: Route },
     { href: "/admin/signals", id: "signals", label: "Señales", icon: RadioTower, count: pendingSignals },
     { href: "/admin/feedback", id: "feedback", label: "Opiniones", icon: ThumbsUp },
+    { href: "/admin/apoyos", id: "support", label: "Apoyos", icon: Heart },
     { href: "/admin/integrations", id: "integrations", label: "Integraciones", icon: KeyRound },
   ];
 
@@ -48,7 +49,7 @@ export default async function AdminHeader({ email, active }: Props) {
             </form>
           </div>
         </div>
-        <nav className="mt-2 grid grid-cols-5 gap-0.5 border-t border-[var(--admin-line)] pt-2 sm:flex sm:flex-wrap sm:gap-1" aria-label="Administración">
+        <nav className="mt-2 grid grid-cols-3 gap-0.5 border-t border-[var(--admin-line)] pt-2 sm:flex sm:flex-wrap sm:gap-1" aria-label="Administración">
           {links.map(({ id, href, label, icon: Icon, count }) => (
             <Link key={id} href={href} aria-current={active === id ? "page" : undefined}
               aria-label={id === "integrations" ? label : undefined}

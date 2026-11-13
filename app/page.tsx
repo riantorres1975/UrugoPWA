@@ -13,6 +13,8 @@ import LandingRanking from "@/components/LandingRanking";
 import ForceDark from "@/components/ForceDark";
 import FareUpdateNotice from "@/components/FareUpdateNotice";
 import PublicFooter from "@/components/PublicFooter";
+import SupportWall from "@/components/SupportWall";
+import { getSupportWall } from "@/lib/support-contributions-server";
 import {
   APP_BRAND,
   FARES_2026,
@@ -26,6 +28,7 @@ import { getTripActivity } from "@/lib/trip-activity-server";
 import { SITE_URL } from "@/lib/site-url";
 
 import "./landing.css";
+import "./support.css";
 
 const URBAN_FARE_DISPLAY = FARES_2026.urbanBus.price.replace(/\.00$/, "");
 const TELEFERICO_FARE_DISPLAY = FARES_2026.teleferico.price.replace(/\.00$/, "");
@@ -149,7 +152,7 @@ const organizationJsonLd = {
 };
 
 export default async function LandingPage() {
-  const [{ basedOnUsage, routes: popularRoutes }, activity] = await Promise.all([getPopularRoutes(4), getTripActivity()]);
+  const [{ basedOnUsage, routes: popularRoutes }, activity, supportWall] = await Promise.all([getPopularRoutes(4), getTripActivity(), getSupportWall()]);
 
   return (
     <div className="premium-home landing-home" data-theme="dark">
@@ -220,6 +223,7 @@ export default async function LandingPage() {
           </div>
         </section>
 
+        <div className="support-home"><div className="wrap"><SupportWall compact data={supportWall} /></div></div>
         <section className="wrap section faq" aria-labelledby="faq-title">
           <div>
             <p className="micro label">04 / Antes de salir</p>
