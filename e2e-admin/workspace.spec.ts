@@ -101,27 +101,44 @@ test("revisa la propuesta de calles antes de unirla y marca los segmentos sustit
 });
 
 test("busca referencias y prueba subidas y bajadas sobre el borrador", async ({ page }) => {
-  await page.goto(`/admin/routes/${routeId}`);
-  const editor = page.getByRole("region", { name: "Editor del recorrido" });
-  await editor.getByRole("button", { name: "Editar en el mapa", exact: true }).click();
-  await expect(editor.getByRole("button", { name: "Ver recorrido completo" })).toBeVisible();
-  await editor.getByLabel("Buscar calle, colonia o referencia").fill("Centro");
-  await editor.getByRole("button", { name: "Buscar en mapa" }).click();
-  await editor.getByRole("button", { name: "Centro", exact: true }).click();
-  await expect(editor.getByRole("status").filter({ hasText: "Mapa centrado en Centro" })).toBeVisible();
-  await editor.getByRole("button", { name: "Ver recorrido completo" }).click();
-  await page.waitForTimeout(450);
-  await editor.getByText("Probar un viaje antes de publicar", { exact: true }).click();
-  for (const [target, x] of [["origen", .25], ["destino", .75]] as const) {
-    await editor.getByRole("button", { name: `Marcar ${target} de prueba` }).click();
-    const canvas = editor.getByLabel("Mapa del recorrido"); await canvas.scrollIntoViewIfNeeded();
-    const box = (await canvas.boundingBox())!;
-    await page.mouse.click(box.x + box.width * x, box.y + box.height * .5);
-  }
-  await editor.getByRole("button", { name: "Calcular prueba" }).click();
-  await expect(editor.getByText("Incluye el borrador", { exact: false })).toBeVisible();
-  await editor.getByRole("button", { name: "Ver subidas, bajadas y cambio" }).first().click();
-  await expect(page.locator('input[name="path"]')).toHaveValue(JSON.stringify(path));
+  let releaseRemote!: () => void;
+  let remoteStarted = false;
+  let remoteFinished = false;
+  const remoteGate = new Promise<void>((resolve) => { releaseRemote = resolve; });
+  await page.route(/^https:\/\/api\.mapbox\.com\/search\/searchbox\/v1\/forward\?/, async (request) => {
+    remoteStarted = true;
+    await remoteGate;
+    await request.fulfill({ json: { features: [] } }).catch(() => {});
+    remoteFinished = true;
+  });
+  try {
+    await page.goto(`/admin/routes/${routeId}`);
+    const editor = page.getByRole("region", { name: "Editor del recorrido" });
+    await editor.getByRole("button", { name: "Editar en el mapa", exact: true }).click();
+    await expect(editor.getByRole("button", { name: "Ver recorrido completo" })).toBeVisible();
+    await editor.getByLabel("Buscar calle, colonia o referencia").fill("Centro");
+    await editor.getByRole("button", { name: "Buscar en mapa" }).click();
+    await expect.poll(() => remoteStarted).toBe(true);
+    await editor.getByRole("button", { name: "Centro", exact: true }).click();
+    releaseRemote();
+    await expect.poll(() => remoteFinished).toBe(true);
+    await expect(editor.getByRole("status").filter({ hasText: "Mapa centrado en Centro" })).toBeVisible();
+    await editor.getByRole("button", { name: "Ver recorrido completo" }).click();
+    await page.waitForTimeout(450);
+    await expect(editor.getByRole("status").filter({ hasText: "Mapa centrado en Centro" })).toBeVisible();
+    await expect(editor.getByRole("list", { name: "Lugares encontrados" })).toHaveCount(0);
+    await editor.getByText("Probar un viaje antes de publicar", { exact: true }).click();
+    for (const [target, x] of [["origen", .25], ["destino", .75]] as const) {
+      await editor.getByRole("button", { name: `Marcar ${target} de prueba` }).click();
+      const canvas = editor.getByLabel("Mapa del recorrido"); await canvas.scrollIntoViewIfNeeded();
+      const box = (await canvas.boundingBox())!;
+      await page.mouse.click(box.x + box.width * x, box.y + box.height * .5);
+    }
+    await editor.getByRole("button", { name: "Calcular prueba" }).click();
+    await expect(editor.getByText("Incluye el borrador", { exact: false })).toBeVisible();
+    await editor.getByRole("button", { name: "Ver subidas, bajadas y cambio" }).first().click();
+    await expect(page.locator('input[name="path"]')).toHaveValue(JSON.stringify(path));
+  } finally { releaseRemote(); }
 });
 
 test("sincroniza el borrador entre dispositivos y rechaza sobrescrituras concurrentes", async ({ page, browser }) => {

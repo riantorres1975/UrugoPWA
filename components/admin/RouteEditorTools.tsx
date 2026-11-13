@@ -17,7 +17,7 @@ export function EditorPlaceSearch({ onLocate }: { onLocate: (point: Coordinates)
   const [notice, setNotice] = useState("");
   const request = useRef(0);
   const abort = useRef<AbortController | null>(null);
-  useEffect(() => () => abort.current?.abort(), []);
+  useEffect(() => () => { request.current++; abort.current?.abort(); }, []);
   async function search() {
     const id = ++request.current;
     abort.current?.abort(); abort.current = new AbortController();
@@ -36,7 +36,10 @@ export function EditorPlaceSearch({ onLocate }: { onLocate: (point: Coordinates)
     </label><button type="button" className={button} disabled={query.trim().length < 3} onClick={() => void search()}>Buscar en mapa</button></div>
     {notice && <p role="status" className="text-xs text-[var(--admin-muted)]">{notice}</p>}
     {results.length > 0 && <ul className="space-y-1" aria-label="Lugares encontrados">{results.map((place, index) => <li key={`${place.label}-${index}`}>
-      <button type="button" className={`${button} w-full text-left`} onClick={() => { onLocate(place.center); setResults([]); setNotice(`Mapa centrado en ${place.label}.`); }}>{place.label}</button>
+      <button type="button" className={`${button} w-full text-left`} onClick={() => {
+        request.current++; abort.current?.abort();
+        onLocate(place.center); setResults([]); setNotice(`Mapa centrado en ${place.label}.`);
+      }}>{place.label}</button>
     </li>)}</ul>}
   </div>;
 }
