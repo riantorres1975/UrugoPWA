@@ -3,6 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "@/app/api/chat/route";
 import { SAFE_CHAT_FALLBACK } from "@/lib/chat-response";
 import { resetMemoryRateLimitsForTests } from "@/lib/rate-limit";
+import { getPublishedRouteData } from "@/lib/route-repository";
+import routeData from "@/data/rutas_produccion_final.json";
+vi.mock("@/lib/route-repository", () => ({ getPublishedRouteData: vi.fn(async () => ({ routes: routeData, source: "static", version: "test" })) }));
 
 const originalApiKey = process.env.DEEPSEEK_API_KEY;
 
@@ -60,6 +63,50 @@ describe("POST /api/chat", () => {
     const upstream = JSON.parse(String(init.body));
     expect(upstream.messages.slice(1).every((item: { role: string }) => item.role === "user"))
       .toBe(true);
+    expect(upstream.model).toBe("deepseek-flash");
+    expect(upstream.thinking).toEqual({ type: "disabled" });
+    expect(upstream.response_format).toEqual({ type: "json_object" });
+    expect(upstream.max_tokens).toBe(64);
+  });
+
+  it("responde turismo y tarifas aunque la IA no esté configurada", async () => {
+    delete process.env.DEEPSEEK_API_KEY;
+    const fetchMock = vi.fn(); vi.stubGlobal("fetch", fetchMock);
+    const tourist = await POST(chatRequest({ message: "Qué visitar en Uruapan", history: [], location: null }, "127.0.0.31"));
+    expect((await tourist.json()).places).toHaveLength(6);
+    expect(tourist.headers.get("cache-control")).toBe("private, no-store");
+    const fare = await POST(chatRequest({ message: "Cuánto cuesta el camión", history: [], location: null }, "127.0.0.32"));
+    expect((await fare.json()).reply).toContain("$12.00");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("usa la intención de la IA pero no publica sus indicaciones", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ choices: [{ message: { content: '{"intent":"culture"}' } }] })));
+    const response = await POST(chatRequest({ message: "Me apetece un plan diferente", history: [], location: null }, "127.0.0.33"));
+    const answer = await response.json();
+    expect(answer.places.every((place: { category: string }) => place.category === "Cultura")).toBe(true);
+    expect(answer.reply).not.toContain('"intent"');
+  });
+
+  it("rechaza instrucciones generadas aunque contengan una ruta real", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ choices: [{ message: { content: '{"intent":"directions","reply":"Toma la Ruta 2 al Centro"}' } }] })));
+    const response = await POST(chatRequest({ message: "Oriéntame por favor", history: [], location: null }, "127.0.0.34"));
+    expect((await response.json()).reply).toBe(SAFE_CHAT_FALLBACK);
+  });
+
+  it("un fallo del proveedor conserva opciones útiles en vez de Sin respuesta", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 503 })));
+    const response = await POST(chatRequest({ message: "Orientación general", history: [], location: null }, "127.0.0.35"));
+    expect(response.status).toBe(200);
+    const answer = await response.json(); expect(answer.reply).toContain("no está disponible");
+    expect(answer.actions.some((action: { href: string }) => action.href === "/mapa")).toBe(true);
+  });
+
+  it("carga la red publicada para resolver un trayecto sin consumir IA", async () => {
+    const fetchMock = vi.fn(); vi.stubGlobal("fetch", fetchMock);
+    const response = await POST(chatRequest({ message: "Salgo de la Central de Autobuses", history: [{ role: "user", text: "Cómo llego al Parque Nacional" }], location: null }, "127.0.0.36"));
+    expect((await response.json()).reply).toContain("Desde Central de Autobuses");
+    expect(getPublishedRouteData).toHaveBeenCalled(); expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("sustituye una respuesta del proveedor fuera del dominio", async () => {

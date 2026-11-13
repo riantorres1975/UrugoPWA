@@ -2,6 +2,11 @@
 
 import { useState, useRef, useEffect, useMemo, useCallback, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
+import { ArrowLeft, ArrowUp, ArrowUpRight, Check, ChevronDown, Clock, Compass, Copy, Flag, MapPin, Plus, Square, Wallet, X } from 'lucide-react';
+import ChatBotIcon from '@/components/ChatBotIcon';
+import { safeChatHref, type ChatAnswer } from '@/lib/chat-types';
+import { isWithinUruapanServiceArea } from '@/lib/geo';
+import './chatbot.css';
 
 const ISSUE_URL = 'https://github.com/riantorres1975/rutasuruapanpwa/issues/new';
 const REPORT_EMAIL = 'contacto@urugo.app';
@@ -17,13 +22,13 @@ const subscribeMobile = (callback: () => void) => {
 
 // Preguntas de arranque: enseñan qué puede responder el bot con un tap.
 const SUGGESTED_QUESTIONS = [
-  '¿Qué ruta me deja en el Centro?',
-  '¿Cómo llego al Hospital Regional?',
-  '¿Cuánto cuesta el pasaje?',
-  '¿Hasta qué hora pasa la Ruta 11?',
+  { question: '¿Qué puedo visitar en Uruapan?', title: 'Explorar Uruapan', description: 'Naturaleza, cultura y comida', Icon: Compass },
+  { question: '¿Cómo llego al Parque Nacional?', title: 'Planear mi viaje', description: 'Ejemplo: al Parque Nacional', Icon: MapPin },
+  { question: '¿Cuánto cuesta el pasaje?', title: 'Tarifas y pagos', description: 'Pasajes y tarjeta de movilidad', Icon: Wallet },
+  { question: '¿Hasta qué hora pasa la Ruta 11?', title: 'Consultar horarios', description: 'Ejemplo: frecuencia de la Ruta 11', Icon: Clock },
 ] as const;
 
-type Message = { role: 'user' | 'bot'; text: string };
+type Message = { role: 'user' | 'bot'; text: string; error?: boolean } & Omit<ChatAnswer, 'reply'>;
 type UserLocation = { lat: number; lng: number } | null;
 type View = 'chat' | 'report';
 
@@ -35,12 +40,20 @@ export default function ChatBot({ initialOpen = false }: { initialOpen?: boolean
   const [loading, setLoading] = useState(false);
   const [location, setLocation] = useState<UserLocation>(null);
   const [locStatus, setLocStatus] = useState<'idle' | 'granted' | 'denied'>('idle');
+  const [locNotice, setLocNotice] = useState('');
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [copyNotice, setCopyNotice] = useState('');
+  const locationTime = useRef(0);
+  const locationRequest = useRef(0);
+  const pendingRequest = useRef<AbortController | null>(null);
+  const requestId = useRef(0);
+  const sending = useRef(false);
   const [desktopStyle, setDesktopStyle] = useState<React.CSSProperties>({});
   const mounted = useSyncExternalStore(subscribeHydration, getClientSnapshot, getServerSnapshot);
   const isMobile = useSyncExternalStore(subscribeMobile, getMobileSnapshot, getServerSnapshot);
   // Altura en px del sheet cuando el teclado reduce el viewport visual
   // (fallback para navegadores que panean en vez de redimensionar, ej. iOS).
-  const [keyboardSheetHeight, setKeyboardSheetHeight] = useState<number | null>(null);
+  const [keyboardViewport, setKeyboardViewport] = useState<{ height: number; bottom: number } | null>(null);
 
   // Reporte
   const [reportRoute, setReportRoute] = useState('');
@@ -88,17 +101,15 @@ export default function ChatBot({ initialOpen = false }: { initialOpen?: boolean
   const btnRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const lastMessageRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Bloquear scroll del body cuando el chat está abierto en mobile
   useEffect(() => {
-    if (!mounted) return;
-    if (open && isMobile) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
+    if (!mounted || !open || !isMobile) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = previous; };
   }, [open, isMobile, mounted]);
 
   // Teclado en mobile: si el navegador panea en vez de redimensionar (iOS),
@@ -112,7 +123,7 @@ export default function ChatBot({ initialOpen = false }: { initialOpen?: boolean
       // El teclado está abierto si el viewport visual es bastante más chico
       // que el de layout (si el layout ya se encogió, no hace falta ajustar).
       const keyboardOpen = vv.height < window.innerHeight - 80;
-      setKeyboardSheetHeight(keyboardOpen ? Math.round(vv.height) : null);
+      setKeyboardViewport(keyboardOpen ? { height: Math.round(vv.height), bottom: Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)) } : null);
     };
     update();
     vv.addEventListener('resize', update);
@@ -142,11 +153,15 @@ export default function ChatBot({ initialOpen = false }: { initialOpen?: boolean
   const calcDesktopStyle = useCallback(() => {
     if (!btnRef.current) return;
     const rect = btnRef.current.getBoundingClientRect();
+    const below = window.innerHeight - rect.bottom;
+    const useAbove = rect.top > below;
+    const width = Math.min(420, window.innerWidth - 24);
     setDesktopStyle({
-      top: rect.bottom + 8,
-      right: window.innerWidth - rect.right,
-      width: 320,
-      maxHeight: window.innerHeight - rect.bottom - 16,
+      ...(useAbove ? { bottom: window.innerHeight - rect.top + 10 } : { top: rect.bottom + 10 }),
+      left: Math.min(Math.max(12, rect.right - width), window.innerWidth - width - 12),
+      width,
+      height: Math.min(700, (useAbove ? rect.top : below) - 22),
+      maxHeight: window.innerHeight - 24,
     });
   }, []);
 
@@ -154,19 +169,27 @@ export default function ChatBot({ initialOpen = false }: { initialOpen?: boolean
     if (!open || isMobile) return;
     calcDesktopStyle();
     window.addEventListener('resize', calcDesktopStyle);
-    setTimeout(() => inputRef.current?.focus(), 50);
-    return () => window.removeEventListener('resize', calcDesktopStyle);
+    const timer = setTimeout(() => inputRef.current?.focus(), 50);
+    return () => { clearTimeout(timer); window.removeEventListener('resize', calcDesktopStyle); };
   }, [open, isMobile, calcDesktopStyle]);
 
-  // En mobile: focus al input cuando se abre
+  // Focus the dialog without opening the mobile keyboard.
   useEffect(() => {
-    if (open && isMobile) {
-      setTimeout(() => inputRef.current?.focus(), 300);
-    }
+    if (open && isMobile) panelRef.current?.focus({ preventScroll: true });
   }, [open, isMobile]);
 
   useEffect(() => {
-    if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const field = inputRef.current;
+    if (!field) return;
+    field.style.height = 'auto';
+    field.style.height = `${Math.min(field.scrollHeight, 112)}px`;
+  }, [input, open, view]);
+
+  useEffect(() => {
+    if (open && messages.length > 0) {
+      const target = messages.at(-1)?.role === 'bot' ? lastMessageRef.current : bottomRef.current;
+      target?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
+    }
   }, [messages, open]);
 
   useEffect(() => {
@@ -198,27 +221,56 @@ export default function ChatBot({ initialOpen = false }: { initialOpen?: boolean
   }, [open]);
 
   const requestLocation = useCallback(() => {
-    if (!navigator.geolocation) { setLocStatus('denied'); return; }
+    const id = ++locationRequest.current;
+    setLocNotice('Consultando ubicación…');
+    if (!navigator.geolocation) { setLocStatus('denied'); setLocNotice('Puedes escribir tu origen o elegirlo en el mapa.'); return; }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        if (id !== locationRequest.current) return;
+        if (pos.coords.accuracy > 250 || !isWithinUruapanServiceArea([pos.coords.longitude, pos.coords.latitude])) {
+          setLocation(null); setLocStatus('denied'); setLocNotice('La ubicación no es suficientemente precisa o está fuera de la zona. Elige tu origen en el mapa.'); return;
+        }
         setLocation({
-          lat: Number(pos.coords.latitude.toFixed(3)),
-          lng: Number(pos.coords.longitude.toFixed(3)),
+          lat: Number(pos.coords.latitude.toFixed(5)),
+          lng: Number(pos.coords.longitude.toFixed(5)),
         });
+        locationTime.current = Date.now();
+        setLocNotice('');
         setLocStatus('granted');
       },
-      () => setLocStatus('denied'),
-      { timeout: 6000 }
+      () => { if (id !== locationRequest.current) return; setLocation(null); setLocStatus('denied'); setLocNotice('No pude obtener tu ubicación. Puedes escribir desde dónde sales.'); },
+      { timeout: 8000, maximumAge: 60000, enableHighAccuracy: true }
     );
   }, []);
 
+  useEffect(() => () => { requestId.current++; locationRequest.current++; pendingRequest.current?.abort(); }, []);
+  useEffect(() => {
+    if (!location) return;
+    const timer = setTimeout(() => {
+      setLocation(null); setLocStatus('idle'); setLocNotice('La ubicación caducó. Compártela otra vez o escribe tu origen.');
+    }, Math.max(0, 5 * 60000 - (Date.now() - locationTime.current)));
+    return () => clearTimeout(timer);
+  }, [location]);
+
+  function newConversation() {
+    requestId.current++; locationRequest.current++; pendingRequest.current?.abort(); sending.current = false;
+    setLoading(false); setMessages([]); setInput(''); setLocation(null); setLocStatus('idle'); setLocNotice('');
+    setCopiedIndex(null); setCopyNotice('');
+    if (!isMobile) inputRef.current?.focus();
+  }
+
   const send = useCallback(async (forcedText?: string) => {
     const text = (forcedText ?? input).trim();
-    if (!text || loading) return;
+    if (!text || sending.current) return;
+    sending.current = true;
+    const id = ++requestId.current;
+    const abort = new AbortController(); pendingRequest.current = abort;
+    const timeout = setTimeout(() => abort.abort(), 20000);
     const userMsg: Message = { role: 'user', text };
     const next = [...messages, userMsg].slice(-10);
     setMessages(next);
     setInput('');
+    setCopiedIndex(null); setCopyNotice('');
     setLoading(true);
     try {
       const history = next
@@ -228,313 +280,158 @@ export default function ChatBot({ initialOpen = false }: { initialOpen?: boolean
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, history, location }),
+        body: JSON.stringify({ message: text, history, location: Date.now() - locationTime.current < 5 * 60000 ? location : null }),
+        signal: abort.signal,
       });
       const data = await res.json();
-      if (res.status === 429) {
-        setMessages((prev) => [...prev, { role: 'bot' as const, text: 'Demasiadas preguntas seguidas. Espera un momento e intenta de nuevo.' }].slice(-10));
-        return;
+      if (id !== requestId.current) return;
+      if (!res.ok) {
+        setMessages((prev) => [...prev, { role: 'bot' as const, text: typeof data.error === 'string' ? data.error : 'No pude completar la consulta. Intenta de nuevo.', error: true }].slice(-10)); return;
       }
-      setMessages((prev) => [...prev, { role: 'bot' as const, text: data.reply ?? 'Sin respuesta.' }].slice(-10));
+      setMessages((prev) => [...prev, { role: 'bot' as const, text: typeof data.reply === 'string' ? data.reply : 'Dime un lugar o una ruta para ayudarte.',
+        actions: data.actions, places: data.places, suggestions: data.suggestions, evidence: data.evidence }].slice(-10));
     } catch {
-      setMessages((prev) => [...prev, { role: 'bot' as const, text: 'Hubo un error, intenta de nuevo.' }].slice(-10));
+      if (id === requestId.current) setMessages((prev) => [...prev, { role: 'bot' as const, text: 'No pude conectar a tiempo. Tu conversación sigue aquí; intenta de nuevo.', error: true }].slice(-10));
     } finally {
-      setLoading(false);
+      clearTimeout(timeout);
+      if (id === requestId.current) { sending.current = false; setLoading(false); }
     }
-  }, [input, loading, messages, location]);
+  }, [input, messages, location]);
 
-  function handleKey(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  function handleKey(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void send(); }
+  }
+
+  function closeChat() { setOpen(false); btnRef.current?.focus(); }
+  function stopRequest() {
+    requestId.current++; pendingRequest.current?.abort(); sending.current = false; setLoading(false);
+    setMessages((previous) => [...previous, { role: 'bot' as const, text: 'Consulta detenida. Puedes ajustar tu pregunta o continuar cuando quieras.' }].slice(-10));
+  }
+  async function copyReply(message: Message, index: number) {
+    try { await navigator.clipboard.writeText(message.text); setCopiedIndex(index); setCopyNotice('Respuesta copiada.'); }
+    catch { setCopyNotice('Tu navegador no permitió copiar. Puedes seleccionar el texto de la respuesta.'); }
   }
 
   function openReport() {
     setReportRoute('');
-    setReportError('');
+    setReportError(messages.findLast((message) => message.role === 'bot')?.text ?? '');
     setReportCorrect('');
     setView('report');
   }
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%', background: 'rgba(255,255,255,0.05)',
-    border: '1px solid rgba(140,200,80,0.15)', borderRadius: 8,
-    padding: '7px 10px', color: 'var(--foreground, #e8f2d8)',
-    // <16px provoca auto-zoom al enfocar inputs en iOS
-    fontSize: isMobile ? 16 : 12, outline: 'none', resize: 'none' as const,
-  };
-
-  // ── Contenido interior compartido entre mobile y desktop ──────────────────
+  const lastQuestion = messages.findLast((message) => message.role === 'user')?.text;
+  const reportReady = reportError.trim().length > 0;
   const panelContent = (
     <>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 14px', borderBottom: '1px solid rgba(140,200,80,0.10)', flexShrink: 0 }}>
-        {/* Handle drag (solo mobile) */}
-        {isMobile && (
-          <div style={{ position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)', width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.15)' }} />
-        )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--verde, #6aab48)', display: 'inline-block' }} />
-          <span id="urugo-chat-title" style={{ color: 'var(--foreground, #e8f2d8)', fontSize: 13, fontWeight: 700, letterSpacing: '-0.01em' }}>
-            {view === 'report' ? 'Reportar error' : 'Asistente UruGo'}
-          </span>
-          {view === 'chat' && (
-            <span style={{ fontSize: 10, background: 'rgba(255,180,0,0.12)', color: '#f5a623', border: '1px solid rgba(255,180,0,0.25)', borderRadius: 6, padding: '1px 6px', fontWeight: 600 }}>
-              BETA
-            </span>
-          )}
+      <header className="chat-header">
+        <div className="chat-brand">
+          <span className="chat-brand-mark"><ChatBotIcon size={24} /></span>
+          <div>
+            <h2 id="urugo-chat-title">{view === 'report' ? 'Reportar respuesta' : 'Asistente UruGo'}</h2>
+            <p>{view === 'report' ? 'Tu ayuda mejora la guía' : 'Tu guía para moverte y descubrir'}</p>
+          </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          {view === 'chat' ? (
-            <>
-              <button type="button" onClick={requestLocation}
-                title={locStatus === 'granted' ? 'Ubicación activa' : locStatus === 'denied' ? 'Permiso denegado' : 'Compartir ubicación'}
-                style={{ background: 'none', border: 'none', cursor: locStatus === 'denied' ? 'default' : 'pointer', padding: '2px 4px', fontSize: 14, opacity: locStatus === 'denied' ? 0.3 : locStatus === 'granted' ? 1 : 0.5 }}
-                aria-label="Compartir ubicación"
-              >
-                {locStatus === 'granted' ? '📍' : '🔍'}
-              </button>
-              <button type="button" onClick={openReport}
-                title="Reportar información incorrecta"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', fontSize: 14, opacity: 0.6 }}
-                aria-label="Reportar error"
-              >🚩</button>
-            </>
-          ) : (
-            <button type="button" onClick={() => setView('chat')}
-              style={{ background: 'none', border: 'none', color: 'var(--foreground, #e8f2d8)', opacity: 0.6, cursor: 'pointer', padding: '2px 8px', fontSize: 12, fontWeight: 600 }}
-            >← Volver</button>
-          )}
-          <button type="button" onClick={() => setOpen(false)}
-            style={{ background: 'none', border: 'none', color: 'var(--foreground, #e8f2d8)', opacity: 0.4, cursor: 'pointer', padding: '2px 6px', fontSize: 16, lineHeight: 1 }}
-            aria-label="Cerrar chat"
-          >✕</button>
+        <div className="chat-header-actions">
+          {view === 'chat' ? <button type="button" className="chat-icon-button" onClick={newConversation} aria-label="Empezar nueva conversación" title="Nueva consulta"><Plus size={20} /></button>
+            : <button type="button" className="chat-icon-button" onClick={() => setView('chat')} aria-label="Volver a la conversación" title="Volver"><ArrowLeft size={19} /></button>}
+          <button type="button" className="chat-icon-button" onClick={closeChat} aria-label="Cerrar chat" title="Cerrar"><X size={20} /></button>
         </div>
-      </div>
+      </header>
 
-      {/* Vista: Chat */}
-      {view === 'chat' && (
-        <>
-          {locStatus === 'idle' && messages.length === 0 && (
-            <button type="button" onClick={requestLocation} style={{ background: 'rgba(106,171,72,0.08)', border: 'none', borderBottom: '1px solid rgba(140,200,80,0.10)', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', textAlign: 'left', width: '100%', flexShrink: 0 }}>
-              <span style={{ fontSize: 14 }}>📍</span>
-              <span style={{ color: 'var(--foreground, #e8f2d8)', fontSize: 12, opacity: 0.7, lineHeight: 1.4 }}>Compartir ubicación para sugerencias más precisas</span>
-            </button>
-          )}
-          {locStatus === 'granted' && (
-            <div style={{ background: 'rgba(106,171,72,0.08)', borderBottom: '1px solid rgba(140,200,80,0.10)', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-              <span style={{ fontSize: 12 }}>📍</span>
-              <span style={{ color: 'var(--verde, #6aab48)', fontSize: 11, fontWeight: 600 }}>Ubicación activa</span>
+      {view === 'chat' ? <>
+        <div className={`chat-location ${locStatus === 'granted' ? 'chat-location-active' : ''}`}>
+          {locStatus === 'granted' ? <>
+            <MapPin size={17} aria-hidden="true" />
+            <span><strong>Mi ubicación está compartida</strong><small>Uso temporal · caduca a los 5 min</small></span>
+            <button type="button" className="chat-icon-button" aria-label="Quitar ubicación" title="Quitar ubicación" onClick={() => { locationRequest.current++; setLocation(null); setLocStatus('idle'); setLocNotice(''); }}><X size={17} /></button>
+          </> : <button type="button" className="chat-location-button" onClick={requestLocation} aria-label="Compartir ubicación">
+            <MapPin size={17} aria-hidden="true" />
+            <span><strong>Usar mi ubicación</strong><small>También puedes escribir tu origen</small></span>
+            <ArrowUpRight size={17} aria-hidden="true" />
+          </button>}
+        </div>
+        {locNotice && <p role="status" className="chat-location-notice">{locNotice}</p>}
+
+        <div role="log" aria-label="Conversación con UruGo" aria-live="polite" className="chat-messages">
+          {messages.length === 0 && <div className="chat-welcome">
+            <div className="chat-welcome-top"><span className="chat-eyebrow">TU GUÍA DE BOLSILLO</span><span className="chat-city-tag">URUAPAN</span></div>
+            <h3 className="chat-welcome-title">¿A dónde <em>vamos hoy?</em></h3>
+            <p className="chat-welcome-description">Rutas y rincones de Uruapan, en una conversación.</p>
+            <div className="chat-starters" aria-label="Ideas para empezar">
+              {SUGGESTED_QUESTIONS.map(({ question, title, description, Icon }, index) => <button key={question} type="button" aria-label={question} className={`chat-starter ${index === 0 ? 'chat-starter-featured' : ''}`} onClick={() => void send(question)}>
+                <span className="chat-starter-icon"><Icon size={19} aria-hidden="true" /></span>
+                <strong>{title}</strong><span className="chat-starter-description">{description}</span><ArrowUpRight className="chat-starter-arrow" size={15} aria-hidden="true" />
+              </button>)}
             </div>
-          )}
+            <p className="chat-welcome-note"><MapPin size={13} aria-hidden="true" /> Para un viaje, dime de dónde sales y a dónde vas.</p>
+          </div>}
 
-          {/* Mensajes */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 8, minHeight: 0 }}>
-            {messages.length === 0 && (
-              <div style={{ margin: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '0 4px' }}>
-                <p style={{ color: 'var(--foreground, #e8f2d8)', opacity: 0.6, fontSize: 12, textAlign: 'center', margin: 0, lineHeight: 1.5 }}>
-                  Pregunta sobre rutas, horarios<br />o cómo llegar a algún lugar.
-                </p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 6 }}>
-                  {SUGGESTED_QUESTIONS.map((q) => (
-                    <button
-                      key={q}
-                      type="button"
-                      onClick={() => send(q)}
-                      disabled={loading}
-                      style={{
-                        background: 'rgba(106,171,72,0.10)',
-                        border: '1px solid rgba(140,200,80,0.22)',
-                        borderRadius: 999,
-                        padding: '6px 11px',
-                        color: 'var(--foreground, #e8f2d8)',
-                        fontSize: 12,
-                        cursor: 'pointer',
-                        opacity: 0.85,
-                      }}
-                    >
-                      {q}
-                    </button>
-                  ))}
+          {messages.map((message, index) => <div key={index} ref={index === messages.length - 1 ? lastMessageRef : undefined} className={`chat-message chat-message-${message.role}${message.error ? ' chat-message-error' : ''}`}>
+            {message.role === 'bot' && <div className="chat-message-author"><ChatBotIcon size={15} /><span>UruGo</span><span className="chat-author-divider" aria-hidden="true">/</span><span>{message.error ? 'Revisemos la consulta' : 'Guía local'}</span></div>}
+            <p className="chat-bubble">{message.text}</p>
+            {message.role === 'bot' && <>
+              {message.evidence && <p className="chat-evidence"><Check size={12} aria-hidden="true" />{message.evidence}</p>}
+              {message.places?.length ? <div className="chat-place-list" aria-label="Lugares de interés">{message.places.map((place) => <article className="chat-place" key={place.id}>
+                <div className="chat-place-top"><div><span className="chat-place-category">{place.category}</span><h3>{place.title}</h3></div>
+                  {safeChatHref(place.href) && <a className="chat-place-map" href={safeChatHref(place.href)} aria-label={`Ubicar y planear viaje a ${place.title}`}>Mapa <ArrowUpRight size={15} aria-hidden="true" /></a>}
                 </div>
-              </div>
-            )}
-            {messages.map((m, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
-                <span style={{
-                  maxWidth: '82%', padding: '7px 11px',
-                  borderRadius: m.role === 'user' ? '12px 12px 3px 12px' : '12px 12px 12px 3px',
-                  background: m.role === 'user' ? 'var(--verde, #6aab48)' : 'rgba(255,255,255,0.07)',
-                  color: m.role === 'user' ? '#0c110a' : 'var(--foreground, #e8f2d8)',
-                  fontSize: 13, lineHeight: 1.45, wordBreak: 'break-word',
-                }}>{m.text}</span>
-              </div>
-            ))}
-            {loading && (
-              <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-                <span style={{ padding: '7px 14px', borderRadius: '12px 12px 12px 3px', background: 'rgba(255,255,255,0.07)', color: 'var(--foreground, #e8f2d8)', opacity: 0.5, fontSize: 12 }}>
-                  escribiendo...
-                </span>
-              </div>
-            )}
-            <div ref={bottomRef} />
-          </div>
-
-          {/* Input */}
-          <div style={{ display: 'flex', gap: 6, padding: '10px 12px', borderTop: '1px solid rgba(140,200,80,0.10)', flexShrink: 0 }}>
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKey}
-              placeholder="¿Cómo llego al IMSS?"
-              aria-label="Escribe tu pregunta sobre rutas"
-              disabled={loading}
-              autoComplete="off"
-              enterKeyHint="send"
-              style={{ flex: 1, minWidth: 0, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(140,200,80,0.12)', borderRadius: 10, padding: '8px 11px', color: 'var(--foreground, #e8f2d8)', fontSize: isMobile ? 16 : 13, outline: 'none' }}
-            />
-            <button type="button" onClick={() => send()} disabled={loading || !input.trim()}
-              style={{ background: 'var(--verde, #6aab48)', border: 'none', borderRadius: 10, padding: '8px 13px', color: '#0c110a', fontSize: 13, fontWeight: 600, cursor: loading || !input.trim() ? 'default' : 'pointer', opacity: loading || !input.trim() ? 0.4 : 1, transition: 'opacity 0.15s', whiteSpace: 'nowrap' }}
-            >Enviar</button>
-          </div>
-        </>
-      )}
-
-      {/* Vista: Reporte */}
-      {view === 'report' && (
-        <div style={{ flex: 1, padding: 14, display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto', minHeight: 0 }}>
-          <p style={{ color: 'var(--foreground, #e8f2d8)', opacity: 0.55, fontSize: 12, lineHeight: 1.5, margin: 0 }}>
-            ¿El bot dio información incorrecta? Llena los campos y elige cómo enviarlo.
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <label htmlFor="chat-report-route" style={{ color: 'var(--foreground, #e8f2d8)', fontSize: 11, fontWeight: 600, opacity: 0.7 }}>Ruta (opcional)</label>
-            <input id="chat-report-route" type="text" value={reportRoute} onChange={(e) => setReportRoute(e.target.value)} placeholder="Ej: Ruta 2, Ruta 25..." style={inputStyle} />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <label htmlFor="chat-report-error" style={{ color: 'var(--foreground, #e8f2d8)', fontSize: 11, fontWeight: 600, opacity: 0.7 }}>¿Qué dijo mal el bot? *</label>
-            <textarea id="chat-report-error" value={reportError} onChange={(e) => setReportError(e.target.value)} placeholder="Ej: Dijo que la Ruta 2 pasa por el centro..." rows={3} style={inputStyle} />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <label htmlFor="chat-report-correct" style={{ color: 'var(--foreground, #e8f2d8)', fontSize: 11, fontWeight: 600, opacity: 0.7 }}>¿Cuál es la información correcta?</label>
-            <textarea id="chat-report-correct" value={reportCorrect} onChange={(e) => setReportCorrect(e.target.value)} placeholder="Ej: La Ruta 2 va de Constituyentes a Jicalán..." rows={3} style={inputStyle} />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 2 }}>
-            <a href={issueHref} target="_blank" rel="noreferrer"
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px', borderRadius: 8, border: '1px solid rgba(140,200,80,0.2)', color: 'var(--foreground, #e8f2d8)', fontSize: 12, fontWeight: 600, textDecoration: 'none', opacity: reportError.trim() ? 0.8 : 0.3, pointerEvents: reportError.trim() ? 'auto' : 'none' }}
-            >Reportar en GitHub</a>
-            <a href={emailHref}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px', borderRadius: 8, background: 'var(--verde, #6aab48)', color: '#0c110a', fontSize: 12, fontWeight: 700, textDecoration: 'none', opacity: reportError.trim() ? 1 : 0.35, pointerEvents: reportError.trim() ? 'auto' : 'none' }}
-            >Enviar por correo</a>
-          </div>
+                <p className="chat-place-description">{place.description}</p>
+                <details className="chat-place-details"><summary>Información de visita <ChevronDown size={14} aria-hidden="true" /></summary><div>
+                  <p>{place.detail}</p>
+                  {safeChatHref(place.source.href) && <a href={safeChatHref(place.source.href)} target="_blank" rel="noopener noreferrer">Fuente: {place.source.label} <ArrowUpRight size={12} aria-hidden="true" /></a>}
+                </div></details>
+              </article>)}</div> : null}
+              {message.actions?.length ? <div className="chat-actions">{message.actions.map((action) => safeChatHref(action.href)
+                ? <a key={action.label} href={safeChatHref(action.href)} className="chat-map-link"><MapPin size={16} aria-hidden="true" />{action.label}<ArrowUpRight size={16} aria-hidden="true" /></a>
+                : action.prompt ? <button key={action.label} type="button" className="chat-prompt" disabled={loading} onClick={() => void send(action.prompt)}>{action.label}</button> : null)}</div> : null}
+              {index === messages.length - 1 && !loading && <>
+                {message.error && lastQuestion ? <button type="button" className="chat-retry" onClick={() => void send(lastQuestion)}>Volver a intentar <ArrowUpRight size={14} aria-hidden="true" /></button> : <div className="chat-response-tools">
+                  <button type="button" onClick={() => void copyReply(message, index)} aria-label="Copiar respuesta">{copiedIndex === index ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}{copiedIndex === index ? 'Copiado' : 'Copiar'}</button>
+                  <button type="button" onClick={openReport} aria-label="Reportar error"><Flag size={14} aria-hidden="true" />Reportar</button>
+                </div>}
+                {message.suggestions?.length ? <div className="chat-follow-ups" aria-label="Continuar la conversación">{message.suggestions.map((suggestion) => <button key={suggestion} type="button" className="chat-prompt" onClick={() => void send(suggestion)}>{suggestion}<ArrowUpRight size={12} aria-hidden="true" /></button>)}</div> : null}
+              </>}
+            </>}
+          </div>)}
+          {loading && <div role="status" className="chat-loading"><span className="chat-loading-dots" aria-hidden="true"><i /><i /><i /></span><span>Preparando tu respuesta</span></div>}
+          <div ref={bottomRef} />
         </div>
-      )}
+
+        <div className="chat-composer-wrap">
+          {copyNotice && <p role="status" className="chat-copy-notice">{copyNotice}</p>}
+          <form className="chat-composer" onSubmit={(event) => { event.preventDefault(); void send(); }}>
+            <textarea ref={inputRef} rows={1} value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={handleKey} placeholder="Escribe tu pregunta…" maxLength={1000} aria-label="Escribe tu pregunta sobre rutas" aria-describedby="chat-input-hint" autoComplete="off" enterKeyHint="send" />
+            {loading ? <button key="stop" type="button" className="chat-send chat-stop" onClick={(event) => { event.preventDefault(); stopRequest(); }} aria-label="Detener consulta" title="Detener consulta"><Square size={15} fill="currentColor" aria-hidden="true" /></button>
+              : <button key="send" type="submit" className="chat-send" disabled={!input.trim()} aria-label="Enviar" title="Enviar pregunta"><ArrowUp size={20} aria-hidden="true" /></button>}
+          </form>
+          <div id="chat-input-hint" className="chat-composer-hint"><span>Rutas, lugares y planes en Uruapan</span>{input.length > 850 ? <span>{input.length}/1000</span> : <span className="chat-keyboard-hint">Mayús + Enter: nueva línea</span>}</div>
+        </div>
+      </> : <div className="chat-report-body">
+        <span className="chat-eyebrow">UNA GUÍA QUE MEJORA CONTIGO</span>
+        <h3>¿Algo no estuvo bien?</h3><p className="chat-report-intro">Cuéntanos qué debemos revisar. Ya incluimos la última respuesta para que sea más sencillo.</p>
+        <label htmlFor="chat-report-route">Ruta o lugar <span>opcional</span></label>
+        <input id="chat-report-route" type="text" value={reportRoute} onChange={(event) => setReportRoute(event.target.value)} placeholder="Ej. Ruta 26 o Parque Nacional" maxLength={120} />
+        <label htmlFor="chat-report-error">¿Qué información debemos revisar?</label>
+        <textarea id="chat-report-error" value={reportError} onChange={(event) => setReportError(event.target.value)} rows={4} maxLength={3000} required />
+        <label htmlFor="chat-report-correct">¿Cuál sería la información correcta? <span>opcional</span></label>
+        <textarea id="chat-report-correct" value={reportCorrect} onChange={(event) => setReportCorrect(event.target.value)} placeholder="Comparte la corrección o lo que observaste" rows={3} maxLength={3000} />
+        <div className="chat-report-links"><a href={reportReady ? emailHref : undefined} aria-disabled={!reportReady} className="chat-map-link">Preparar correo <ArrowUpRight size={17} aria-hidden="true" /></a>
+          <a href={reportReady ? issueHref : undefined} target="_blank" rel="noopener noreferrer" aria-disabled={!reportReady} className="chat-report-github">Abrir reporte en GitHub <ArrowUpRight size={14} aria-hidden="true" /></a></div>
+        <p className="chat-report-note">Podrás revisar el mensaje antes de enviarlo desde tu correo o GitHub.</p>
+      </div>}
     </>
   );
 
-  if (!mounted) return (
-    <button ref={btnRef} type="button" onClick={() => setOpen(true)}
-      className="ov-panel pointer-events-auto inline-flex h-12 w-12 items-center justify-center rounded-2xl border shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl transition active:scale-[0.97] lg:h-10 lg:w-10 lg:rounded-lg lg:shadow-none border-foreground/12 bg-foreground/5 text-foreground/50"
-      aria-label="Abrir asistente de rutas"
-    >
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-        <path d="M14 1H2C1.45 1 1 1.45 1 2v9c0 .55.45 1 1 1h2v3l3-3h7c.55 0 1-.45 1-1V2c0-.55-.45-1-1-1z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" fill="none" />
-      </svg>
-    </button>
-  );
+  const launcher = <button ref={btnRef} type="button" onClick={() => open ? closeChat() : setOpen(true)}
+    className={`ov-panel chat-launcher pointer-events-auto inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-lima/25 bg-surface text-lima shadow-[0_8px_28px_rgba(0,0,0,0.25)] transition active:scale-[0.97] lg:h-10 lg:w-10 lg:rounded-lg ${open ? 'chat-launcher-open' : ''}`}
+    aria-label={mounted && open ? 'Cerrar asistente de rutas' : 'Abrir asistente de rutas'} aria-expanded={mounted && open} aria-controls={mounted ? 'urugo-chat-panel' : undefined} title="Tu guía de Uruapan"><ChatBotIcon /></button>;
+  if (!mounted) return launcher;
 
-  // ── Panel MOBILE: bottom sheet de pantalla completa ───────────────────────
-  const mobileSheet = isMobile ? createPortal(
-    <>
-      {/* Backdrop */}
-      <div
-        onClick={() => setOpen(false)}
-        style={{
-          position: 'fixed', inset: 0, zIndex: 99998,
-          background: 'rgba(0,0,0,0.55)',
-          opacity: open ? 1 : 0,
-          pointerEvents: open ? 'auto' : 'none',
-          transition: 'opacity 0.25s',
-        }}
-      />
-      {/* Sheet */}
-      <div
-        ref={panelRef}
-        id="urugo-chat-panel"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="urugo-chat-title"
-        aria-hidden={!open}
-        inert={!open ? true : undefined}
-        style={{
-          position: 'fixed', left: 0, right: 0, bottom: 0,
-          zIndex: 99999,
-          background: 'var(--surface, #111a0d)',
-          borderTop: '1px solid rgba(140,200,80,0.18)',
-          borderRadius: '20px 20px 0 0',
-          boxShadow: '0 -8px 40px rgba(0,0,0,0.65)',
-          display: 'flex',
-          flexDirection: 'column',
-          // 70% del viewport; con teclado abierto en iOS se fija en px al
-          // viewport visual (en Android lo resuelve interactive-widget).
-          height: keyboardSheetHeight !== null ? `${keyboardSheetHeight}px` : '70dvh',
-          maxHeight: '100dvh',
-          transform: open ? 'translateY(0)' : 'translateY(100%)',
-          transition: 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-        }}
-      >
-        {panelContent}
-      </div>
-    </>,
-    document.body
-  ) : null;
-
-  // ── Panel DESKTOP: flotante posicionado sobre el botón ────────────────────
-  const desktopPanel = !isMobile && open ? createPortal(
-    <div
-      ref={panelRef}
-      id="urugo-chat-panel"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="urugo-chat-title"
-      style={{
-        position: 'fixed',
-        ...desktopStyle,
-        background: 'var(--surface, #111a0d)',
-        border: '1px solid rgba(140,200,80,0.18)',
-        borderRadius: 16,
-        boxShadow: '0 8px 40px rgba(0,0,0,0.65)',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-        zIndex: 99999,
-      }}
-    >
-      {panelContent}
-    </div>,
-    document.body
-  ) : null;
-
-  return (
-    <>
-      <button
-        ref={btnRef}
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className={`ov-panel pointer-events-auto inline-flex h-12 w-12 items-center justify-center rounded-2xl border shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-xl transition active:scale-[0.97] lg:h-10 lg:w-10 lg:rounded-lg lg:shadow-none ${
-          open ? 'border-lima/40 bg-lima/12 text-lima' : 'border-foreground/12 bg-foreground/5 text-foreground/50 hover:border-foreground/25 hover:text-foreground/80'
-        }`}
-        aria-label={open ? "Cerrar asistente de rutas" : "Abrir asistente de rutas"}
-        aria-expanded={open}
-        aria-controls="urugo-chat-panel"
-        title="Pregunta sobre rutas"
-      >
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <path d="M14 1H2C1.45 1 1 1.45 1 2v9c0 .55.45 1 1 1h2v3l3-3h7c.55 0 1-.45 1-1V2c0-.55-.45-1-1-1z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" fill="none" />
-        </svg>
-      </button>
-      {mobileSheet}
-      {desktopPanel}
-    </>
-  );
+  const mobileSheet = isMobile ? createPortal(<>
+    <div className="chat-backdrop" data-open={open} aria-hidden="true" onClick={closeChat} />
+    <div className="urugo-chat chat-mobile" data-open={open} tabIndex={-1} ref={panelRef} id="urugo-chat-panel" role="dialog" aria-modal="true" aria-labelledby="urugo-chat-title" aria-hidden={!open} inert={!open ? true : undefined}
+      style={keyboardViewport ? { height: keyboardViewport.height, bottom: keyboardViewport.bottom } : undefined}>{panelContent}</div>
+  </>, document.body) : null;
+  const desktopPanel = !isMobile && open ? createPortal(<div className="urugo-chat chat-desktop" tabIndex={-1} ref={panelRef} id="urugo-chat-panel" role="dialog" aria-modal="true" aria-labelledby="urugo-chat-title" style={desktopStyle}>{panelContent}</div>, document.body) : null;
+  return <>{launcher}{mobileSheet}{desktopPanel}</>;
 }

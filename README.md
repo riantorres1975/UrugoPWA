@@ -71,7 +71,7 @@ UruGo es una aplicación web para consultar las rutas de transporte público de 
 - Rutas favoritas, lugares guardados y viajes recientes almacenados en el dispositivo.
 - Enlaces compartibles que conservan la ruta, dirección, origen y destino.
 - Instalación como PWA y una vista básica del recorrido cuando no hay conexión.
-- Asistente opcional para preguntas sobre transporte, limitado a los datos disponibles en el proyecto.
+- Asistente de rutas y lugares de Uruapan: viajes con el motor del mapa, fichas turísticas con fuentes y seguimiento del origen/destino. [Funcionamiento y fuentes](docs/chat-assistant.md).
 - Reportes comunitarios sin cuenta, con una herramienta para dibujar recorridos corregidos sobre el mapa.
 - Rutas más consultadas ordenadas mediante actividad anónima agregada, sin guardar ubicación ni identidad.
 
@@ -109,7 +109,7 @@ El cálculo se realiza en el cliente con los datos del proyecto. Mapbox se utili
 - Node.js 20.9 o posterior.
 - pnpm 11.
 - Una cuenta de Mapbox y un token público.
-- Una clave de DeepSeek únicamente si se quiere habilitar el asistente.
+- Una clave de DeepSeek solo para clasificar preguntas poco claras; las respuestas habituales y las fichas del asistente funcionan sin IA.
 
 ### Instalación
 
@@ -142,7 +142,7 @@ La aplicación estará disponible en [http://localhost:3000](http://localhost:30
 | --- | --- | --- |
 | `NEXT_PUBLIC_MAPBOX_TOKEN` | Sí | Token público para el mapa y la búsqueda de lugares |
 | `NEXT_PUBLIC_SITE_URL` | No | URL base usada en metadatos y enlaces compartidos |
-| `DEEPSEEK_API_KEY` | No | Habilita el asistente de transporte |
+| `DEEPSEEK_API_KEY` | No | Clasificación opcional de intención; no genera indicaciones ni datos de lugares |
 | `UPSTASH_REDIS_REST_URL` | No | Backend Redis opcional, con prioridad sobre Supabase para el límite de solicitudes |
 | `UPSTASH_REDIS_REST_TOKEN` | No | Token del backend Redis opcional |
 | `RATE_LIMIT_HASH_SECRET` | No | Secreto HMAC dedicado para anonimizar las claves del rate limit; usa `REPORTER_HASH_SECRET` como respaldo |

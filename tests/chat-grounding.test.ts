@@ -8,7 +8,11 @@ import {
   getRoutePlaces,
   nearbyRoutesReal,
 } from "@/lib/chat-grounding";
-import { buildVerifiedChatReply } from "@/lib/chat-reply";
+import { buildChatAnswer } from "@/lib/chat-assistant";
+import routeData from "@/data/rutas_produccion_final.json";
+import type { ProductionRoute } from "@/lib/types";
+
+const ask = async (message: string) => (await buildChatAnswer({ message, history: [], location: null }, async () => ({ routes: routeData as ProductionRoute[], source: "static" })))?.reply;
 
 // Coordenadas del Centro (las mismas de KNOWN_PLACES en lib/geocode.ts)
 const CENTRO_LAT = 19.42101;
@@ -75,31 +79,30 @@ describe("chat-grounding (datos reales)", () => {
     expect(section).toContain("No hubo una coincidencia exacta");
   });
 
-  it("responde tarifas sin depender del modelo", () => {
-    expect(buildVerifiedChatReply("¿Cuánto cuesta el teleférico?")).toContain("$12.00");
+  it("responde tarifas sin depender del modelo", async () => {
+    expect(await ask("¿Cuánto cuesta el teleférico?")).toContain("$12.00");
   });
 
-  it("pide origen antes de explicar cómo llegar a un landmark", () => {
-    const reply = buildVerifiedChatReply("¿Cómo llego al Tec Uruapan?");
+  it("pide origen antes de explicar cómo llegar a un landmark", async () => {
+    const reply = await ask("¿Cómo llego al Tec Uruapan?");
     expect(reply).toContain("necesito saber desde dónde sales");
     expect(reply).toContain("Ruta 27");
   });
 
-  it("responde qué ruta pasa por un landmark con evidencia verificada", () => {
-    const reply = buildVerifiedChatReply("¿Qué ruta pasa por el Tec Uruapan?");
+  it("responde qué ruta pasa por un landmark con evidencia verificada", async () => {
+    const reply = await ask("¿Qué ruta pasa por el Tec Uruapan?");
     expect(reply).toContain("Ruta 27");
     expect(reply).toContain("Tec Uruapan");
   });
 
-  it("distingue las rutas que entran al Centro de las que pasan a unas cuadras", () => {
-    const reply = buildVerifiedChatReply("¿Qué ruta pasa por el centro?");
-    expect(reply).toContain("Rutas 25, 26 y 76");
-    expect(reply).toContain("entran directamente al primer cuadro");
-    expect(reply).not.toContain("Ruta 1");
+  it("no convierte cercanía al Centro en un viaje desde cualquier origen", async () => {
+    const reply = await ask("¿Qué ruta pasa por el centro?");
+    expect(reply).toContain("La cercanía al destino no confirma una ruta desde tu origen");
+    expect(reply).not.toMatch(/Ruta 2(?:\s|:|\()/);
   });
 
-  it("combina una estación exacta con las rutas cercanas al Hospital Regional", () => {
-    const reply = buildVerifiedChatReply("¿Qué ruta me lleva al Hospital Regional?");
+  it("combina una estación exacta con las rutas cercanas al Hospital Regional", async () => {
+    const reply = await ask("¿Qué ruta me lleva al Hospital Regional?");
     expect(reply).toContain("Teleférico Uruapan");
     expect(reply).toContain("Ruta 25");
     expect(reply).toContain("necesito saber desde dónde sales");
