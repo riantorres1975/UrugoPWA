@@ -81,7 +81,8 @@ test("verifica pagos antes de reconocerlos y mantiene en privado referencias y m
   expect(claim.status()).toBe(201);
   const inserted = await db.from("support_contributions").select("id,status,revision").eq("payment_reference", reference).single();
   expect(inserted.error).toBeNull(); expect(inserted.data?.status).toBe("pending");
-  ids.push(inserted.data!.id);
+  const contributionId = inserted.data!.id;
+  ids.push(contributionId);
   const anon = createClient(process.env.TEST_SUPABASE_URL!, process.env.TEST_SUPABASE_PUBLISHABLE_KEY!, { auth: { persistSession: false } });
   expect((await anon.from("support_contributions").select("payment_reference")).error?.code).toBe("42501");
   expect((await anon.rpc("get_support_wall")).error?.code).toBe("42501");
@@ -114,8 +115,8 @@ test("verifica pagos antes de reconocerlos y mantiene en privado referencias y m
   expect(wall.confirmedCount).toBe(2);
   expect(wall.supporters.find((row: { name: string }) => row.name === "Apoyo anónimo").amount_cents).toBeNull();
   expect(JSON.stringify(wall)).not.toContain(run);
-  expect((await db.rpc("review_support_contribution", { p_id: ids[0], p_revision: 1, p_status: "rejected", p_amount_cents: 4550, p_note: "Conflicto", p_actor_id: userId })).error?.code).toBe("40001");
-  expect((await db.rpc("review_support_contribution", { p_id: ids[0], p_revision: null, p_status: "rejected", p_amount_cents: 4550, p_note: "Nulo", p_actor_id: userId })).error?.code).toBe("22023");
+  expect((await db.rpc("review_support_contribution", { p_id: contributionId, p_revision: 1, p_status: "rejected", p_amount_cents: 4550, p_note: "Conflicto", p_actor_id: userId })).error?.code).toBe("40001");
+  expect((await db.rpc("review_support_contribution", { p_id: contributionId, p_revision: null, p_status: "rejected", p_amount_cents: 4550, p_note: "Nulo", p_actor_id: userId })).error?.code).toBe("22023");
 
   await page.goto("/apoyar");
   await expect(page.locator(".supporter-grid")).toContainText("Apoyo de prueba E2E");
@@ -127,7 +128,7 @@ test("verifica pagos antes de reconocerlos y mantiene en privado referencias y m
   await confirmed.getByLabel("Nota privada de revisión").fill("Retirado para comprobar la privacidad");
   await confirmed.getByRole("button", { name: "Retirar reconocimiento" }).click();
   await expect(confirmed).toHaveCount(0);
-  expect((await db.from("support_contribution_reviews").select("id", { count: "exact" }).eq("contribution_id", ids[0])).count).toBe(2);
+  expect((await db.from("support_contribution_reviews").select("id", { count: "exact" }).eq("contribution_id", contributionId)).count).toBe(2);
   expect((await db.rpc("get_support_wall")).data.confirmedCount).toBe(1);
   await page.goto("/apoyar");
   await expect(page.locator(".supporter-grid")).not.toContainText("Apoyo de prueba E2E");
