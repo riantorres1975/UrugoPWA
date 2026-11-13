@@ -59,10 +59,23 @@
 .support-wall-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:24px}
 .support-wall-heading p:not(.support-eyebrow){color:var(--support-muted);font-size:13px;max-width:540px;margin:14px 0 24px}
 .supporter-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;list-style:none;padding:0;margin:0}
-.supporter-grid li{display:flex;align-items:center;gap:12px;padding:16px;border-radius:14px;border:1px solid var(--support-line);background:#fcfcf4;animation:support-arrive .55s both}
+.supporter-grid li{display:flex;align-items:center;gap:12px;padding:16px;border-radius:14px;border:1px solid var(--support-line);background:#fcfcf4;transition:border-color .2s,box-shadow .2s}
+.supporter-grid li[data-supporter-visible]{animation:support-arrive .55s ease-out var(--supporter-delay,0ms) both}
 .supporter-avatar{display:grid;place-items:center;width:40px;height:40px;flex-shrink:0;border-radius:50%;background:#e7edd7;color:#3a623f;font-weight:700}
 .supporter-grid li>div{min-width:0}
 .supporter-grid strong{font-size:13px;display:block;overflow-wrap:anywhere}
+.supporter-grid .supporter-name{display:flex;align-items:center;gap:7px}
+.supporter-name-text{position:relative;isolation:isolate;min-width:0;transition:color .2s}
+.supporter-name-text::after{content:"";position:absolute;z-index:-1;inset:auto -2px 0;height:.45em;border-radius:3px;background:#d4edab;transform:scaleX(0);transform-origin:left}
+.supporter-thanks{display:inline-flex;flex-shrink:0;color:#4c743a}
+.supporter-grid .supporter-thanks svg{width:13px;height:13px;fill:#d4edab}
+.supporter-grid li[data-supporter-visible] .supporter-name-text::after{animation:support-name-highlight .9s ease-out calc(var(--supporter-delay,0ms) + .15s) both}
+.supporter-grid li[data-supporter-visible] .supporter-thanks{animation:support-heart-thanks .85s ease-in-out calc(var(--supporter-delay,0ms) + .3s) 2}
+@media(hover:hover){
+  .supporter-grid li:hover{border-color:#95ad80;box-shadow:0 5px 18px #2545260c}
+  .supporter-grid li:hover .supporter-name-text{color:#315a32}
+  .supporter-grid li:hover .supporter-thanks{animation:support-heart-hover .8s ease-in-out 1}
+}
 .supporter-grid small{font-size:10px;color:var(--support-muted);display:block;margin-top:4px}
 .supporter-amount{margin-left:auto;white-space:nowrap;text-align:right;font-weight:750;font-size:16px}
 .support-wall-caption{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--support-muted);margin-top:16px}
@@ -106,6 +119,9 @@
 @keyframes support-route{to{stroke-dashoffset:-522}}
 @keyframes support-pulse{0%,100%{opacity:.15;transform:scale(.94)}50%{opacity:.65;transform:scale(1.07)}}
 @keyframes support-arrive{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes support-name-highlight{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes support-heart-thanks{0%,45%,100%{transform:scale(1)}18%{transform:scale(1.22)}30%{transform:scale(1.06)}}
+@keyframes support-heart-hover{0%,100%{transform:scale(1)}35%{transform:scale(1.22) rotate(-8deg)}65%{transform:scale(1.08) rotate(5deg)}}
 @media(max-width:800px){
   .support-shell{padding:104px 20px 48px}.support-hero{grid-template-columns:1fr;gap:32px;padding:12px 0 36px}
   .support-hero-copy>p:not(.support-eyebrow){max-width:550px}.support-route-art{margin-top:16px;max-width:340px}
@@ -121,4 +137,4 @@
   .supporter-grid{grid-template-columns:1fr}.support-first{align-items:flex-start;padding:22px;gap:16px}.support-first-heart{width:36px;height:36px}.support-first-heart svg{width:19px;height:19px}.support-first h3{font-size:21px}.support-first p{font-size:12px}
   .support-form{padding:20px 16px}.support-form-grid{grid-template-columns:1fr}.support-purpose,.support-wall,.support-claim,.support-other{padding-top:32px;padding-bottom:32px}.support-wall-caption{align-items:flex-start}.support-other{padding-bottom:0}
 }
-@media(prefers-reduced-motion:reduce){.support-page *,.support-wall *{animation:none!important;transition:none!important}}
+@media(prefers-reduced-motion:reduce){.support-page *,.support-wall *,.support-wall *::after{animation:none!important;transition:none!important}.supporter-name-text::after{transform:scaleX(1)}}
