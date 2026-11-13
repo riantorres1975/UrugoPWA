@@ -138,3 +138,64 @@
   .support-form{padding:20px 16px}.support-form-grid{grid-template-columns:1fr}.support-purpose,.support-wall,.support-claim,.support-other{padding-top:32px;padding-bottom:32px}.support-wall-caption{align-items:flex-start}.support-other{padding-bottom:0}
 }
 @media(prefers-reduced-motion:reduce){.support-page *,.support-wall *,.support-wall *::after{animation:none!important;transition:none!important}.supporter-name-text::after{transform:scaleX(1)}}
+
+/* Private receipts and transparent monthly goals share the public support identity. */
+.support-manage-entry{margin:0 0 36px;font-size:13px;color:var(--support-muted)}
+.support-manage-entry a{text-decoration:underline;text-underline-offset:4px;font-weight:650}
+.support-access-ticket{margin-top:22px;padding:20px;border:1px solid #a5b98b;border-radius:14px;background:#f4f7e9;color:#142a23;font-size:13px}
+.support-access-ticket>strong{display:block;font-size:15px}
+.support-access-ticket p{font-size:12px;line-height:1.7;margin:8px 0;color:#4c6257}
+.support-access-ticket code{display:block;overflow-wrap:anywhere;user-select:all;padding:12px;background:#e6edd7;border-radius:8px;font-size:12px;line-height:1.8;margin:12px 0}
+.support-ticket-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.support-ticket-actions>a,.support-ticket-actions>button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 14px;border:1px solid #8ba276;border-radius:9px;font-weight:700;font-size:12px;line-height:1.5;cursor:pointer}
+.support-ticket-actions>a:hover,.support-ticket-actions>button:hover{background:#ddecbe}
+.support-access-ticket>small{display:block;margin-top:12px;font-size:11px}
+.support-goal{padding:26px 28px;background:#14271e;color:#f4f3e9;border-radius:18px;margin:0 0 24px}
+.support-goal .support-eyebrow{color:#d4fc76;margin-bottom:8px}
+.support-goal-heading{display:flex;justify-content:space-between;align-items:center;gap:20px}
+.support-goal-heading h3{font-size:25px;font-weight:700;line-height:1.2}
+.support-goal-heading>strong{font-size:34px;letter-spacing:-.05em;color:#d4fc76;flex-shrink:0}
+.support-goal>p{font-size:13px;color:#bdcbb9;margin-top:14px;max-width:700px;overflow-wrap:anywhere}
+.support-goal-track{height:8px;border-radius:20px;background:#40563c;overflow:hidden;margin:22px 0 12px}
+.support-goal-track>span{display:block;height:100%;border-radius:20px;background:#d4fc76;transition:width .6s ease}
+.support-goal-amounts{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;font-size:13px}
+.support-goal-amounts>span{color:#bdcbb9}
+.support-goal>small{display:block;margin-top:14px;color:#bdcbb9;font-size:10px;line-height:1.7;max-width:700px}
+.support-manager-shell{max-width:820px;padding:132px 28px 64px;margin:auto}
+.support-manager>h1{font-size:clamp(40px,6vw,64px);line-height:1.05;margin:18px 0 24px}
+.support-manager>h1 em,.support-thanks-card h2 em{font-family:var(--font-playfair),Georgia,serif;font-weight:500}
+.support-manager>p:not(.support-eyebrow){font-size:14px;line-height:1.8;color:var(--support-muted);margin-bottom:26px}
+.support-manager .support-form{margin:26px 0}
+.support-manager .support-form>h2{font-size:24px;margin-bottom:6px}
+.support-receipt{padding:28px;border:1px solid #b8c9a3;border-radius:20px;background:#e9eedc;margin:28px 0}
+.support-receipt-heading{display:flex;gap:14px;align-items:flex-start}
+.support-receipt-heading>svg{margin-top:2px;color:#3f683a}
+.support-receipt-heading .support-eyebrow{margin-bottom:8px}
+.support-receipt-heading h2{font-size:27px}
+.support-receipt>p{font-size:13px;color:var(--support-muted);margin-top:16px}
+.support-receipt dl{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:22px 0}
+.support-receipt dt{font-size:11px;color:var(--support-muted);margin-bottom:8px}
+.support-receipt dd{font-size:16px;font-weight:700;overflow-wrap:anywhere}
+.support-inline-button{display:inline-flex;align-items:center;min-height:44px;font-size:12px;font-weight:650;text-decoration:underline;text-underline-offset:4px;margin-right:20px}
+.support-manager button:disabled{opacity:.5;cursor:wait}
+.support-manager-notice{border:1px solid #abc596;background:#e6f1d9;color:#294d2a!important;padding:16px 20px;border-radius:12px}
+.support-thanks-card{border-radius:20px;background:#14271e;color:#f4f3e9;padding:32px;position:relative;margin:28px 0}
+.support-thanks-card>svg{color:#d4fc76;margin-bottom:20px}
+.support-thanks-card .support-eyebrow{color:#d4fc76}
+.support-thanks-card h2{font-size:clamp(32px,5vw,46px);margin-bottom:20px}
+.support-thanks-card h2 em{color:#d4fc76}
+.support-thanks-card>p:not(.support-eyebrow){font-size:13px;color:#bdcbb9;max-width:540px}
+.support-thanks-card .support-ticket-actions>button{color:#14271e;background:#d4fc76;border-color:#d4fc76}
+.support-thanks-card .support-checkbox{display:flex;gap:10px;font-size:12px;line-height:1.7;margin:20px 0}
+.support-thanks-card input[type=checkbox]{accent-color:#d4fc76;margin-top:3px;flex-shrink:0}
+.admin-brand .support-access-ticket{background:#14271e;color:#f4f3e9;border-color:#526b46}
+.admin-brand .support-access-ticket p{color:#bdcbb9}
+.admin-brand .support-access-ticket code{background:#243d29;color:#d4fc76}
+.admin-brand .support-ticket-actions>a,.admin-brand .support-ticket-actions>button{border-color:#526b46}
+.admin-brand .support-ticket-actions>a:hover,.admin-brand .support-ticket-actions>button:hover{background:#29472f}
+.admin-brand .support-access-ticket :focus-visible{outline:2px solid #d4fc76;outline-offset:3px}
+@media(max-width:480px){
+  .support-goal{padding:22px 20px}.support-goal-heading{align-items:flex-start}.support-goal-heading h3{font-size:22px}.support-goal-heading>strong{font-size:28px}
+  .support-manager-shell{padding:112px 20px 48px}.support-receipt{padding:22px 18px}.support-receipt-heading h2{font-size:23px}.support-receipt dl{grid-template-columns:1fr}
+  .support-thanks-card{padding:26px 22px}.support-access-ticket{padding:18px 16px}.support-ticket-actions{gap:8px}.support-ticket-actions>a,.support-ticket-actions>button{font-size:11px;padding:10px 12px}
+}

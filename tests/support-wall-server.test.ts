@@ -15,4 +15,8 @@ describe("proyección pública de apoyos", () => {
     mocks.abort.mockResolvedValueOnce({ error: { code: "42P01" }, data: null }); expect(await getSupportWall()).toBeNull();
     mocks.abort.mockRejectedValueOnce(Error("offline")); expect(await getSupportWall()).toBeNull();
   });
+  it("la meta pública conserva solo importe, avance y motivo autorizados", async () => {
+    mocks.abort.mockResolvedValueOnce({ error: null, data: { confirmedCount: 0, supporters: [], goal: { month: "2026-11-01", target_cents: 10000, raised_cents: 2500, description: "Mantenimiento definido por el administrador", updated_by: "private", revision: 2 } } });
+    expect((await getSupportWall())?.goal).toEqual({ month: "2026-11-01", target_cents: 10000, raised_cents: 2500, description: "Mantenimiento definido por el administrador" });
+  });
 });

@@ -51,6 +51,7 @@ export default async function SupportPage() {
       </section>
       <SupportWall data={data} />
       <SupportClaimForm methods={methods} />
+      <p className="support-manage-entry">¿Ya enviaste tu aviso? <Link href="/apoyar/mi-aporte" prefetch={false}>Consulta su estado o cambia cómo apareces →</Link></p>
       <section className="support-other" aria-labelledby="support-other-title"><div><p className="support-eyebrow">Cada ayuda cuenta</p><h2 id="support-other-title">También puedes apoyar<br />sin dinero.</h2></div><div>
         <Link href="/reportar-error"><MessageSquareWarning aria-hidden="true" /><span><strong>Reporta un cambio</strong><small>Tu experiencia ayuda a mejorar las rutas.</small></span><ArrowRight aria-hidden="true" /></Link>
         <a href={PROJECT.repositoryUrl} target="_blank" rel="noreferrer"><Code2 aria-hidden="true" /><span><strong>Contribuye al proyecto</strong><small>Consulta el código y las mejoras pendientes.</small></span><ArrowRight aria-hidden="true" /></a>

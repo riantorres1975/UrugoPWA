@@ -95,6 +95,10 @@ const nextConfig = {
       {
         source: "/(.*)",
         headers: securityHeaders
+      },
+      {
+        source: "/apoyar/mi-aporte",
+        headers: [{ key: "Referrer-Policy", value: "no-referrer" }, { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }]
       }
     ];
   },

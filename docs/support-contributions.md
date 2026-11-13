@@ -49,3 +49,43 @@ búsquedas activas, resultados, viajes ni recuperación de viajes. Se oculta a l
 30 días; abrir apoyo o enviar un aviso lo aplaza por 90 días. No bloquea funciones
 ni envía eventos de analítica. Sin almacenamiento local disponible no se muestra.
 Las animaciones respetan `prefers-reduced-motion`.
+
+## Consulta y privacidad del aportante
+
+Aplicar también `20261113172211_support_self_service_and_goals.sql` antes de
+desplegar la consulta privada. Cada aviso nuevo recibe un secreto aleatorio de
+192 bits con prefijo `UG-`; Supabase conserva solo SHA-256. El código se entrega
+al navegador y no se guarda automáticamente en almacenamiento local. El enlace
+privado lo lleva en un fragmento que la página elimina de la barra de direcciones.
+Nunca usarlo en parámetros de consulta, analítica, logs ni enlaces de compartir.
+
+`/apoyar/mi-aporte` consulta por POST y permite cambiar exclusivamente privacidad,
+nombre y autorización del monto. No permite modificar el pago ni confirmarlo.
+Pasar a anónimo u ocultar datos se aplica inmediatamente; un nombre nuevo queda
+oculto hasta revisión. La confirmación del pago se conserva. Los datos privados
+de consulta usan `no-store`; referencias y notas de moderación no se devuelven.
+La ruta privada se excluye de Analytics y Speed Insights. Una tarjeta PNG se
+genera localmente sin importe, referencia ni código; el nombre requiere elección
+explícita de quien descarga. Compartir siempre usa el enlace público `/apoyar`.
+
+Los avisos anteriores a esta función siguen visibles según su consentimiento,
+pero no tienen código. Desde administración se puede crear o rotar el acceso
+después de comprobar a quién se entrega. El código anterior queda revocado.
+
+## Herramientas administrativas y metas
+
+El panel permite registrar un pago recibido sin formulario. Requiere comprobación
+real y nota privada; comienza anónimo, sin monto público. Publicar un nombre o un
+monto exige autorización. La transacción crea el apoyo y su revisión de forma
+atómica. Las referencias duplicadas no crean otro aporte.
+
+El contador de Apoyos incluye pagos pendientes y nombres nuevos por revisar.
+En la bandeja se consulta cada minuto mientras la pestaña está visible; una
+notificación pide actualizar, conservando formularios en curso.
+
+Las metas se definen por mes de Uruapan con importe y motivo reales. No hay metas
+predeterminadas ni registros de ejemplo. Solo se publica una meta habilitada para
+el mes actual. Su avance suma aportes confirmados durante ese mes que también
+tienen reconocimiento aprobado y monto visible; nunca importes ocultos o privados.
+Las revisiones concurrentes de metas y privacidad usan versiones para impedir
+sobrescrituras silenciosas.

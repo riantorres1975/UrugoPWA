@@ -28,7 +28,7 @@ export default async function AdminHeader({ email, active }: Props) {
     { href: "/admin/routes", id: "routes", label: "Rutas", icon: Route },
     { href: "/admin/signals", id: "signals", label: "Señales", icon: RadioTower, count: pendingSignals },
     { href: "/admin/feedback", id: "feedback", label: "Opiniones", icon: ThumbsUp },
-    { href: "/admin/apoyos", id: "support", label: "Apoyos", icon: Heart },
+    { href: "/admin/apoyos", id: "support", label: "Apoyos", icon: Heart, count: pending.support ?? 0 },
     { href: "/admin/integrations", id: "integrations", label: "Integraciones", icon: KeyRound },
   ];
 

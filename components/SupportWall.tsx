@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowUpRight, Heart, ShieldCheck } from "lucide-react";
 import type { CSSProperties } from "react";
 import SupporterList from "@/components/SupporterList";
+import SupportGoal from "@/components/SupportGoal";
 import { formatSupportAmount, type SupportWallData } from "@/lib/support-contributions";
 
 export default function SupportWall({ data, compact = false }: { data: SupportWallData | null; compact?: boolean }) {
@@ -12,6 +13,7 @@ export default function SupportWall({ data, compact = false }: { data: SupportWa
       <p>{supporters.length ? "Estos son los apoyos que el equipo ya verificó. Cada persona elige cómo aparecer." : "Aquí reconoceremos los apoyos verificados de la comunidad. Tú eliges si quieres aparecer."}</p></div>
       {compact && <Link href="/apoyar" className="support-link">Apoyar UruGo <ArrowUpRight className="h-4 w-4" aria-hidden="true" /></Link>}
     </div>
+    {data?.goal && <SupportGoal goal={data.goal} />}
     {supporters.length > 0 ? <><SupporterList>{supporters.map((supporter, index) => <li key={supporter.id} style={{ "--supporter-delay": `${index * 90}ms` } as CSSProperties}>
       <span className="supporter-avatar" aria-hidden="true">{supporter.name === "Apoyo anónimo" ? <Heart /> : Array.from(supporter.name)[0]?.toUpperCase()}</span>
       <div><strong className="supporter-name"><span className="supporter-name-text">{supporter.name}</span><span className="supporter-thanks" aria-hidden="true"><Heart /></span></strong><small>Confirmado el {new Date(supporter.confirmed_at).toLocaleDateString("es-MX", { day: "numeric", month: "short", timeZone: "America/Mexico_City" })}</small></div>

@@ -1,29 +1,16 @@
 "use client";
 
 import { Analytics } from "@vercel/analytics/next";
-
-const SENSITIVE_QUERY_PARAMS = new Set([
-  "a",
-  "b",
-  "destino",
-  "ia",
-  "ib",
-  "tas",
-  "tax",
-  "tbx",
-  "tbe",
-]);
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { safeAnalyticsUrl } from "@/lib/analytics-url";
 
 export default function PrivacySafeAnalytics() {
   return (
-    <Analytics
+    <><Analytics
       beforeSend={(event) => {
-        const url = new URL(event.url);
-        for (const key of SENSITIVE_QUERY_PARAMS) {
-          url.searchParams.delete(key);
-        }
-        return { ...event, url: url.toString() };
+        const url = safeAnalyticsUrl(event.url);
+        return url ? { ...event, url } : null;
       }}
-    />
+    /><SpeedInsights beforeSend={(event) => { const url = safeAnalyticsUrl(event.url); return url ? { ...event, url } : null; }} /></>
   );
 }

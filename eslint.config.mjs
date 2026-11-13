@@ -10,6 +10,7 @@ const config = [
   {
     ignores: [
       ".next/**",
+      ".cache/**", // Generated local previews and bundled third-party code.
       "out/**",
       "build/**",
       "node_modules/**",

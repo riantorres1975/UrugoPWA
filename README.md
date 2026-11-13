@@ -172,6 +172,8 @@ Los enlaces de apoyo, la CLABE y el nombre del destinatario se renderizan en la 
 
 Los avisos de aportaciones se guardan pendientes en Supabase y se verifican en `/admin/apoyos` contra el pago recibido. Inicio y `/apoyar` reconocen únicamente apoyos confirmados con la privacidad autorizada: nombre, anónimo o sin publicación, y monto opcional. El recordatorio de la PWA se puede cerrar por 30 días y se oculta durante búsquedas y viajes. Consulta la [configuración y el flujo de verificación](docs/support-contributions.md).
 
+Cada aviso nuevo recibe un código privado para `/apoyar/mi-aporte`: permite consultar el estado, corregir el nombre y retirar el reconocimiento. El panel incluye contador de pendientes, registro manual de pagos verificados, recuperación del acceso y metas mensuales configurables sin cifras de ejemplo. Las tarjetas de agradecimiento se generan como PNG en el dispositivo y nunca incluyen el monto ni el código.
+
 El resumen administrativo se programa una vez al día y sólo se envía cuando existen reportes o señales por revisar. Requiere `CRON_SECRET`, `RESEND_API_KEY` y un remitente de un dominio verificado en Resend.
 
 En producción conviene configurar Upstash para que los límites de solicitudes se compartan entre todas las instancias. El webhook operativo es opcional: recibe únicamente errores críticos de React, deduplicados por huella durante 15 minutos, sin mensajes, trazas ni ubicación del usuario.

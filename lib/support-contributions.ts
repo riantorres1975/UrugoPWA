@@ -1,7 +1,8 @@
 export const SUPPORT_METHODS = { paypal: "PayPal", mercadopago: "Mercado Pago", spei: "Transferencia SPEI" } as const;
 export type SupportMethod = keyof typeof SUPPORT_METHODS;
 export type SupportVisibility = "anonymous" | "named" | "private";
-export type SupportWallData = { confirmedCount: number; supporters: { id: string; name: string; amount_cents: number | null; confirmed_at: string }[] };
+export type SupportGoal = { month: string; target_cents: number; raised_cents: number; description: string };
+export type SupportWallData = { confirmedCount: number; supporters: { id: string; name: string; amount_cents: number | null; confirmed_at: string }[]; goal?: SupportGoal | null };
 
 export function parseSupportAmount(value: unknown): number | null {
   if (typeof value !== "string" || !/^\d{1,6}(?:[.,]\d{1,2})?$/.test(value.trim())) return null;
