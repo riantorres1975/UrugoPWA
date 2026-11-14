@@ -1,270 +1,250 @@
 "use client";
 
-import { Check, LoaderCircle, MapPinned, Trash2, Undo2 } from "lucide-react";
+import { Check, ChevronLeft, Crosshair, Eye, EyeOff, LoaderCircle, MapPinned, Plus, Redo2, Search, Trash2, Undo2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { getMapStyle, URUAPAN_CENTER } from "@/lib/map";
 import type { Coordinates } from "@/lib/types";
+import "./route-proposal.css";
 
-type Direction = {
-  id: number;
-  label: string;
-  color: string;
-  path: Coordinates[];
-};
-
-type GeometryResponse = {
-  directions: Direction[];
-};
-
+type Direction = { id: number; label: string; path: Coordinates[] };
 type Props = {
   routeKey: string;
   points: Coordinates[];
   onChange: (points: Coordinates[]) => void;
+  direction?: string;
+  onDirectionChange?: (label: string) => void;
 };
-
-const CURRENT_SOURCE = "proposal-current-route";
-const PROPOSAL_LINE_SOURCE = "proposal-line";
-const PROPOSAL_POINTS_SOURCE = "proposal-points";
-const MAX_PROPOSAL_POINTS = 120;
-
-function isCoordinate(value: unknown): value is Coordinates {
-  return Array.isArray(value)
-    && value.length === 2
-    && value.every((number) => typeof number === "number" && Number.isFinite(number));
-}
-
-function parseGeometryResponse(value: unknown): GeometryResponse | null {
-  if (typeof value !== "object" || value === null || !("directions" in value) || !Array.isArray(value.directions)) return null;
-  const directions = value.directions.filter((direction): direction is Direction => {
-    if (typeof direction !== "object" || direction === null) return false;
-    const candidate = direction as Partial<Direction>;
-    return Number.isSafeInteger(candidate.id)
-      && typeof candidate.label === "string"
-      && typeof candidate.color === "string"
-      && Array.isArray(candidate.path)
-      && candidate.path.length >= 2
-      && candidate.path.every(isCoordinate);
-  });
-  return directions.length > 0 ? { directions } : null;
-}
+const CURRENT = "proposal-current-route";
+const LINE = "proposal-line";
+const MAX_POINTS = 120;
 
 function lineData(points: Coordinates[]): GeoJSON.FeatureCollection<GeoJSON.LineString> {
-  return {
-    type: "FeatureCollection",
-    features: points.length >= 2
-      ? [{ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: points } }]
-      : [],
-  };
+  return { type: "FeatureCollection", features: points.length < 2 ? [] : [{ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: points } }] };
+}
+function parseDirections(value: unknown): Direction[] {
+  if (!value || typeof value !== "object" || !("directions" in value) || !Array.isArray(value.directions)) return [];
+  return value.directions.filter((item): item is Direction => item && Number.isSafeInteger(item.id) && typeof item.label === "string" && Array.isArray(item.path) && item.path.length >= 2 && item.path.every((p: unknown) => Array.isArray(p) && p.length === 2 && p.every(n => typeof n === "number" && Number.isFinite(n))));
 }
 
-function pointData(points: Coordinates[]): GeoJSON.FeatureCollection<GeoJSON.Point> {
-  return {
-    type: "FeatureCollection",
-    features: points.map((point, index) => ({
-      type: "Feature",
-      properties: { index: index + 1 },
-      geometry: { type: "Point", coordinates: point },
-    })),
-  };
-}
-
-export default function RouteProposalMap({ routeKey, points, onChange }: Props) {
+export default function RouteProposalMap(props: Props) {
   const [open, setOpen] = useState(false);
+  return <>
+    <button type="button" className="proposal-launch" onClick={() => setOpen(true)} aria-haspopup="dialog">
+      <MapPinned size={22} aria-hidden="true" />
+      <span><strong>{props.points.length >= 2 ? "Revisar mi tramo" : "Marcar calles en el mapa"}</strong><small>{props.points.length >= 2 ? `${props.points.length} puntos · ${props.direction || "Recorrido propuesto"}` : "Pantalla completa · opcional"}</small></span>
+      {props.points.length >= 2 ? <Check size={20} aria-hidden="true" /> : <Plus size={20} aria-hidden="true" />}
+    </button>
+    {open && createPortal(<ProposalEditor {...props} onClose={() => setOpen(false)} />, document.body)}
+  </>;
+}
+
+function ProposalEditor({ routeKey, points, onChange, direction, onDirectionChange, onClose }: Props & { onClose: () => void }) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<import("mapbox-gl").Map | null>(null);
+  const markerConstructor = useRef<typeof import("mapbox-gl").Marker | null>(null);
+  const currentRef = useRef(points);
+  const directionChangeRef = useRef(onDirectionChange);
+  const initialDirection = useRef(direction);
+  const history = useRef<Coordinates[][]>([]);
+  const future = useRef<Coordinates[][]>([]);
   const [directions, setDirections] = useState<Direction[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [state, setState] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
+  const [insertAfter, setInsertAfter] = useState<number | null>(null);
+  const [ready, setReady] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [error, setError] = useState("");
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<import("mapbox-gl").Map | null>(null);
-  const pointsRef = useRef(points);
-  const onChangeRef = useRef(onChange);
+  const [notice, setNotice] = useState("");
+  const [showReference, setShowReference] = useState(true);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const [query, setQuery] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [results, setResults] = useState<import("@/lib/geocode").PlaceResult[]>([]);
+  const searchGeneration = useRef(0);
+  const searchAbort = useRef<AbortController | null>(null);
+  const [historyCounts, setHistoryCounts] = useState({ undo: 0, redo: 0 });
+  const activeDirection = directions.find(item => item.id === selectedId);
 
-  useEffect(() => { pointsRef.current = points; }, [points]);
-  useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
+  useEffect(() => { currentRef.current = points; directionChangeRef.current = onDirectionChange; }, [points, onDirectionChange]);
+  useEffect(() => {
+    const dialog = dialogRef.current!;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    dialog.showModal();
+    document.body.style.overflow = "hidden";
+    const viewport = window.visualViewport;
+    const resize = () => {
+      dialog.style.setProperty("--proposal-view-height", `${viewport?.height ?? window.innerHeight}px`);
+      dialog.style.setProperty("--proposal-view-top", `${viewport?.offsetTop ?? 0}px`);
+    };
+    resize(); viewport?.addEventListener("resize", resize); viewport?.addEventListener("scroll", resize);
+    return () => {
+      // Invalidate asynchronous searches when this editor is closed.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      searchGeneration.current++;
+      searchAbort.current?.abort();
+      viewport?.removeEventListener("resize", resize); viewport?.removeEventListener("scroll", resize);
+      dialog.close();
+      document.body.style.overflow = previousOverflow;
+      previousFocus?.focus({ preventScroll: true });
+    };
+  }, []);
 
   useEffect(() => {
-    if (!open || !containerRef.current || mapRef.current) return;
     const controller = new AbortController();
     let disposed = false;
-
+    let backgroundFailed = false;
+    const timer = setTimeout(() => {
+      if (!disposed) { setFailed(true); setError("El mapa está tardando en cargar. Puedes reabrirlo o enviar el reporte solo con una descripción."); }
+    }, 20000);
     async function initialize() {
-      setState("loading");
-      setError("");
       try {
         const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-        if (!token) throw new Error("El editor de mapa no está disponible en este momento.");
-
-        const [mapboxModule, response] = await Promise.all([
-          import("mapbox-gl"),
-          fetch(`/api/v1/routes/${encodeURIComponent(routeKey)}/geometry`, { signal: controller.signal }),
-        ]);
-        if (!response.ok) throw new Error("No pudimos cargar el recorrido publicado.");
-        const parsed = parseGeometryResponse(await response.json());
-        if (!parsed) throw new Error("El recorrido publicado no tiene datos válidos.");
+        if (!token) throw new Error("El mapa no está disponible. Puedes enviar el reporte describiendo las calles.");
+        const [module, response] = await Promise.all([import("mapbox-gl"), fetch(`/api/v1/routes/${encodeURIComponent(routeKey)}/geometry`, { signal: controller.signal })]);
+        if (!response.ok) throw new Error("No pudimos cargar esta ruta. Cierra el mapa e intenta otra vez.");
+        const paths = parseDirections(await response.json());
+        if (!paths.length) throw new Error("Esta ruta no tiene un recorrido disponible para comparar.");
         if (disposed || !containerRef.current) return;
-
-        const firstDirection = parsed.directions[0];
-        setDirections(parsed.directions);
-        setSelectedId(firstDirection.id);
-
-        const mapboxgl = mapboxModule.default;
+        const initial = paths.find(item => item.label === initialDirection.current) ?? paths[0];
+        setDirections(paths); setSelectedId(initial.id);
+        directionChangeRef.current?.(initial.label);
+        const mapboxgl = module.default;
+        markerConstructor.current = mapboxgl.Marker;
         mapboxgl.accessToken = token;
-        const map = new mapboxgl.Map({
-          container: containerRef.current,
-          style: getMapStyle(true),
-          center: URUAPAN_CENTER,
-          zoom: 12.5,
-          attributionControl: true,
-        });
+        const map = new mapboxgl.Map({ container: containerRef.current, style: getMapStyle(false), center: URUAPAN_CENTER, zoom: 13, attributionControl: true });
         mapRef.current = map;
         map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
-
+        map.doubleClickZoom.disable();
+        map.touchZoomRotate.disableRotation();
+        map.on("error", event => {
+          const status = (event.error as Error & { status?: number })?.status;
+          if (disposed || (status !== 401 && status !== 403)) return;
+          backgroundFailed = true; clearTimeout(timer); setReady(false); setFailed(true);
+          setError("No pudimos cargar las calles del mapa. Puedes volver y describir por dónde pasa el camión; tu tramo se conserva.");
+        });
         map.on("load", () => {
-          if (disposed) return;
-          map.addSource(CURRENT_SOURCE, {
-            type: "geojson",
-            data: lineData(firstDirection.path),
-          });
-          map.addLayer({
-            id: `${CURRENT_SOURCE}-casing`,
-            type: "line",
-            source: CURRENT_SOURCE,
-            paint: { "line-color": "#071006", "line-width": 8, "line-opacity": 0.72 },
-          });
-          map.addLayer({
-            id: CURRENT_SOURCE,
-            type: "line",
-            source: CURRENT_SOURCE,
-            paint: { "line-color": "#48cce0", "line-width": 4, "line-opacity": 0.82 },
-          });
-          map.addSource(PROPOSAL_LINE_SOURCE, { type: "geojson", data: lineData(pointsRef.current) });
-          map.addLayer({
-            id: PROPOSAL_LINE_SOURCE,
-            type: "line",
-            source: PROPOSAL_LINE_SOURCE,
-            paint: { "line-color": "#f4c84a", "line-width": 5, "line-dasharray": [1.2, 1.2] },
-          });
-          map.addSource(PROPOSAL_POINTS_SOURCE, { type: "geojson", data: pointData(pointsRef.current) });
-          map.addLayer({
-            id: PROPOSAL_POINTS_SOURCE,
-            type: "circle",
-            source: PROPOSAL_POINTS_SOURCE,
-            paint: {
-              "circle-radius": 6,
-              "circle-color": "#f4c84a",
-              "circle-stroke-color": "#071006",
-              "circle-stroke-width": 3,
-            },
-          });
-
+          if (disposed || backgroundFailed) return;
+          clearTimeout(timer);
+          map.addSource(CURRENT, { type: "geojson", data: lineData(initial.path) });
+          map.addLayer({ id: CURRENT, type: "line", source: CURRENT, layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#167aaf", "line-width": 5, "line-opacity": .65 } });
+          map.addSource(LINE, { type: "geojson", data: lineData(currentRef.current) });
+          map.addLayer({ id: `${LINE}-casing`, type: "line", source: LINE, layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#fff", "line-width": 9 } });
+          map.addLayer({ id: LINE, type: "line", source: LINE, layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#a45f0c", "line-width": 5 } });
           const bounds = new mapboxgl.LngLatBounds();
-          firstDirection.path.forEach((point) => bounds.extend(point));
-          map.fitBounds(bounds, { padding: 48, maxZoom: 14, duration: 0 });
-          setState("ready");
+          (currentRef.current.length >= 2 ? currentRef.current : initial.path).forEach(p => bounds.extend(p));
+          map.fitBounds(bounds, { padding: 48, maxZoom: 16, duration: 0 });
+          setFailed(false); setError(""); setReady(true);
         });
-
-        map.on("click", (event) => {
-          if (pointsRef.current.length >= MAX_PROPOSAL_POINTS) {
-            setError(`Máximo ${MAX_PROPOSAL_POINTS} puntos por propuesta.`);
-            return;
-          }
-          const nextPoint: Coordinates = [
-            Number(event.lngLat.lng.toFixed(6)),
-            Number(event.lngLat.lat.toFixed(6)),
-          ];
-          onChangeRef.current([...pointsRef.current, nextPoint]);
-        });
-      } catch (caught) {
-        if (controller.signal.aborted || disposed) return;
-        setState("error");
-        setError(caught instanceof Error ? caught.message : "No pudimos abrir el editor de mapa.");
+        // Navigating the map never changes the proposed path; adding requires the explicit button.
+      } catch (cause) {
+        clearTimeout(timer);
+        if (!disposed && !controller.signal.aborted) { setFailed(true); setError(cause instanceof Error ? cause.message : "No pudimos abrir el mapa."); }
       }
     }
-
     void initialize();
-    return () => {
-      disposed = true;
-      controller.abort();
-      mapRef.current?.remove();
-      mapRef.current = null;
-    };
-  }, [open, routeKey]);
+    return () => { disposed = true; clearTimeout(timer); controller.abort(); mapRef.current?.remove(); mapRef.current = null; };
+  }, [routeKey]);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map?.isStyleLoaded()) return;
-    (map.getSource(PROPOSAL_LINE_SOURCE) as import("mapbox-gl").GeoJSONSource | undefined)?.setData(lineData(points));
-    (map.getSource(PROPOSAL_POINTS_SOURCE) as import("mapbox-gl").GeoJSONSource | undefined)?.setData(pointData(points));
-  }, [points]);
+    if (!ready || !map) return;
+    (map.getSource(LINE) as import("mapbox-gl").GeoJSONSource)?.setData(lineData(points));
+    const Marker = markerConstructor.current;
+    if (!Marker) return;
+    const markers = points.map((point, index) => {
+      const element = document.createElement("div");
+      element.className = `proposal-point-marker${selectedPoint === index ? " is-selected" : ""}`;
+      element.textContent = String(index + 1);
+      element.setAttribute("aria-hidden", "true");
+      return new Marker({ element }).setLngLat(point).addTo(map);
+    });
+    return () => { markers.forEach(marker => marker.remove()); };
+  }, [points, selectedPoint, ready]);
 
   useEffect(() => {
     const map = mapRef.current;
-    const direction = directions.find((candidate) => candidate.id === selectedId);
-    if (!map?.isStyleLoaded() || !direction) return;
-    (map.getSource(CURRENT_SOURCE) as import("mapbox-gl").GeoJSONSource | undefined)?.setData(lineData(direction.path));
-    map.setPaintProperty(CURRENT_SOURCE, "line-color", "#48cce0");
-    const longitudes = direction.path.map(([longitude]) => longitude);
-    const latitudes = direction.path.map(([, latitude]) => latitude);
-    map.fitBounds([
-      [Math.min(...longitudes), Math.min(...latitudes)],
-      [Math.max(...longitudes), Math.max(...latitudes)],
-    ], { padding: 48, maxZoom: 14, duration: 450 });
-  }, [directions, selectedId]);
+    if (!ready || !map || !activeDirection) return;
+    (map.getSource(CURRENT) as import("mapbox-gl").GeoJSONSource)?.setData(lineData(activeDirection.path));
+    map.setLayoutProperty(CURRENT, "visibility", showReference ? "visible" : "none");
+  }, [activeDirection, ready, showReference]);
 
-  if (!open) {
-    return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-expanded="false"
-        className="flex min-h-14 w-full items-center justify-between gap-3 border border-[#48cce0]/35 bg-[#071312] px-4 text-left text-sm font-black text-[#dff9fb] transition hover:border-[#74dceb] hover:bg-[#0a1b19]"
-      >
-        <span className="inline-flex items-center gap-3"><MapPinned className="h-5 w-5 text-[#48cce0]" aria-hidden="true" /> Abrir mapa y marcar calles</span>
-        {points.length >= 2 && <span className="shrink-0 bg-[#48cce0] px-2 py-1 text-xs text-[#071006]">Listo</span>}
-      </button>
-    );
+  function update(next: Coordinates[]) {
+    history.current = [...history.current.slice(-49), currentRef.current]; future.current = []; currentRef.current = next; onChange(next);
+    setSelectedPoint(null); setInsertAfter(null); setError(""); setConfirmClear(false); setHistoryCounts({ undo: history.current.length, redo: 0 });
+  }
+  function addPoint() {
+    const map = mapRef.current;
+    if (!ready || !map) return;
+    const center = map.getCenter();
+    const point: Coordinates = [Number(center.lng.toFixed(6)), Number(center.lat.toFixed(6))];
+    if (point[0] < -103 || point[0] > -101 || point[1] < 18.5 || point[1] > 20.5) { setError("Acerca el mapa a Uruapan para marcar el recorrido."); return; }
+    const current = currentRef.current;
+    const neighbor = insertAfter !== null ? current[insertAfter] : selectedPoint === null ? current.at(-1) : null;
+    if (neighbor && Math.abs(point[0] - neighbor[0]) + Math.abs(point[1] - neighbor[1]) < .00002) { setError("Mueve el mapa hasta la siguiente esquina antes de agregar otro punto."); return; }
+    if (selectedPoint === null && current.length >= MAX_POINTS) { setError("Llegaste a 120 puntos. Puedes mover o quitar un punto para ajustar el tramo."); return; }
+    update(insertAfter !== null ? [...current.slice(0, insertAfter + 1), point, ...current.slice(insertAfter + 1)] : selectedPoint === null ? [...current, point] : current.map((p, i) => i === selectedPoint ? point : p));
+    setNotice(insertAfter !== null ? `Punto ${insertAfter + 2} insertado. Se conserva el orden de los siguientes.` : selectedPoint === null ? `Punto ${current.length + 1} agregado. Mueve el mapa a la siguiente esquina.` : `Punto ${selectedPoint + 1} actualizado.`);
+  }
+  function undo(redo = false) {
+    const from = redo ? future : history; const to = redo ? history : future; const next = from.current.pop();
+    if (!next) return;
+    to.current.push(currentRef.current); currentRef.current = next; onChange(next);
+    setSelectedPoint(null); setInsertAfter(null); setConfirmClear(false); setError(""); setNotice(redo ? "Cambio recuperado." : "Último cambio deshecho."); setHistoryCounts({ undo: history.current.length, redo: future.current.length });
+  }
+  function selectPoint(index: number) {
+    setSelectedPoint(index); setInsertAfter(null); setNotice(`Punto ${index + 1} seleccionado. Mueve la mira para cambiarlo.`);
+    mapRef.current?.flyTo({ center: points[index], zoom: Math.max(16, mapRef.current.getZoom()), duration: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 300 });
+  }
+  async function search() {
+    if (query.trim().length < 3) { setNotice("Escribe al menos 3 letras para buscar una calle o lugar."); return; }
+    searchAbort.current?.abort(); const controller = new AbortController(); searchAbort.current = controller;
+    const generation = ++searchGeneration.current;
+    setSearching(true); setResults([]);
+    try {
+      const { searchPlaces } = await import("@/lib/geocode");
+      const found = await searchPlaces(query, { limit: 4, signal: controller.signal });
+      if (generation !== searchGeneration.current) return;
+      setResults(found); if (!found.length) setNotice("Sin resultados. Puedes acercar el mapa y buscar la calle manualmente.");
+    } catch { if (generation === searchGeneration.current) setNotice("No pudimos buscar. Puedes mover el mapa manualmente."); }
+    finally { if (generation === searchGeneration.current) setSearching(false); }
   }
 
-  return (
-    <section className="border border-[#48cce0]/30 bg-[#090d08]" aria-label="Propuesta de recorrido">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
-        <div>
-          <p className="text-xs font-black uppercase text-[#74dceb]">Recorrido propuesto</p>
-          <p className="mt-1 text-[11px] text-[#89a873]">Toca las calles en orden. Azul: ruta publicada. Amarillo: tu corrección.</p>
-        </div>
-        <button type="button" onClick={() => setOpen(false)} className="text-xs font-bold text-[#78965f] hover:text-[#e8f2d8]">Cerrar mapa</button>
-      </div>
-
-      {directions.length > 1 && (
-        <label className="block border-b border-white/10 px-4 py-3 text-xs font-bold text-[#89a873]">
-          Recorrido de referencia
-          <select value={selectedId ?? ""} onChange={(event) => setSelectedId(Number(event.target.value))} className="ml-3 h-9 border border-white/15 bg-[#111a0d] px-3 text-xs text-[#e8f2d8] outline-none focus:border-[#48cce0]/60">
-            {directions.map((direction) => <option key={direction.id} value={direction.id}>{direction.label}</option>)}
-          </select>
-        </label>
-      )}
-
-      <div className="relative h-[420px] w-full bg-[#10170e] sm:h-[480px]">
-        <div ref={containerRef} className="absolute inset-0 cursor-crosshair" />
-        {state === "loading" && <div className="absolute inset-0 grid place-items-center bg-[#0c110a]/85"><LoaderCircle className="h-6 w-6 animate-spin text-[#48cce0]" aria-label="Cargando mapa" /></div>}
-        {state === "ready" && points.length === 0 && <p className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap bg-[#0c110a]/95 px-3 py-2 text-xs font-bold text-[#e8f2d8] shadow-lg">Marca el primer punto</p>}
-        {state === "ready" && (
-          <div className="pointer-events-none absolute left-3 top-3 flex flex-wrap gap-2 text-[10px] font-black uppercase">
-            <span className="bg-[#0c110a]/95 px-2.5 py-2 text-[#74dceb]">Línea actual</span>
-            <span className="bg-[#0c110a]/95 px-2.5 py-2 text-[#f4c84a]">Tu propuesta</span>
-          </div>
-        )}
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-4 py-3">
-        <p className="text-xs text-[#78965f]">{points.length < 2 ? `${points.length} de 2 puntos mínimos` : `${points.length} puntos listos para enviar`}</p>
-        <div className="flex gap-2">
-          <button type="button" disabled={points.length === 0} onClick={() => onChange(points.slice(0, -1))} aria-label="Deshacer último punto" title="Deshacer último punto" className="grid h-9 w-9 place-items-center border border-white/15 text-[#a8c888] hover:text-[#e8f2d8] disabled:opacity-30"><Undo2 className="h-4 w-4" /></button>
-          <button type="button" disabled={points.length === 0} onClick={() => onChange([])} aria-label="Borrar propuesta" title="Borrar propuesta" className="grid h-9 w-9 place-items-center border border-[#dd6b5f]/25 text-[#e98b80] hover:bg-[#dd6b5f]/10 disabled:opacity-30"><Trash2 className="h-4 w-4" /></button>
-          <button type="button" onClick={() => setOpen(false)} title="Terminar propuesta" className="inline-flex h-9 items-center gap-2 bg-[#48cce0] px-3 text-xs font-black text-[#071006]"><Check className="h-4 w-4" /> Terminar</button>
-        </div>
-      </div>
-      {error && <p className="border-t border-[#f4c84a]/20 px-4 py-3 text-xs text-[#f4df98]" role="alert">{error}</p>}
-    </section>
-  );
+  return <dialog ref={dialogRef} className="proposal-editor" aria-labelledby="proposal-title" aria-describedby={ready ? "proposal-instructions" : undefined} onCancel={event => { event.preventDefault(); onClose(); }}>
+    <header className="proposal-header">
+      <button type="button" onClick={onClose} className="proposal-icon" aria-label="Volver al reporte"><ChevronLeft size={22} /></button>
+      <div><p>Corrección del recorrido</p><h2 id="proposal-title">¿Por dónde pasa el camión?</h2></div><span className="proposal-count">{points.length}/120</span>
+    </header>
+    <div className="proposal-reference">
+      <div className="proposal-directions" aria-label="Sentido de referencia">{directions.map(item => <button type="button" key={item.id} aria-pressed={item.id === selectedId} onClick={() => { setSelectedId(item.id); directionChangeRef.current?.(item.label); setNotice(`Referencia: ${item.label}. Tu tramo se conserva.`); }}>{item.label}</button>)}</div>
+      <button type="button" className="proposal-icon" aria-label={showReference ? "Ocultar ruta publicada" : "Mostrar ruta publicada"} aria-pressed={showReference} onClick={() => setShowReference(v => !v)}>{showReference ? <Eye size={19} /> : <EyeOff size={19} />}</button>
+    </div>
+    <div className="proposal-search">
+      <input aria-label="Buscar calle o lugar en el mapa" placeholder="Buscar calle, colonia o lugar" value={query} maxLength={120} onChange={event => { searchGeneration.current++; searchAbort.current?.abort(); setSearching(false); setResults([]); setQuery(event.target.value); }} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); event.stopPropagation(); void search(); } }} />
+      <button type="button" className="proposal-icon" disabled={searching || !ready} aria-label="Buscar en el mapa" onClick={() => void search()}>{searching ? <LoaderCircle className="animate-spin" size={20} /> : <Search size={20} />}</button>
+      {results.length > 0 && <div className="proposal-results">{results.map((result, index) => <button key={`${result.label}-${index}`} type="button" onClick={() => { searchGeneration.current++; searchAbort.current?.abort(); setResults([]); setQuery(result.label); if (document.activeElement instanceof HTMLInputElement) document.activeElement.blur(); mapRef.current?.flyTo({ center: result.center, zoom: 16, duration: 0 }); setNotice(`Mapa centrado en ${result.label}. No se ha agregado ningún punto.`); }}>{result.label}</button>)}</div>}
+    </div>
+    <div className="proposal-map">
+      <div ref={containerRef} className="proposal-canvas" />
+      {!ready && !failed && <div className="proposal-loading" role="status"><LoaderCircle size={26} className="animate-spin" /> Cargando mapa…</div>}
+      {failed && !ready && <div className="proposal-loading"><MapPinned size={30} /><p>{error}</p><button type="button" onClick={onClose}>Volver y describir las calles</button></div>}
+      {ready && <><div className="proposal-mira" aria-hidden="true"><Crosshair size={34} strokeWidth={1.8} /></div><p className="proposal-map-hint" id="proposal-instructions">{selectedPoint !== null ? `Coloca la mira donde va el punto ${selectedPoint + 1}` : points.length === 0 ? "Mueve el mapa al inicio del tramo que cambió" : "Mueve la mira a la siguiente esquina"}</p><div className="proposal-legend"><span>Azul: publicado</span><span>Ámbar: tu tramo</span></div></>}
+    </div>
+    <div className="proposal-tools">
+      {points.length > 0 && <div className="proposal-point-list" aria-label="Puntos del tramo">{points.map((_, i) => <button key={i} type="button" aria-label={`Editar punto ${i + 1}`} aria-pressed={selectedPoint === i} onClick={() => selectPoint(i)}>{i + 1}</button>)}</div>}
+      {selectedPoint !== null && <div className="proposal-selection"><span>Punto {selectedPoint + 1}</span><button type="button" onClick={() => { setInsertAfter(selectedPoint); setSelectedPoint(null); setNotice(`Mueve la mira a la esquina que falta después del punto ${selectedPoint + 1}.`); }}><Plus size={16} />Insertar después</button><button type="button" onClick={() => { update(points.filter((_, i) => i !== selectedPoint)); setNotice("Punto eliminado."); }}><Trash2 size={16} />Quitar</button><button type="button" onClick={() => setSelectedPoint(null)} aria-label="Cancelar edición de punto"><X size={16} /></button></div>}
+      {insertAfter !== null && <div className="proposal-selection"><span>Insertando después del punto {insertAfter + 1}</span><button type="button" onClick={() => setInsertAfter(null)}>Cancelar</button></div>}
+      {confirmClear ? <div className="proposal-clear"><span>¿Borrar los {points.length} puntos?</span><button type="button" onClick={() => { update([]); setNotice("Tramo borrado. Puedes empezar otra vez."); }}>Sí, borrar</button><button type="button" onClick={() => setConfirmClear(false)}>Conservar</button></div> : <div className="proposal-actions">
+        <button type="button" className="proposal-icon" aria-label="Deshacer último cambio" disabled={!historyCounts.undo} onClick={() => undo()}><Undo2 size={20} /></button>
+        <button type="button" className="proposal-icon" aria-label="Rehacer último cambio" disabled={!historyCounts.redo} onClick={() => undo(true)}><Redo2 size={20} /></button>
+        <button type="button" className="proposal-add" disabled={!ready} onClick={addPoint}><Plus size={19} />{insertAfter !== null ? "Insertar punto" : selectedPoint === null ? "Agregar punto" : `Mover punto ${selectedPoint + 1}`}</button>
+        <button type="button" className="proposal-icon" aria-label="Borrar todo el tramo" disabled={!points.length} onClick={() => setConfirmClear(true)}><Trash2 size={19} /></button>
+      </div>}
+      <p className="proposal-status" role="status">{error && ready ? error : notice || "Marca solo el tramo que conoces, en el orden del viaje. No hace falta toda la ruta."}</p>
+      <button type="button" className="proposal-done" disabled={points.length < 2 || !ready} onClick={onClose}><Check size={19} />{points.length < 2 ? "Agrega al menos 2 puntos" : `Usar este tramo · ${points.length} puntos`}</button>
+      <p className="proposal-footnote">Se adjunta al reporte. Revisaremos el cambio antes de publicarlo.</p>
+    </div>
+  </dialog>;
 }

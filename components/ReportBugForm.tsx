@@ -14,20 +14,15 @@ import {
   PlayCircle,
   Send,
   Smartphone,
+  Trash2,
   X,
 } from "lucide-react";
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import RouteProposalMap from "@/components/RouteProposalMap";
 import type { CommunityReportType } from "@/lib/community-report";
 import type { Coordinates } from "@/lib/types";
 
 const subscribeBrowserContext = () => () => {};
-const subscribeReducedMotion = (onStoreChange: () => void) => {
-  const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-  mediaQuery.addEventListener("change", onStoreChange);
-  return () => mediaQuery.removeEventListener("change", onStoreChange);
-};
-const getReducedMotionPreference = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const CUSTOM_ROUTE_VALUE = "__custom__";
 
 type ReportChoice = {
@@ -106,12 +101,13 @@ export default function ReportBugForm({
   const [contact, setContact] = useState("");
   const [evidenceUrl, setEvidenceUrl] = useState("");
   const [proposedPath, setProposedPath] = useState<Coordinates[]>([]);
+  const [proposalDirection, setProposalDirection] = useState("");
   const [website, setWebsite] = useState("");
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [submitError, setSubmitError] = useState("");
+  const submitting = useRef(false);
   const [showRouteGuide, setShowRouteGuide] = useState(false);
   const sourceUrl = useSyncExternalStore(subscribeBrowserContext, getSourceUrl, () => "");
-  const prefersReducedMotion = useSyncExternalStore(subscribeReducedMotion, getReducedMotionPreference, () => false);
 
   const selectedChoice = REPORT_CHOICES.find((choice) => choice.value === reportType) ?? REPORT_CHOICES[0];
   const requiresRoute = ROUTE_REPORT_TYPES.includes(reportType);
@@ -121,7 +117,8 @@ export default function ReportBugForm({
     && selectedRouteKey !== CUSTOM_ROUTE_VALUE,
   );
   const isCustomRoute = requiresRoute && selectedRouteKey === CUSTOM_ROUTE_VALUE;
-  const canSubmit = description.trim().length >= 10
+  const hasPath = canProposePath && proposedPath.length >= 2;
+  const canSubmit = (description.trim().length >= 10 || (hasPath && !description.trim()))
     && (!requiresRoute || routeName.trim().length > 0)
     && proposedPath.length !== 1
     && submitState !== "submitting";
@@ -148,6 +145,7 @@ export default function ReportBugForm({
   function chooseRoute(value: string) {
     setSelectedRouteKey(value);
     setProposedPath([]);
+    setProposalDirection("");
     if (value === CUSTOM_ROUTE_VALUE) {
       setRouteName("");
       return;
@@ -158,7 +156,8 @@ export default function ReportBugForm({
 
   async function submitReport(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!canSubmit) return;
+    if (!canSubmit || submitting.current) return;
+    submitting.current = true;
     setSubmitState("submitting");
     setSubmitError("");
 
@@ -171,14 +170,15 @@ export default function ReportBugForm({
           routeKey: requiresRoute && selectedRouteKey && selectedRouteKey !== CUSTOM_ROUTE_VALUE ? selectedRouteKey : null,
           routeName: requiresRoute ? routeName : null,
           place,
-          description,
-          expectedResult: null,
+          description: description.trim() || `El camión pasa por el tramo marcado en el mapa. Propongo corregir el recorrido de ${routeName}.`,
+          expectedResult: hasPath ? `Tramo propuesto para revisión. Sentido de referencia: ${proposalDirection || "no indicado"}. Los puntos siguen el orden del viaje; no sustituyen automáticamente el recorrido completo.` : null,
           contact,
           evidenceUrl,
           proposedPath: canProposePath && proposedPath.length >= 2 ? proposedPath : null,
           sourcePath: sourceUrl ? new URL(sourceUrl).pathname : window.location.pathname,
           website,
         }),
+        signal: AbortSignal.timeout(15000),
       });
       const result = (await response.json().catch(() => null)) as { error?: string; receipt?: string } | null;
       if (!response.ok) throw new Error(result?.error || "No pudimos enviar el reporte.");
@@ -187,7 +187,7 @@ export default function ReportBugForm({
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "No pudimos enviar el reporte.");
       setSubmitState("error");
-    }
+    } finally { submitting.current = false; }
   }
 
   if (submitState === "success") {
@@ -221,17 +221,17 @@ export default function ReportBugForm({
 
   return (
     <form className="overflow-hidden rounded-2xl border border-[var(--public-border)] bg-[var(--public-surface)]" onSubmit={submitReport}>
-      <section className="px-5 py-7 sm:px-8 sm:py-9" aria-labelledby="report-problem-title">
+      <section className="px-4 py-5 sm:px-8 sm:py-7" aria-labelledby="report-problem-title">
         <div className="flex items-center gap-3">
           <span className="grid h-7 w-7 place-items-center bg-[var(--brand-lime)] text-xs font-bold text-[var(--brand-deep)]">1</span>
-          <h2 id="report-problem-title" className="text-[var(--public-ink)] public-section-title">¿Qué está mal?</h2>
+          <h2 id="report-problem-title" className="text-xl font-bold text-[var(--public-ink)]">¿Qué está mal?</h2>
         </div>
         <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3">
           {REPORT_CHOICES.map((choice, index) => {
             const Icon = choice.icon;
             const selected = reportType === choice.value;
             return (
-              <label key={choice.value} className={`relative min-h-28 cursor-pointer rounded-xl border p-4 transition ${index === 0 ? "col-span-2 sm:col-span-3" : ""} ${selected ? "border-[var(--public-accent)] bg-[var(--public-tint)]" : "border-[var(--public-border)] bg-[var(--public-surface)] hover:border-[#6aab48]/50"}`}>
+              <label key={choice.value} className={`relative flex min-h-16 cursor-pointer items-center rounded-xl border p-3 transition focus-within:ring-2 focus-within:ring-[var(--public-accent)] ${index === 0 ? "col-span-2 sm:col-span-3" : ""} ${selected ? "border-[var(--public-accent)] bg-[var(--public-tint)]" : "border-[var(--public-border)] bg-[var(--public-surface)] hover:border-[#6aab48]/50"}`}>
                 <input
                   type="radio"
                   name="reportType"
@@ -240,11 +240,11 @@ export default function ReportBugForm({
                   onChange={() => chooseReportType(choice.value)}
                   className="sr-only"
                 />
-                <div className={index === 0 ? "flex items-center gap-4" : ""}>
+                <div className="flex items-center gap-3">
                   <Icon className={`h-5 w-5 shrink-0 ${selected ? "text-[var(--public-accent)]" : "text-[var(--public-muted)]"}`} aria-hidden="true" />
                   <span className={index === 0 ? "block" : ""}>
-                    <span className={`${index === 0 ? "" : "mt-3"} block text-sm font-bold leading-5 text-[var(--public-ink)]`}>{choice.label}</span>
-                    <span className="mt-1 block text-[11px] leading-4 text-[var(--public-muted)]">{choice.hint}</span>
+                    <span className="block text-sm font-bold leading-5 text-[var(--public-ink)]">{choice.label}</span>
+                    <span className="mt-1 hidden text-xs leading-4 text-[var(--public-muted)] sm:block">{choice.hint}</span>
                   </span>
                 </div>
               </label>
@@ -253,10 +253,10 @@ export default function ReportBugForm({
         </div>
       </section>
 
-      <section className="border-t border-[var(--public-border)] px-5 py-7 sm:px-8 sm:py-9" aria-labelledby="report-route-title">
+      <section className="border-t border-[var(--public-border)] px-4 py-5 sm:px-8 sm:py-7" aria-labelledby="report-route-title">
         <div className="flex items-center gap-3">
           <span className="grid h-7 w-7 place-items-center bg-[var(--brand-lime)] text-xs font-bold text-[var(--brand-deep)]">2</span>
-          <h2 id="report-route-title" className="text-[var(--public-ink)] public-section-title">{requiresRoute ? "¿Qué ruta es?" : "¿Dónde ocurrió?"}</h2>
+          <h2 id="report-route-title" className="text-xl font-bold text-[var(--public-ink)]">{requiresRoute ? "¿Qué ruta es?" : "¿Dónde ocurrió?"}</h2>
         </div>
 
         {requiresRoute && (
@@ -277,84 +277,41 @@ export default function ReportBugForm({
           </label>
         )}
 
-        {PATH_REPORT_TYPES.includes(reportType) && (
-          <div className="mt-5 border-y border-[var(--public-border)] py-4">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-xs font-bold uppercase text-[var(--public-teal)]">Ejemplo rápido</p>
-                <p className="mt-1 text-sm leading-6 text-[var(--public-secondary)]">Mira cómo seleccionar una ruta y marcar las calles correctas.</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowRouteGuide((visible) => !visible)}
-                aria-expanded={showRouteGuide}
-                aria-controls="route-report-guide"
-                className="inline-flex h-11 shrink-0 items-center justify-center gap-2 border border-[#48cce0]/40 px-4 text-sm font-bold text-[var(--public-teal)] transition hover:border-[#48cce0] hover:bg-[#48cce0]/10"
-              >
-                {showRouteGuide ? <X className="h-4 w-4" aria-hidden="true" /> : <PlayCircle className="h-4 w-4" aria-hidden="true" />}
-                {showRouteGuide ? "Ocultar ejemplo" : "Ver ejemplo"}
-              </button>
+        {canProposePath && (
+          <div className="mt-5 rounded-2xl border border-[var(--public-border)] bg-[var(--public-tint)] p-3 sm:p-5">
+            <h3 className="text-base font-bold text-[var(--public-ink)]">Marca por dónde pasa realmente.</h3>
+            <p className="mt-1 text-sm leading-6 text-[var(--public-secondary)]">Dibuja solo el tramo que cambió. No necesitas marcar toda la ruta.</p>
+            <div className="mt-3">
+              <RouteProposalMap key={selectedRouteKey} routeKey={selectedRouteKey} points={proposedPath} onChange={setProposedPath} direction={proposalDirection} onDirectionChange={setProposalDirection} />
             </div>
-
-            {showRouteGuide && (
-              <figure id="route-report-guide" className="mt-4 overflow-hidden border border-[#48cce0]/25 bg-[#070c06]">
-                <video
-                  className="mx-auto block aspect-[320/311] w-full max-w-[640px] bg-[#070c06] object-contain"
-                  controls
-                  autoPlay={!prefersReducedMotion}
-                  loop
-                  muted
-                  playsInline
-                  preload="metadata"
-                  aria-label="Ejemplo para reportar y dibujar la corrección de una ruta"
-                >
-                  <source src="/readme/reportar-ruta.mp4" type="video/mp4" />
-                  Tu navegador no puede reproducir este ejemplo.
-                </video>
-                <figcaption className="grid grid-cols-2 border-t border-[var(--public-border)] text-[11px] font-bold leading-4 text-[var(--public-muted)] sm:grid-cols-4">
-                  {[
-                    "Elige el problema",
-                    "Selecciona la ruta",
-                    "Marca las calles",
-                    "Envía la referencia",
-                  ].map((step, index) => (
-                    <span key={step} className="border-[var(--public-border)] px-3 py-3 odd:border-r sm:border-r sm:last:border-r-0">
-                      <span className="mr-1 text-[var(--public-accent)]">{index + 1}.</span> {step}
-                    </span>
-                  ))}
-                </figcaption>
-              </figure>
-            )}
+            <button type="button" onClick={() => setShowRouteGuide(v => !v)} aria-expanded={showRouteGuide} aria-controls="route-report-guide" className="mt-2 inline-flex min-h-11 items-center gap-2 text-sm font-bold text-[var(--public-teal)]">
+              {showRouteGuide ? <X size={17} aria-hidden="true" /> : <PlayCircle size={17} aria-hidden="true" />}{showRouteGuide ? "Ocultar ejemplo" : "Ver ejemplo"}
+            </button>
+            {showRouteGuide && <ol id="route-report-guide" className="mt-1 space-y-2 text-sm leading-6 text-[var(--public-secondary)]">
+              <li><strong>1.</strong> Mueve el mapa hasta que la mira esté en el inicio del cambio.</li>
+              <li><strong>2.</strong> Pulsa “Agregar punto”. Repite en cada esquina, en el orden del viaje.</li>
+              <li><strong>3.</strong> Toca un número para corregirlo. Al terminar, pulsa “Usar este tramo”.</li>
+            </ol>}
+            {proposedPath.length > 0 && <button type="button" onClick={() => { setProposedPath([]); setProposalDirection(""); }} className="mt-2 flex min-h-11 items-center gap-2 text-sm font-semibold text-[var(--public-secondary)]"><Trash2 size={16} aria-hidden="true" />Quitar tramo del reporte</button>}
+            {proposedPath.length === 1 && <p role="status" className="mt-2 text-sm text-[var(--public-amber)]">Tu tramo tiene un punto. Agrega otro o quítalo para enviar solo la descripción.</p>}
           </div>
         )}
-
         <label className="mt-4 block">
           <span className="text-xs font-bold uppercase text-[var(--public-muted)]">Calle, colonia o referencia <span className="normal-case text-[var(--public-muted)]">(opcional)</span></span>
           <input value={place} onChange={(event) => setPlace(event.target.value)} maxLength={180} placeholder="Ej. frente al Mercado Poniente" className={`${fieldClass} h-14`} />
         </label>
 
-        {canProposePath && (
-          <div className="mt-5 border-l-2 border-[#48cce0] bg-[#48cce0]/[0.06] p-4 sm:p-5">
-            <p className="text-xs font-bold uppercase text-[var(--public-teal)]">¿El recorrido del mapa está mal?</p>
-            <h3 className="mt-2 text-lg font-bold text-[var(--public-ink)]">Marca por dónde pasa realmente.</h3>
-            <p className="mt-1 text-xs leading-5 text-[var(--public-muted)]">Verás la ruta publicada como referencia. Toca las calles en orden para dibujar la corrección.</p>
-            <div className="mt-4">
-              <RouteProposalMap routeKey={selectedRouteKey} points={proposedPath} onChange={setProposedPath} />
-            </div>
-            {proposedPath.length === 1 && <p className="mt-2 text-xs text-[var(--public-amber)]">Marca un segundo punto para formar el recorrido.</p>}
-          </div>
-        )}
       </section>
 
-      <section className="border-t border-[var(--public-border)] px-5 py-7 sm:px-8 sm:py-9" aria-labelledby="report-detail-title">
+      <section className="border-t border-[var(--public-border)] px-4 py-5 sm:px-8 sm:py-7" aria-labelledby="report-detail-title">
         <div className="flex items-center gap-3">
           <span className="grid h-7 w-7 place-items-center bg-[var(--brand-lime)] text-xs font-bold text-[var(--brand-deep)]">3</span>
-          <h2 id="report-detail-title" className="text-[var(--public-ink)] public-section-title">Cuéntanos qué cambió</h2>
+          <h2 id="report-detail-title" className="text-xl font-bold text-[var(--public-ink)]">Cuéntanos qué cambió</h2>
         </div>
         <label className="mt-5 block">
-          <span className="sr-only">Detalle del reporte</span>
-          <textarea value={description} onChange={(event) => setDescription(event.target.value)} required minLength={10} maxLength={2000} rows={5} placeholder={promptFor(reportType)} className={`${fieldClass} py-3 leading-6`} />
-          <span className="mt-2 block text-xs text-[var(--public-muted)]">No necesitas escribir perfecto; con una referencia clara es suficiente.</span>
+          <span className="text-sm font-semibold text-[var(--public-secondary)]">Detalle del reporte {hasPath && <span className="font-normal">(opcional: ya marcaste el tramo)</span>}</span>
+          <textarea value={description} onChange={(event) => setDescription(event.target.value)} required={!hasPath} minLength={10} maxLength={2000} rows={3} placeholder={promptFor(reportType)} className={`${fieldClass} py-3 leading-6`} />
+          <span className="mt-2 block text-xs text-[var(--public-muted)]">{hasPath ? "El dibujo basta. Puedes agregar una referencia o desde cuándo cambió." : "Escribe al menos 10 caracteres. Una calle o referencia nos ayuda."}</span>
         </label>
 
         <details className="mt-5 border-y border-[var(--public-border)] py-4">

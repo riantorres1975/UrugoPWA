@@ -42,27 +42,26 @@ export default async function ReportErrorPage({ searchParams }: ReportErrorPageP
       <ForceDark />
       <PublicHeader active="reportar-error" />
 
-      <section className="border-b border-[var(--public-border)] px-5 pb-9 pt-28 sm:px-8 lg:px-10">
+      <section className="border-b border-[var(--public-border)] px-5 pb-6 pt-24 sm:px-8 lg:px-10">
         <div className="mx-auto max-w-4xl">
           <div className="flex items-center gap-2 text-xs font-bold uppercase text-[var(--public-accent)]">
             <MapPinned className="h-4 w-4" aria-hidden="true" />
             Correcciones de la comunidad
           </div>
-          <h1 className="mt-5 max-w-3xl public-page-title">
-            Ayúdanos a corregir una ruta.
+          <h1 className="mt-3 max-w-3xl public-page-title">
+            ¿Algo cambió en tu ruta?
           </h1>
-          <p className="mt-5 max-w-2xl text-base leading-7 text-[var(--public-secondary)] sm:text-lg">
-            Elige qué está mal, selecciona la ruta y cuéntanos lo que sabes. Si cambió el recorrido, puedes dibujarlo directamente sobre el mapa.
+          <p className="mt-3 max-w-2xl text-base leading-7 text-[var(--public-secondary)]">
+            Elige el problema y la ruta. Cuéntanos qué pasó o marca las calles en el mapa.
           </p>
-          <div className="mt-7 flex flex-wrap gap-x-6 gap-y-3 border-t border-[var(--public-border)] pt-5 text-xs font-bold text-[var(--public-muted)]">
+          <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs font-bold text-[var(--public-muted)]">
             <span className="inline-flex items-center gap-2"><Check className="h-4 w-4 text-[var(--public-accent)]" /> No necesitas cuenta</span>
             <span className="inline-flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-[var(--public-accent)]" /> Revisión antes de publicar</span>
-            <span className="inline-flex items-center gap-2"><MapPinned className="h-4 w-4 text-[var(--public-teal)]" /> Puedes marcar las calles</span>
           </div>
         </div>
       </section>
 
-      <div className="mx-auto max-w-4xl px-0 py-8 sm:px-8 lg:py-12">
+      <div className="mx-auto max-w-4xl px-3 py-5 sm:px-8 lg:py-8">
         <ReportBugForm
           initialRoute={initialRoute}
           initialRouteKey={linkedRoute?.slug}

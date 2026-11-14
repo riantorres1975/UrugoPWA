@@ -8,14 +8,14 @@ test("permite elegir una ruta y enviar una corrección desde el formulario gener
   });
 
   await page.goto("/reportar-error");
-  const routeGuide = page.locator('video[aria-label="Ejemplo para reportar y dibujar la corrección de una ruta"]');
+  await page.getByLabel("Elige una ruta").selectOption({ label: "Ruta 17" });
+  const routeGuide = page.locator('#route-report-guide');
   await expect(routeGuide).toHaveCount(0);
   await page.getByRole("button", { name: "Ver ejemplo" }).click();
   await expect(routeGuide).toBeVisible();
-  await expect(routeGuide.locator("source")).toHaveAttribute("src", "/readme/reportar-ruta.mp4");
+  await expect(routeGuide).toContainText("Agregar punto");
   await page.getByRole("button", { name: "Ocultar ejemplo" }).click();
   await expect(routeGuide).toHaveCount(0);
-  await page.getByLabel("Elige una ruta").selectOption({ label: "Ruta 17" });
   await expect(page.getByText("Marca por dónde pasa realmente.")).toBeVisible();
   await page.getByLabel("Detalle del reporte").fill("Ahora entra por la colonia y ya no sigue el recorrido que aparece en el mapa.");
   await page.getByRole("button", { name: "Enviar reporte" }).click();

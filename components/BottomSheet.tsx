@@ -138,6 +138,9 @@ export default function BottomSheet({
     if (!open) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return;
+      // A native dialog above this sheet owns Escape and keyboard focus while open.
+      const modal = event.target instanceof Element ? event.target.closest("dialog[open]") : null;
+      if (modal && !sheetRef.current?.contains(modal)) return;
       if (event.key === "Escape") {
         event.preventDefault();
         if (snapPoints && snap === "full") setSnap("mini");

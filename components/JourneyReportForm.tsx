@@ -6,6 +6,12 @@ import { CheckCircle2, LoaderCircle, Send } from "lucide-react";
 import type { CommunityReportType } from "@/lib/community-report";
 import { formatRouteLabel, getRouteKey } from "@/lib/route-names";
 import { savePendingReport } from "@/lib/journey-report-outbox";
+import dynamic from "next/dynamic";
+import type { Coordinates } from "@/lib/types";
+
+const RouteProposalMap = dynamic(() => import("@/components/RouteProposalMap"), {
+  loading: () => <p role="status" className="ov-text-muted py-3 text-sm">Preparando editor…</p>,
+});
 
 const subscribeOnline = (callback: () => void) => {
   window.addEventListener("online", callback); window.addEventListener("offline", callback);
@@ -26,6 +32,8 @@ export default function JourneyReportForm({ routes, quickFeedback = false }: { r
   const [routeName, setRouteName] = useState(routes.length === 1 ? routes[0] : "");
   const [reportType, setReportType] = useState<CommunityReportType>("route_changed");
   const [description, setDescription] = useState("");
+  const [proposedPath, setProposedPath] = useState<Coordinates[]>([]);
+  const [proposalDirection, setProposalDirection] = useState("");
   const [website, setWebsite] = useState("");
   const [state, setState] = useState<"idle" | "submitting" | "success" | "saved" | "error">("idle");
   const [reasonChosen, setReasonChosen] = useState(false);
@@ -33,7 +41,11 @@ export default function JourneyReportForm({ routes, quickFeedback = false }: { r
   const [error, setError] = useState("");
   const submitting = useRef(false);
   const fieldClass = "ov-panel ov-border ov-text mt-1.5 min-h-11 w-full rounded-xl border px-3 py-2 text-base outline-none focus:border-lima focus:ring-1 focus:ring-lima";
-  const validDetails = description.trim().length >= 10 || (quickFeedback && reasonChosen && description.trim().length === 0);
+  const routeKey = getRouteKey(routeName);
+  const canDraw = reportType === "route_changed" && Boolean(routeKey) && (!quickFeedback || reasonChosen);
+  const hasPath = canDraw && proposedPath.length >= 2;
+  const validDetails = (description.trim().length >= 10 || ((hasPath || (quickFeedback && reasonChosen)) && description.trim().length === 0)) && proposedPath.length !== 1;
+  function resetDrawing() { setProposedPath([]); setProposalDirection(""); }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -44,7 +56,9 @@ export default function JourneyReportForm({ routes, quickFeedback = false }: { r
     try {
       const report = {
         reportType, routeName, routeKey: getRouteKey(routeName), website,
-        description: description.trim() || `Problema indicado durante el viaje: ${issues.find((issue) => issue.value === reportType)?.label}.`,
+        description: description.trim() || (hasPath ? "El camión pasa por el tramo marcado en el mapa. Propongo corregir ese tramo del recorrido." : `Problema indicado durante el viaje: ${issues.find((issue) => issue.value === reportType)?.label}.`),
+        proposedPath: hasPath ? proposedPath : null,
+        expectedResult: hasPath ? `Tramo propuesto para revisión. Sentido de referencia: ${proposalDirection || "no indicado"}. Los puntos siguen el orden del viaje; no sustituyen automáticamente el recorrido completo.` : null,
         sourcePath: "/mapa",
         place: routes.length > 1 ? `Transbordo: ${routes.join(" → ")}` : null,
       };
@@ -88,7 +102,7 @@ export default function JourneyReportForm({ routes, quickFeedback = false }: { r
     <fieldset disabled={state === "submitting"} className="space-y-3 disabled:opacity-60">
       {routes.length > 1 ? <div>
         <label htmlFor={`${id}-route`} className="ov-text text-[13px] font-semibold">¿En qué ruta ocurrió?</label>
-        <select id={`${id}-route`} required className={fieldClass} value={routeName} onChange={(event) => setRouteName(event.target.value)}>
+        <select id={`${id}-route`} required className={fieldClass} value={routeName} onChange={(event) => { setRouteName(event.target.value); resetDrawing(); }}>
           <option value="" disabled>Elige el tramo del viaje</option>
           {routes.map((name, index) => <option key={name} value={name}>{index + 1}. {formatRouteLabel(name)}</option>)}
         </select>
@@ -97,19 +111,25 @@ export default function JourneyReportForm({ routes, quickFeedback = false }: { r
         <legend className="ov-text text-[13px] font-semibold">¿Qué pasó?</legend>
         <div className="mt-2 grid grid-cols-2 gap-2">
           {issues.map((issue) => <label key={issue.value} className={`ov-border ov-text flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border p-2 text-xs ${reasonChosen && reportType === issue.value ? "bg-cream-100/10" : "ov-pill"}`}>
-            <input type="radio" name={`${id}-reason`} value={issue.value} checked={reasonChosen && reportType === issue.value} onChange={() => { setReasonChosen(true); setReportType(issue.value); }} className="accent-cream-100" />{issue.label}
+            <input type="radio" name={`${id}-reason`} value={issue.value} checked={reasonChosen && reportType === issue.value} onChange={() => { setReasonChosen(true); setReportType(issue.value); resetDrawing(); }} className="accent-cream-100" />{issue.label}
           </label>)}
         </div>
       </fieldset> : <div>
         <label htmlFor={`${id}-issue`} className="ov-text text-[13px] font-semibold">¿Qué pasó?</label>
-        <select id={`${id}-issue`} className={fieldClass} value={reportType} onChange={(event) => setReportType(event.target.value as CommunityReportType)}>
+        <select id={`${id}-issue`} className={fieldClass} value={reportType} onChange={(event) => { setReportType(event.target.value as CommunityReportType); resetDrawing(); }}>
           {issues.map((issue) => <option key={issue.value} value={issue.value}>{issue.label}</option>)}
         </select>
       </div>}
+      {canDraw && routeKey && <div className="space-y-2">
+        <p className="ov-text-muted text-[13px]">Si cambió el recorrido, puedes marcar solo ese tramo. Es opcional.</p>
+        <RouteProposalMap key={routeKey} routeKey={routeKey} points={proposedPath} onChange={setProposedPath} direction={proposalDirection} onDirectionChange={setProposalDirection} />
+        {proposedPath.length > 0 && <button type="button" onClick={resetDrawing} className="ov-text-muted min-h-11 text-[13px] underline">Quitar tramo del reporte</button>}
+        {proposedPath.length === 1 && <p role="status" className="text-[13px] text-amber-200">Agrega otro punto o quita el tramo para continuar.</p>}
+      </div>}
       <div>
         <label htmlFor={`${id}-detail`} className="ov-text text-[13px] font-semibold">Cuéntanos un poco más</label>
-        <textarea id={`${id}-detail`} required={!quickFeedback} minLength={10} maxLength={2000} rows={3} className={fieldClass} value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Por ejemplo: ahora pasa por otra calle…" aria-describedby={`${id}-hint`} />
-        <p id={`${id}-hint`} className="ov-text-muted mt-1 text-xs">{quickFeedback ? "Opcional. Si agregas detalles, escribe al menos 10 caracteres." : "Mínimo 10 caracteres. Una calle o referencia nos ayuda."}</p>
+        <textarea id={`${id}-detail`} required={!quickFeedback && !hasPath} minLength={10} maxLength={2000} rows={3} className={fieldClass} value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Por ejemplo: ahora pasa por otra calle…" aria-describedby={`${id}-hint`} />
+        <p id={`${id}-hint`} className="ov-text-muted mt-1 text-xs">{quickFeedback || hasPath ? "Opcional. Si agregas detalles, escribe al menos 10 caracteres." : "Mínimo 10 caracteres. Una calle o referencia nos ayuda."}</p>
       </div>
       <div hidden aria-hidden="true"><label>Sitio web<input tabIndex={-1} autoComplete="off" value={website} onChange={(event) => setWebsite(event.target.value)} /></label></div>
       <button type="submit" disabled={!routeName || !validDetails || (quickFeedback && !reasonChosen)} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-lima px-3 text-sm font-bold text-ink-900 disabled:cursor-not-allowed disabled:opacity-40">

@@ -174,41 +174,34 @@ await moveCursorTo(routeSelect);
 await routeSelect.selectOption({ label: "Ruta 17" });
 await hold(9);
 
-const openMap = page.getByRole("button", { name: "Abrir mapa y marcar calles" });
-await setStep("3. Marca por dónde pasa realmente");
+const openMap = page.getByRole("button", { name: /Marcar calles en el mapa/ });
+await setStep("3. Mueve la mira y agrega cada esquina");
 await scrollToLocator(openMap, 5);
 await click(openMap);
-await page.locator(".mapboxgl-canvas").waitFor({ state: "visible", timeout: 15_000 });
-await page.getByText("Marca el primer punto").waitFor({ state: "visible", timeout: 15_000 });
-const canvas = page.locator(".mapboxgl-canvas");
-await scrollToLocator(canvas, 5);
-await hold(5);
-
-const canvasBox = await canvas.boundingBox();
-if (!canvasBox) throw new Error("No se pudo ubicar el mapa del reporte.");
-for (const [xRatio, yRatio] of [[0.25, 0.7], [0.5, 0.53], [0.76, 0.36]]) {
-  const point = {
-    x: canvasBox.x + canvasBox.width * xRatio,
-    y: canvasBox.y + canvasBox.height * yRatio,
-  };
-  const start = cursor;
-  for (let index = 1; index <= 5; index += 1) {
-    const progress = index / 5;
-    cursor = {
-      x: start.x + (point.x - start.x) * progress,
-      y: start.y + (point.y - start.y) * progress,
-    };
-    await page.evaluate(({ x, y }) => {
-      const element = document.querySelector("#readme-demo-cursor");
-      if (element instanceof HTMLElement) element.style.transform = `translate(${x}px, ${y}px)`;
-    }, cursor);
-    await captureFrame();
+const editor = page.getByRole("dialog", { name: "¿Por dónde pasa el camión?" });
+await page.waitForFunction(() => !document.querySelector(".proposal-add")?.disabled);
+await page.evaluate(() => {
+  const editor = document.querySelector(".proposal-editor");
+  for (const id of ["readme-demo-step", "readme-demo-cursor"]) {
+    const element = document.getElementById(id);
+    if (element) editor?.appendChild(element);
   }
-  await page.mouse.click(point.x, point.y);
+});
+const add = editor.getByRole("button", { name: "Agregar punto", exact: true });
+for (let index = 0; index < 3; index++) {
+  await click(add);
+  await page.locator(".proposal-canvas canvas").focus();
+  await page.keyboard.press(index === 0 ? "ArrowRight" : "ArrowDown");
+  await page.waitForTimeout(400);
   await hold(3);
 }
-
-const finishMap = page.getByRole("button", { name: "Terminar", exact: true });
+const finishMap = editor.getByRole("button", { name: "Usar este tramo · 3 puntos", exact: true });
+await page.evaluate(() => {
+  for (const id of ["readme-demo-step", "readme-demo-cursor"]) {
+    const element = document.getElementById(id);
+    if (element) document.body.appendChild(element);
+  }
+});
 await click(finishMap);
 
 const detail = page.getByLabel("Detalle del reporte");
