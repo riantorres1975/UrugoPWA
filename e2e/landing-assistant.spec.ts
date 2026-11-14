@@ -10,6 +10,7 @@ for (const width of [320, 1280]) {
     const floating = page.getByRole("complementary", { name: "Ayuda para moverte y descubrir Uruapan" });
     const button = floating.getByRole("button", { name: "Abrir asistente de rutas" });
     await expect(button).toBeVisible();
+    await expect(floating).toHaveCSS("box-shadow", "none");
     await expect(page.getByRole("dialog", { name: "Asistente UruGo" })).toHaveCount(0);
     expect(questions).toBe(0);
     if (width >= 768) await expect(floating.getByText("Pregúntale a UruGo")).toBeVisible();
