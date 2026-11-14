@@ -1719,7 +1719,24 @@ function MapComponent({
 
     mapRef.current = map;
 
+    // Standalone startup and the visual keyboard can resize the container without
+    // a window resize, which is the only resize Mapbox tracks by itself.
+    let resizeFrame = 0;
+    let containerSize = "";
+    const sizeObserver = new ResizeObserver(() => {
+      const container = map.getContainer();
+      if (!container.clientWidth || !container.clientHeight) return;
+      const size = `${container.clientWidth}:${container.clientHeight}`;
+      if (size === containerSize) return;
+      containerSize = size;
+      cancelAnimationFrame(resizeFrame);
+      resizeFrame = requestAnimationFrame(() => map.resize());
+    });
+    sizeObserver.observe(map.getContainer());
+
     return () => {
+      sizeObserver.disconnect();
+      cancelAnimationFrame(resizeFrame);
       stopRouteAnimation();
       originMarkerRef.current?.remove();
       destinationMarkerRef.current?.remove();

@@ -69,6 +69,7 @@ import { findMatchingTransfer, getTransferSelectionKey } from "@/lib/transfer-se
 import { buildSharedRouteSegment } from "@/lib/shared-route";
 import { getSharedTransferIdentity } from "@/lib/shared-map-state";
 import { haversineMeters } from "@/lib/geo";
+import { observeMapViewport } from "@/lib/map-viewport";
 import { findNearbyRouteIds } from "@/lib/nearby-routes";
 import { consumeNearbyRoutesRequest, hasNearbyRoutesRequest } from "@/lib/nearby-request";
 import {
@@ -1191,7 +1192,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   if (fetchError && !showSavedJourneys) {
     const offline = !isOnline;
     return (
-      <main className="map-brand relative flex h-dvh w-full flex-col items-center justify-center gap-4 overflow-hidden bg-ink-900 px-6 text-center">
+      <main ref={observeMapViewport} className="map-brand map-viewport flex w-full flex-col items-center justify-center gap-4 overflow-hidden bg-ink-900 px-6 text-center">
         <p className="font-display text-[18px] font-semibold text-white">No se pudieron cargar las rutas</p>
         <p className="max-w-sm text-[13px] leading-6 text-foreground/60">
           {offline
@@ -1401,7 +1402,7 @@ function MapPage({ initialSearch }: { initialSearch: string }) {
   };
 
   return (
-    <main className="map-brand relative flex h-dvh w-full overflow-hidden">
+    <main ref={observeMapViewport} className="map-brand map-viewport flex w-full overflow-hidden">
       <h1 className="sr-only">Mapa de rutas de transporte en Uruapan</h1>
 
       {/* ══════════════════════════════════════════════════════════════════════

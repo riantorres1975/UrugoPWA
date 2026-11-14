@@ -3,13 +3,26 @@
   --map-gutter: max(12px, env(safe-area-inset-left), env(safe-area-inset-right));
   --map-top: max(12px, env(safe-area-inset-top));
   --map-shadow: 0 8px 28px rgb(8 20 12 / 24%);
-  --map-sheet-height: min(84dvh, calc(100dvh - var(--map-top) - 52px));
+  --map-sheet-height: min(calc(var(--map-viewport-height, 100dvh) * .84), calc(var(--map-viewport-height, 100dvh) - var(--map-top) - 52px));
   --ov-bg: var(--brand-header);
   --ov-bg-soft: #18251b;
   --ov-border: #394d3d;
   --ov-border2: #6c806b;
   --ov-pill-bg: #243528;
   color-scheme: dark;
+}
+
+.map-viewport {
+  position: fixed;
+  inset: var(--map-viewport-top, 0px) 0 auto;
+  height: 100svh;
+  height: min(100dvh, var(--map-viewport-height, 100svh));
+  min-height: 0;
+  overscroll-behavior: none;
+}
+
+.map-viewport .map-sheet, .map-viewport .map-sheet-backdrop {
+  position: absolute;
 }
 
 .map-brand :focus-visible {
