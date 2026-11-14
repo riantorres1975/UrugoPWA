@@ -1,4 +1,10 @@
 /* Portada de UruGo. Los estilos se mantienen dentro de .premium-home. */
+.premium-home .home-assistant { position: fixed; right: max(20px, env(safe-area-inset-right)); bottom: max(20px, env(safe-area-inset-bottom)); z-index: 40; }
+.premium-home .home-assistant > button { width: 194px; height: 54px; display: flex; justify-content: flex-start; align-items: center; padding: 0 16px; border: 1px solid #547448; border-radius: 17px; background: #14271e; color: #d4fc76; box-shadow: 0 10px 32px #07120c40; }
+.premium-home .home-assistant > button:hover { background: #203b29; border-color: #b8df75; }
+.premium-home .home-assistant > button:focus-visible { outline: 2px solid #d4fc76; outline-offset: 3px; box-shadow: 0 0 0 6px #14271e; }
+.premium-home .home-assistant-label { position: absolute; left: 49px; top: 50%; transform: translateY(-50%); color: #e7f2d6; font-size: 12px; font-weight: 650; line-height: 1.3; pointer-events: none; white-space: nowrap; }
+@media (max-width:1023px) { .premium-home .home-assistant { right: max(16px, env(safe-area-inset-right)); bottom: calc(96px + env(safe-area-inset-bottom, 0px)); } .premium-home .home-assistant > button { width: 52px; height: 52px; padding: 0; justify-content: center; border-radius: 17px; } .premium-home .home-assistant-label { display: none; } }
 .premium-home {
   --forest: var(--brand-forest);
   --deep: var(--brand-deep);

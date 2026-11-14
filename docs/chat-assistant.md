@@ -42,6 +42,10 @@ deben revisarse cuando cambien los recintos o sus fuentes.
 
 ## Privacidad y conversación
 
+La portada reutiliza el mismo asistente con un botón flotante: etiqueta en
+escritorio e icono en móvil. El panel se carga de forma diferida y solo se abre
+al activarlo. Abrirlo no envía preguntas ni solicita ubicación automáticamente.
+
 La conversación no se persiste en el navegador. La ubicación es optativa, se
 rechaza si es imprecisa o está fuera de cobertura y caduca a los cinco minutos.
 Se puede retirar o empezar otra conversación, cancelando la solicitud pendiente.

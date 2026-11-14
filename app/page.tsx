@@ -14,6 +14,7 @@ import ForceDark from "@/components/ForceDark";
 import FareUpdateNotice from "@/components/FareUpdateNotice";
 import PublicFooter from "@/components/PublicFooter";
 import SupportWall from "@/components/SupportWall";
+import ChatBotLauncher from "@/components/ChatBotLauncher";
 import { getSupportWall } from "@/lib/support-contributions-server";
 import {
   APP_BRAND,
@@ -241,6 +242,10 @@ export default async function LandingPage() {
         </section>
       </main>
       <PublicFooter />
+      <aside className="home-assistant" aria-label="Ayuda para moverte y descubrir Uruapan">
+        <ChatBotLauncher />
+        <span className="home-assistant-label" aria-hidden="true">Pregúntale a UruGo</span>
+      </aside>
     </div>
   );
 }
