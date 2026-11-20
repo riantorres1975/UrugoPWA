@@ -1,9 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { QualityVote } from "@/lib/journey-quality";
 
-const mocks = vi.hoisted(() => ({ client: vi.fn(), page: vi.fn(), range: vi.fn() }));
+const mocks = vi.hoisted(() => ({ client: vi.fn(), page: vi.fn(), range: vi.fn(), cached: new Map<string, unknown>() }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/server", () => ({ createSupabaseAdminClient: mocks.client }));
+vi.mock("@/lib/supabase/config", () => ({ getAdminSupabaseConfig: () => ({ url: "https://quality-test.supabase.co" }) }));
+vi.mock("next/cache", () => ({ unstable_cache: (load: () => Promise<unknown>, keys: string[]) => async () => {
+  const key = JSON.stringify(keys);
+  if (mocks.cached.has(key)) return mocks.cached.get(key);
+  const value = await load(); mocks.cached.set(key, value); return value;
+} }));
 
 function vote(index: number): QualityVote {
   return { route_keys: ["a"], route_names: ["A"], device_hash: `device-${index}`,
@@ -14,6 +20,7 @@ describe("server aggregation of journey opinions", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.resetAllMocks();
+    mocks.cached.clear();
     const query = {
       select: vi.fn().mockReturnThis(), gte: vi.fn().mockReturnThis(), lte: vi.fn().mockReturnThis(),
       order: vi.fn().mockReturnThis(), range: mocks.range.mockReturnThis(), abortSignal: mocks.page,

@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { PUBLISHED_ROUTES_CACHE_TAG } from "@/lib/public-data-cache";
 import { redirect } from "next/navigation";
 import { getAdminAccess } from "@/lib/admin-auth";
 import {
@@ -27,6 +28,7 @@ export type ApiClientActionState = {
 };
 
 function refreshRouteViews(routeId: number) {
+  revalidateTag(PUBLISHED_ROUTES_CACHE_TAG, { expire: 0 });
   revalidatePath("/admin");
   revalidatePath("/admin/routes");
   revalidatePath(`/admin/routes/${routeId}`);

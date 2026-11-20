@@ -1,6 +1,7 @@
 import staticRouteData from "@/data/rutas_produccion_final.json";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import type { Coordinates, ProductionRoute, ProductionRouteLandmark } from "@/lib/types";
+import { cachePublicData, PUBLISHED_ROUTES_CACHE_TAG } from "@/lib/public-data-cache";
 
 export type RouteDataBundle = {
   routes: ProductionRoute[];
@@ -61,30 +62,25 @@ function staticBundle(source: RouteDataBundle["source"] = "static"): RouteDataBu
   };
 }
 
-export async function getPublishedRouteData(): Promise<RouteDataBundle> {
-  if (process.env.ROUTE_DATA_SOURCE?.trim().toLowerCase() !== "supabase") {
-    return staticBundle();
-  }
-
+async function queryPublishedRouteData(): Promise<RouteDataBundle> {
   const supabase = createSupabaseAdminClient();
-  if (!supabase) return staticBundle("static-fallback");
+  if (!supabase) throw new Error("Supabase no está configurado");
 
   const { data, error } = await supabase
     .from("routes")
     .select("id,name,original_name,color,corridor_width_m,verified,last_verified_at,path,landmarks,data_version,updated_at")
     .eq("publication_status", "published")
     .eq("operational_status", "active")
-    .order("id", { ascending: true });
+    .order("id", { ascending: true })
+    .abortSignal(AbortSignal.timeout(8_000));
 
   if (error || !data?.length) {
-    console.error("[route-repository] Usando respaldo estático:", error?.message ?? "sin rutas publicadas");
-    return staticBundle("static-fallback");
+    throw new Error(error?.message ?? "sin rutas publicadas");
   }
 
   const routes = data.map(parseDatabaseRoute).filter((route): route is ProductionRoute => route !== null);
   if (routes.length !== data.length) {
-    console.error("[route-repository] Una o más rutas publicadas no cumplen el contrato esperado.");
-    return staticBundle("static-fallback");
+    throw new Error("Una o más rutas publicadas no cumplen el contrato esperado.");
   }
 
   const latestUpdate = data.reduce((latest, row) => {
@@ -92,4 +88,17 @@ export async function getPublishedRouteData(): Promise<RouteDataBundle> {
     return Number.isFinite(timestamp) ? Math.max(latest, timestamp) : latest;
   }, 0);
   return { routes, source: "supabase", version: `supabase-${latestUpdate}-${routes.length}` };
+}
+
+const readPublishedRoutes = cachePublicData(PUBLISHED_ROUTES_CACHE_TAG, queryPublishedRouteData);
+
+export async function getPublishedRouteData(): Promise<RouteDataBundle> {
+  if (process.env.ROUTE_DATA_SOURCE?.trim().toLowerCase() !== "supabase") return staticBundle();
+  try {
+    return await readPublishedRoutes();
+  } catch (error) {
+    // A database outage must not persist the static backup as the published catalog.
+    console.error("[route-repository] Usando respaldo estático:", error instanceof Error ? error.message : "consulta fallida");
+    return staticBundle("static-fallback");
+  }
 }

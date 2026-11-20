@@ -1,9 +1,8 @@
 import "server-only";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { aggregateJourneyQuality, type JourneyQualityGroup, type QualityVote } from "@/lib/journey-quality";
+import { cachePublicData, JOURNEY_QUALITY_CACHE_TAG } from "@/lib/public-data-cache";
 
-let cached: { expires: number; groups: JourneyQualityGroup[] } | null = null;
-let pending: Promise<JourneyQualityGroup[]> | null = null;
 const PAGE_SIZE = 1000;
 
 async function queryJourneyQuality(): Promise<JourneyQualityGroup[]> {
@@ -26,11 +25,9 @@ async function queryJourneyQuality(): Promise<JourneyQualityGroup[]> {
   throw new Error("La muestra supera el límite de agregación");
 }
 
+// Cache only the aggregate, never the per-device votes downloaded above.
+const readQuality = cachePublicData(JOURNEY_QUALITY_CACHE_TAG, queryJourneyQuality);
+
 export async function loadJourneyQuality(): Promise<JourneyQualityGroup[]> {
-  if (cached && cached.expires > Date.now()) return cached.groups;
-  pending ??= queryJourneyQuality().then((groups) => {
-    cached = { expires: Date.now() + 5 * 60_000, groups };
-    return groups;
-  }).finally(() => { pending = null; });
-  return pending;
+  return readQuality();
 }
