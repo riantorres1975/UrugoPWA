@@ -24,12 +24,12 @@ describe("public route cache invalidation", () => {
     expect(mocks.tag).toHaveBeenCalledWith(PUBLISHED_ROUTES_CACHE_TAG, { expire: 0 });
     expect(mocks.rpc).toHaveBeenCalledWith("publish_route_revision", expect.objectContaining({ p_route_id: 17, p_expected_version: 1 }));
   });
-  it("does not invalidate data when publishing is denied or the revision is stale", async () => {
+  it.each(["PT409", "40001"])("keeps the stale-version warning and cache intact for %s", async (code) => {
     mocks.access.mockResolvedValueOnce({ status: "denied" });
     expect(await publishRouteRevision({ status: "idle", message: "" }, form())).toMatchObject({ status: "error" });
     expect(mocks.rpc).not.toHaveBeenCalled();
-    mocks.rpc.mockResolvedValueOnce({ data: null, error: { code: "40001", message: "revision conflict" } });
-    expect(await publishRouteRevision({ status: "idle", message: "" }, form())).toMatchObject({ status: "error" });
+    mocks.rpc.mockResolvedValueOnce({ data: null, error: { code, message: "revision conflict" } });
+    expect(await publishRouteRevision({ status: "idle", message: "" }, form())).toMatchObject({ status: "error", message: expect.stringContaining("otra versión") });
     expect(mocks.tag).not.toHaveBeenCalled();
   });
 });

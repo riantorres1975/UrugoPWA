@@ -171,6 +171,21 @@ test.describe("moderación con Supabase aislado", () => {
     expect(verifiedRoute).toMatchObject({ data_version: 1, verified: true });
     expect(Date.parse(verifiedRoute.last_verified_at)).not.toBeNaN();
 
+    // Stale business versions must return once, rather than starting a
+    // PostgREST serialization retry loop that outlives the HTTP request.
+    const stalePublication = await adminClient.rpc("publish_route_revision", {
+      p_route_id: routeId, p_expected_version: 0, p_name: routeName,
+      p_original_name: routeName, p_color: "#abcdef", p_corridor_width_m: 500,
+      p_verified: false, p_operational_status: "active", p_path: [[-102.071, 19.411], [-102.061, 19.421]],
+      p_landmarks: [], p_change_summary: "Esta versión está desactualizada",
+      p_report_id: null, p_actor_id: adminUserId,
+    }).abortSignal(AbortSignal.timeout(2_000));
+    expect(stalePublication.error?.code).toBe("PT409");
+    const staleVerification = await adminClient.rpc("record_route_field_verification", {
+      p_route_id: routeId, p_expected_version: 0, p_note: verificationNote, p_actor_id: adminUserId,
+    }).abortSignal(AbortSignal.timeout(2_000));
+    expect(staleVerification.error?.code).toBe("PT409");
+
     const { data: verification, error: verificationError } = await adminClient
       .from("route_field_verifications")
       .select("id,note,route_id,verified_by")

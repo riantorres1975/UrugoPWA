@@ -115,7 +115,7 @@ test("verifica pagos antes de reconocerlos y mantiene en privado referencias y m
   expect(wall.confirmedCount).toBe(2);
   expect(wall.supporters.find((row: { name: string }) => row.name === "Apoyo anónimo").amount_cents).toBeNull();
   expect(JSON.stringify(wall)).not.toContain(run);
-  expect((await db.rpc("review_support_contribution", { p_id: contributionId, p_revision: 1, p_status: "rejected", p_amount_cents: 4550, p_note: "Conflicto", p_actor_id: userId })).error?.code).toBe("40001");
+  expect((await db.rpc("review_support_contribution", { p_id: contributionId, p_revision: 1, p_status: "rejected", p_amount_cents: 4550, p_note: "Conflicto", p_actor_id: userId })).error?.code).toBe("PT409");
   expect((await db.rpc("review_support_contribution", { p_id: contributionId, p_revision: null, p_status: "rejected", p_amount_cents: 4550, p_note: "Nulo", p_actor_id: userId })).error?.code).toBe("22023");
 
   await page.goto("/apoyar");

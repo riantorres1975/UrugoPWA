@@ -1,5 +1,6 @@
 "use server";
 
+import { isVersionConflict } from "@/lib/database-errors";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { PUBLISHED_ROUTES_CACHE_TAG } from "@/lib/public-data-cache";
 import { redirect } from "next/navigation";
@@ -240,7 +241,7 @@ export async function publishRouteRevision(
 
   if (error) {
     console.error("[admin-routes] No se pudo publicar la revisión:", error.code, error.message);
-    const stale = error.code === "40001";
+    const stale = isVersionConflict(error);
     return {
       status: "error",
       message: stale
@@ -332,7 +333,7 @@ export async function recordRouteFieldVerification(
     console.error("[admin-routes] No se pudo registrar la verificación:", error.code, error.message);
     return {
       status: "error",
-      message: error.code === "40001"
+      message: isVersionConflict(error)
         ? "La ruta cambió mientras la comprobabas. Recarga la página antes de registrarla."
         : "No se pudo registrar la verificación. Comprueba que la migración esté aplicada.",
     };

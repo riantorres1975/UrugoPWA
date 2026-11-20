@@ -25,7 +25,7 @@ describe("confirmación de apoyos", () => {
     expect(mocks.revalidate.mock.calls.map(([path]) => path)).toEqual(["/", "/apoyar", "/admin/apoyos"]);
   });
   it("rechaza revisiones obsoletas y no publica si falla el guardado", async () => {
-    mocks.abort.mockResolvedValueOnce({ error: { code: "40001" } });
+    mocks.abort.mockResolvedValueOnce({ error: { code: "PT409" } });
     expect(await reviewSupportContribution({}, form())).toEqual({ error: expect.stringContaining("actualizó") });
     expect(mocks.revalidate).not.toHaveBeenCalled();
     expect(await reviewSupportContribution({}, form({ revision: "0" }))).toHaveProperty("error");
@@ -54,7 +54,7 @@ describe("nuevas herramientas de apoyo", () => {
     const goal = form({ month: "2026-11", target: "200.50", description: "Gastos comprobados de mantenimiento", revision: "0", enabled: "on" });
     expect(await saveSupportGoal({}, goal)).toHaveProperty("success");
     expect(mocks.rpc).toHaveBeenCalledWith("save_support_monthly_goal", { p_month: "2026-11-01", p_target: 20050, p_description: "Gastos comprobados de mantenimiento", p_enabled: true, p_revision: 0, p_actor_id: actor });
-    mocks.abort.mockResolvedValueOnce({ error: { code: "40001" } });
+    mocks.abort.mockResolvedValueOnce({ error: { code: "PT409" } });
     expect(await saveSupportGoal({}, goal)).toEqual({ error: expect.stringContaining("cambió") });
   });
   it("el acceso de recuperación requiere comprobación y nunca guarda el código en claro", async () => {

@@ -26,7 +26,7 @@ describe("consulta privada del aporte", () => {
     expect((await POST(request({ action: "privacy", code, visibility: "private", showAmount: true, revision: 2, amount_cents: 999999, status: "confirmed" }))).status).toBe(200);
     expect(mocks.rpc).toHaveBeenCalledWith("update_support_privacy", { p_hash: expect.any(String), p_revision: 2, p_visibility: "private", p_name: null, p_show_amount: false });
     expect(mocks.revalidate.mock.calls.map(([path]) => path)).toEqual(["/", "/apoyar", "/admin/apoyos"]);
-    mocks.update.mockResolvedValueOnce({ error: { code: "40001" } });
+    mocks.update.mockResolvedValueOnce({ error: { code: "PT409" } });
     expect((await POST(request({ action: "privacy", code, visibility: "anonymous", showAmount: false, revision: 1 }))).status).toBe(409);
   });
 });

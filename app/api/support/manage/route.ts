@@ -1,3 +1,4 @@
+import { isVersionConflict } from "@/lib/database-errors";
 import { NextRequest } from "next/server";
 import { revalidatePath } from "next/cache";
 import { hashSupportCode } from "@/lib/support-access-server";
@@ -25,7 +26,7 @@ export async function POST(request: NextRequest) {
     const privacy = parseSupportPrivacy(input);
     if (!privacy) return Response.json({ error: "Revisa el nombre y la opción de privacidad." }, { status: 400, headers });
     const { error } = await db.rpc("update_support_privacy", { p_hash: hash, p_revision: privacy.revision, p_visibility: privacy.visibility, p_name: privacy.name, p_show_amount: privacy.showAmount }).abortSignal(AbortSignal.timeout(8000));
-    if (error) return Response.json({ error: error.code === "40001" ? "El aviso cambió. Actualiza el estado antes de guardar." : "No se pudo actualizar el aporte con ese código." }, { status: error.code === "40001" ? 409 : error.code === "P0002" ? 404 : 502, headers });
+    if (error) return Response.json({ error: isVersionConflict(error) ? "El aviso cambió. Actualiza el estado antes de guardar." : "No se pudo actualizar el aporte con ese código." }, { status: isVersionConflict(error) ? 409 : error.code === "P0002" ? 404 : 502, headers });
     revalidatePath("/"); revalidatePath("/apoyar"); revalidatePath("/admin/apoyos");
   }
   const { data, error } = await db.from("support_contributions")

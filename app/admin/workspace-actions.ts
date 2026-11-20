@@ -1,5 +1,6 @@
 "use server";
 
+import { isVersionConflict } from "@/lib/database-errors";
 import { getAdminAccess } from "@/lib/admin-auth";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { parseEditorDraft, type EditorDraft } from "@/lib/admin-route-draft";
@@ -36,7 +37,7 @@ export async function saveCloudDraft(snapshot: EditorDraft, expectedRevision: nu
   if (!validated || !Number.isSafeInteger(expectedRevision) || expectedRevision < 0) return { error: "El borrador no es válido." };
   const { data, error } = await db.rpc("save_route_editor_draft", { p_route_id: validated.routeId, p_user_id: access.userId,
     p_base_version: validated.baseVersion, p_revision: expectedRevision, p_snapshot: validated });
-  if (error) return { error: error.code === "40001" ? "La ruta o el borrador cambió en otro dispositivo. Carga la copia de la cuenta antes de seguir guardando." : "No se pudo guardar en la cuenta. Conservamos la copia local." };
+  if (error) return { error: isVersionConflict(error) ? "La ruta o el borrador cambió en otro dispositivo. Carga la copia de la cuenta antes de seguir guardando." : "No se pudo guardar en la cuenta. Conservamos la copia local." };
   return { revision: Number(data) };
 }
 

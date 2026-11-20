@@ -164,10 +164,10 @@ test("sincroniza el borrador entre dispositivos y rechaza sobrescrituras concurr
     const input = { p_route_id: routeId + 1, p_user_id: userId!, p_base_version: 2, p_revision: updated.data!.revision, p_snapshot: updated.data!.snapshot };
     const first = await db.rpc("save_route_editor_draft", input);
     expect(first.error).toBeNull();
-    const conflict = await db.rpc("save_route_editor_draft", input);
-    expect(conflict.error?.code).toBe("40001");
-    const stale = await db.rpc("save_route_editor_draft", { ...input, p_base_version: 1, p_revision: first.data });
-    expect(stale.error?.code).toBe("40001");
+    const conflict = await db.rpc("save_route_editor_draft", input).abortSignal(AbortSignal.timeout(2_000));
+    expect(conflict.error?.code).toBe("PT409");
+    const stale = await db.rpc("save_route_editor_draft", { ...input, p_base_version: 1, p_revision: first.data }).abortSignal(AbortSignal.timeout(2_000));
+    expect(stale.error?.code).toBe("PT409");
     const anon = createClient(process.env.TEST_SUPABASE_URL!, process.env.TEST_SUPABASE_PUBLISHABLE_KEY!, { auth: { persistSession: false } });
     expect((await anon.from("route_editor_drafts").select("snapshot")).error).not.toBeNull();
     expect((await anon.rpc("save_route_editor_draft", input)).error).not.toBeNull();

@@ -1,5 +1,6 @@
 "use server";
 
+import { isVersionConflict } from "@/lib/database-errors";
 import { revalidatePath } from "next/cache";
 import { getAdminAccess } from "@/lib/admin-auth";
 import { parseSupportAmount, parseSupportClaim } from "@/lib/support-contributions";
@@ -28,7 +29,7 @@ export async function reviewSupportContribution(_previous: SupportReviewState, f
   const { error } = await db.rpc("review_support_contribution", {
     p_id: id, p_revision: revision, p_status: status, p_amount_cents: amount, p_note: note, p_actor_id: access.userId,
   }).abortSignal(AbortSignal.timeout(8000));
-  if (error) return { error: error.code === "40001" ? "Otra persona actualizó este aviso. Recarga la página antes de revisarlo." : "No se pudo guardar la revisión. Vuelve a intentarlo." };
+  if (error) return { error: isVersionConflict(error) ? "Otra persona actualizó este aviso. Recarga la página antes de revisarlo." : "No se pudo guardar la revisión. Vuelve a intentarlo." };
   refreshSupportPages();
   return { success: status === "confirmed" ? "Aporte confirmado. Se respetará la privacidad elegida." : "Aviso rechazado. No aparecerá en la comunidad." };
 }
@@ -67,7 +68,7 @@ export async function saveSupportGoal(_previous: SupportReviewState, form: FormD
   const db = createSupabaseAdminClient(); if (!db) return { error: "La configuración no está disponible." };
   const { error } = await db.rpc("save_support_monthly_goal", { p_month: `${month}-01`, p_target: target, p_description: description,
     p_enabled: form.get("enabled") === "on", p_revision: revision, p_actor_id: access.userId }).abortSignal(AbortSignal.timeout(8000));
-  if (error) return { error: error.code === "40001" ? "La meta cambió. Recarga la página antes de editarla." : "No se pudo guardar la meta." };
+  if (error) return { error: isVersionConflict(error) ? "La meta cambió. Recarga la página antes de editarla." : "No se pudo guardar la meta." };
   refreshSupportPages(); return { success: form.get("enabled") === "on" ? "Meta mensual guardada y publicada." : "Meta guardada sin publicación pública." };
 }
 
@@ -79,7 +80,7 @@ export async function rotateSupportAccess(_previous: SupportReviewState, form: F
   const db = createSupabaseAdminClient(); if (!db) return { error: "No se pudo crear el acceso." };
   const accessCode = newSupportCode();
   const { error } = await db.rpc("rotate_support_access", { p_id: id, p_revision: revision, p_hash: hashSupportCode(accessCode), p_actor_id: access.userId }).abortSignal(AbortSignal.timeout(8000));
-  if (error) return { error: error.code === "40001" ? "El aviso cambió. Recarga antes de crear un acceso nuevo." : "No se pudo crear el acceso privado." };
+  if (error) return { error: isVersionConflict(error) ? "El aviso cambió. Recarga antes de crear un acceso nuevo." : "No se pudo crear el acceso privado." };
   // Keep the receipt visible in the client action state; rotating doesn't change public data.
   return { success: "Acceso creado. El código anterior dejó de funcionar. Guarda este código antes de cerrar.", accessCode };
 }
