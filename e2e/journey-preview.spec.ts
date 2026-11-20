@@ -24,6 +24,8 @@ test("el resumen deja el mapa visible y permite enfocar y recuperar el viaje", a
   await page.keyboard.press("Escape");
   await expect(panel).toBeHidden();
   await expect(preview).toBeFocused();
+  const map = page.getByRole("application", { name: /Mapa interactivo/ });
+  await expect.poll(async () => (await map.boundingBox())?.y).toBe(0);
   await preview.click();
   await panel.getByRole("button", { name: "Sube aquí", exact: true }).click();
   await expect(panel).toBeHidden();
@@ -34,7 +36,6 @@ test("el resumen deja el mapa visible y permite enfocar y recuperar el viaje", a
   await overview.click();
   await expect(overview).toBeHidden();
   await page.waitForTimeout(900);
-  const map = page.getByRole("application", { name: /Mapa interactivo/ });
   const box = (await map.boundingBox())!;
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.wheel(0, -500);
