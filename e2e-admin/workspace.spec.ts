@@ -181,6 +181,10 @@ test("cierra un reporte con solución, fecha y responsable sin publicar geometr�
   await page.getByText("Marcar como resuelto", { exact: true }).click();
   await page.getByLabel("Cómo se solucionó", { exact: true }).fill(note);
   await page.getByRole("button", { name: "Confirmar solución" }).click();
+  // Wait for the server action to persist before navigating away. A click alone
+  // can finish while the update is still in flight, and navigation cancels it.
+  await expect.poll(async () => (await db.from("community_reports")
+    .select("resolution_note").eq("id", report.data!.id).single()).data?.resolution_note).toBe(note);
   await page.goto(`/admin?estado=resolved&reporte=${report.data!.id}`);
   await expect(page.locator("article")).toContainText(note);
   const resolved = await db.from("community_reports").select("status,resolution_note,resolved_by,resolved_at").eq("id", report.data!.id).single();
